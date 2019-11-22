@@ -1,0 +1,3 @@
+[submodule "StatisticsTracker"]
+	path = StatisticsTracker
+	url = https://github.com/Microsoft/StatisticsTracker
