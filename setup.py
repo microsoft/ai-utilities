@@ -4,7 +4,7 @@ setup(
     name="AI-Utilities",	     # This is the name of your PyPI-package.
     version="0.0.1",		     # Update the version number for new releases
     description="Utility Functions for AI Solutions",
-    author="Daniel Ciborowski",
+    author="Daniel Ciborowski & Daniel Grecoe",
     author_email="dciborow@microsoft.com",
     url="https://github.com/microsoft/AI-Utilities",
     license="MIT",
