@@ -1,5 +1,5 @@
 """
-ado-ml-batch-train - aml_configuration/utils.py
+ado-ml-batch-train - machine_learning/utils.py
 
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.

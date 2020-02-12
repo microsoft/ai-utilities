@@ -8,7 +8,7 @@ import os
 
 from azureml.core import Workspace
 
-from AIHelpers.aml_configuration.utils import load_configuration, get_or_create_workspace, \
+from azure_utils.machine_learning.utils import load_configuration, get_or_create_workspace, \
     get_workspace_from_config
 
 

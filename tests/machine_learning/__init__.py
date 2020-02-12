@@ -6,5 +6,5 @@ Licensed under the MIT License.
 """
 import os
 
-if os.path.exists(os.path.join(os.curdir, "aml_configuration")):
-    os.chdir("aml_configuration")
+if os.path.exists(os.path.join(os.curdir, "machine_learning")):
+    os.chdir("machine_learning")

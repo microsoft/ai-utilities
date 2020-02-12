@@ -4,7 +4,7 @@ ado-ml-batch-train - test_register_datastores.py
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
-from AIHelpers.aml_configuration.register_datastores import register_sql_datastore, register_blob_datastore
+from azure_utils.machine_learning.register_datastores import register_sql_datastore, register_blob_datastore
 from tests.utils import init_test_vars
 
 CONFIG, SUBSCRIPTION_ID, RESOURCE_GROUP, WORKSPACE_NAME, WORKSPACE_REGION, WORKSPACE, SQL_DATASTORE_NAME, \

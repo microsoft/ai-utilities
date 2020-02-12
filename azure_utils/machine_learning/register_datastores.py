@@ -1,5 +1,5 @@
 """
-ado-ml-batch-train - aml_configuration/register_datastores.py
+ado-ml-batch-train - machine_learning/register_datastores.py
 
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
