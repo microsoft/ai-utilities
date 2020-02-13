@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="Microsoft-Azure-AI-Utilities",	     # This is the name of your PyPI-package.
+    name="Microsoft-AI-Azure-Utilities",	     # This is the name of your PyPI-package.
     version="0.2.0",		     # Update the version number for new releases
     description="Utility Functions for AI Solutions",
     author="Daniel Ciborowski & Daniel Grecoe",
