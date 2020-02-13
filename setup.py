@@ -9,5 +9,5 @@ setup(
     url="https://github.com/microsoft/AI-Utilities",
     license="MIT",
     packages=find_packages(),
-    install_requires=["azure-cli", 'azureml-core']
+    install_requires=["azure-cli", 'azureml-core', 'python-dotenv']
 )
