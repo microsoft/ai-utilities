@@ -1,2 +1,0 @@
-azure-cli==2.0.37
-azureml-core==1.0.43
