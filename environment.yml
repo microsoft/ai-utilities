@@ -1,0 +1,15 @@
+name: MLAKSDeployAML
+channels:
+  - conda-forge
+dependencies:
+  - python=3.6.2
+  - pip
+  - nb_conda_kernels
+  - pip:    
+    - azure-cli
+    - azureml-core
+    - python-dotenv
+    - nbformat
+    - papermill
+    - nbconvert
+    - junit_xml
