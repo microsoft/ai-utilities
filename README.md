@@ -1,3 +1,6 @@
+# AI Utilities Sample Project
+This project is a sample showcasing how to create a common repository for utilities that can be used by other AI projects. 
+
 # Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
