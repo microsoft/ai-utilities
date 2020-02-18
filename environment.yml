@@ -13,3 +13,4 @@ dependencies:
     - papermill
     - nbconvert
     - junit_xml
+    - PyYAML
