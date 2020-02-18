@@ -49,7 +49,6 @@ def run_notebook(input_notebook, add_nunit_attachment, parameters=None, kernel_n
             jupyter_output = nbformat.reads(json.dumps(data), as_version=nbformat.NO_CONVERT)
 
         export_md(jupyter_output, output_notebook, add_nunit_attachment, file_ext=".txt", root=root)
-        export_rst(jupyter_output, output_notebook, add_nunit_attachment, root=root)
 
         regex = r'Deployed (.*) with name (.*). Took (.*) seconds.'
 
