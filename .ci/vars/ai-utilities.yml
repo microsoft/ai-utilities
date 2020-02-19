@@ -2,3 +2,4 @@ variables:
   TridentWorkloadTypeShort: aiutilities
   DeployLocation: westus
   ProjectLocation: "."
+  conda: ai-utilities
