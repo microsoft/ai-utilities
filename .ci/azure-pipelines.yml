@@ -28,13 +28,17 @@ pr:
     include:
     - master
 
+variables:
+- template: ./vars/ai-utilities.yml
+
 stages:
-- template: .ci/stages/deploy_notebooks_stages_v2.yml@aitemplates
+- template: .ci/stages/deploy_notebooks_stages_v5.yml@aitemplates
   parameters:
     Agent: $(Agent_Name)
     jobDisplayName: ai-utilities
-    DefaultWorkingDirectory: $(System.DefaultWorkingDirectory)
-    workload_vars: ../vars/ai-utilities.yml
+    TridentWorkloadTypeShort: ${{ variables.TridentWorkloadTypeShort }}
+    DeployLocation: ${{ variables.DeployLocation }}
+    Template: ${{ variables.Template }}
     flighting_release: false
     flighting_preview: false
     flighting_master: false
