@@ -2,5 +2,4 @@ variables:
   TridentWorkloadTypeShort: aiutilities
   DeployLocation: westus
   ProjectLocation: "."
-  PythonPath: "."
-  Template: .ci/steps/ai-architecture-template.yml
+  conda: ai-utilities
