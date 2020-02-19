@@ -38,7 +38,8 @@ stages:
     jobDisplayName: ai-utilities
     TridentWorkloadTypeShort: ${{ variables.TridentWorkloadTypeShort }}
     DeployLocation: ${{ variables.DeployLocation }}
-    Template: ${{ variables.Template }}
+    ProjectLocation: ${{ variables.ProjectLocation }}
+    conda: ${{ variables.conda }}
     flighting_release: false
     flighting_preview: false
     flighting_master: false
