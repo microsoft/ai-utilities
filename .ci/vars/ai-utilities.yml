@@ -2,4 +2,3 @@ variables:
   TridentWorkloadTypeShort: aiutilities
   DeployLocation: westus
   ProjectLocation: "."
-  Template: ai-architecture-template.yml
