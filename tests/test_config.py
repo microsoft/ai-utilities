@@ -1,14 +1,15 @@
+"""
+ai-utilities - test_config.py
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the MIT License.
+"""
 import os
-import sys
-from configuration import ProjectConfiguration
 
+from azure_utils.configuration import ProjectConfiguration
 
-def removeConfigFile(conf_file):
-    if os.path.isfile(conf_file):
-        os.remove(conf_file)
 
 def test_config():
-    
     new_config_file = "./testconfiguration.yml"
     project_name = "Test Project"
 
@@ -43,4 +44,12 @@ def test_config():
 
     removeConfigFile(new_config_file)
 
-test_config()
+
+def removeConfigFile(conf_file: str):
+    """
+    Clean up configuration file
+
+    :param conf_file: location of configuration file
+    """
+    if os.path.isfile(conf_file):
+        os.remove(conf_file)

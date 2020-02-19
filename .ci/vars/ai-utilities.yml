@@ -1,0 +1,6 @@
+variables:
+  TridentWorkloadTypeShort: aiutilities
+  DeployLocation: westus
+  ProjectLocation: "."
+  PythonPath: "."
+  Template: steps/ai-utilities.yml
