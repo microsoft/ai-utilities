@@ -11,6 +11,8 @@ import yaml
 from azureml.core import Workspace
 from azureml.core.authentication import InteractiveLoginAuthentication, ServicePrincipalAuthentication
 
+from azure_utils import DIRECTORY
+
 
 def load_configuration(configuration_file: str):
     """
@@ -22,11 +24,12 @@ def load_configuration(configuration_file: str):
     This file is set to in the .gitignore to prevent accidental comments.
 
     :param configuration_file: File Path to configuration yml
+    :param root: root directory path of file
     :return: Returns the parameters needed to configure the AML Workspace and Experiments
     :rtype: Union[Dict[Hashable, Any], list, None], str, str, str, str, Workspace, str, str
     """
     if not os.path.isfile(configuration_file):
-        configuration_file = "../sample_workspace_conf.yml"
+        configuration_file = DIRECTORY + "/../sample_workspace_conf.yml"
 
     with open(configuration_file, 'r') as ymlfile:
         cfg = yaml.load(ymlfile)

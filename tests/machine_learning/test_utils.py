@@ -1,5 +1,5 @@
 """
-ado-ml-batch-train - test_utils.py
+ai-utilities - test_utils.py
 
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
@@ -8,13 +8,16 @@ import os
 
 from azureml.core import Workspace
 
+from azure_utils import DIRECTORY
 from azure_utils.machine_learning.utils import load_configuration, get_or_create_workspace, \
     get_workspace_from_config
 
+filepath = DIRECTORY
+
 
 def test_load_configuration():
-    """ Test Load Configuration Method"""
-    cfg = load_configuration("../../sample_workspace_conf.yml")
+
+    cfg = load_configuration(filepath + "/../sample_workspace_conf.yml")
     assert cfg
 
     assert cfg['subscription_id'] == '<>'
@@ -36,7 +39,7 @@ def test_load_configuration():
 
 def test_get_or_create_workspace():
     """Test Get or Create Workspace Method"""
-    cfg = load_configuration("../../workspace_conf.yml")
+    cfg = load_configuration(filepath + "/../workspace_conf.yml")
 
     workspace = get_or_create_workspace(cfg['workspace_name'], cfg['subscription_id'], cfg['resource_group'],
                                         cfg['workspace_region'])
@@ -47,7 +50,7 @@ def test_get_or_create_workspace():
 
 def test_get_workspace_from_config():
     """ Test Get Workspace From Config File"""
-    cfg = load_configuration("../../workspace_conf.yml")
+    cfg = load_configuration(filepath + "/../workspace_conf.yml")
 
     get_or_create_workspace(cfg['workspace_name'], cfg['subscription_id'], cfg['resource_group'],
                             cfg['workspace_region'])
