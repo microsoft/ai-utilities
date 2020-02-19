@@ -3,4 +3,4 @@ variables:
   DeployLocation: westus
   ProjectLocation: "."
   PythonPath: "."
-  Template: ai-architecture-template.yml
+  Template: .ci/steps/ai-architecture-template.yml
