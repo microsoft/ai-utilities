@@ -32,7 +32,7 @@ variables:
 - template: ./vars/ai-utilities.yml
 
 stages:
-- template: .ci/stages/deploy_notebooks_stages_v5.yml@aitemplates
+- template: .ci/stages/deploy_notebooks_stages_v4.yml@aitemplates
   parameters:
     Agent: $(Agent_Name)
     jobDisplayName: ai-utilities
