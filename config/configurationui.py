@@ -39,6 +39,11 @@ class SettingsUpdate(Frame):
         '''
         current_row = 0
         for setting in self.configuration.get_settings():
+
+            if isinstance(setting, dict) == False:
+                print("Found setting does not match pattern...")
+                continue
+            
             # Only can be one key as they are sinletons with a list 
             # of values
             if len(setting.keys()) == 1: 
