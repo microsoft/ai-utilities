@@ -1,5 +1,5 @@
 """
-ado-ml-batch-train - __init__.py
+ai-utilities - __init__.py
 
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.

@@ -1,5 +1,5 @@
 """
-ado-ml-batch-train - test_register_datastores.py
+ai-utilities - test_register_datastores.py
 
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.

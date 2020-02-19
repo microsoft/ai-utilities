@@ -1,0 +1,54 @@
+# AI Utilities Sample
+#
+# A Github Service Connection must also be created with the name "AIArchitecturesAndPractices-GitHub"
+# https://docs.microsoft.com/en-us/azure/devops/pipelines/process/demands?view=azure-devops&tabs=yaml
+#
+# An Agent_Name Variable must be creating in the Azure DevOps UI.
+# https://docs.microsoft.com/en-us/azure/devops/pipelines/process/variables?view=azure-devops&tabs=yaml%2Cbatch#secret-variables
+#
+# This must point to an Agent Pool, with a Self-Hosted Linux VM with a DOcker.
+# https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/v2-linux?view=azure-devops
+
+resources:
+  repositories:
+    - repository: aitemplates
+      type: github
+      name: microsoft/AI
+      endpoint: AIArchitecturesAndPractices-GitHub
+
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+
+pr:
+  autoCancel: true
+  branches:
+    include:
+    - master
+
+variables:
+- template: ./vars/ai-utilities.yml
+
+stages:
+- template: .ci/stages/deploy_notebooks_stages_v5.yml@aitemplates
+  parameters:
+    Agent: $(Agent_Name)
+    jobDisplayName: ai-utilities
+    TridentWorkloadTypeShort: ${{ variables.TridentWorkloadTypeShort }}
+    DeployLocation: ${{ variables.DeployLocation }}
+    ProjectLocation: ${{ variables.ProjectLocation }}
+    conda: ${{ variables.conda }}
+    flighting_release: false
+    flighting_preview: false
+    flighting_master: false
+    sql_server_name: $(sql_server_name)
+    sql_database_name: $(sql_database_name)
+    sql_username: $(sql_username)
+    sql_password: $(sql_password)
+    
+    container_name: $(container_name)
+    account_name: $(account_name)
+    account_key: $(account_key)
+    datastore_rg: $(datastore_rg)

@@ -1,17 +1,22 @@
-import pandas as pd
-import re
-import math
+"""
+ai-utilities - azure_utils/utilities.py
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the MIT License.
+"""
 import gzip
-import requests
 import json
-import ipywidgets as widgets
-from azureml.core.authentication import ServicePrincipalAuthentication
+import logging
+import math
+import re
+
+import pandas as pd
+import requests
+from azureml.core.authentication import AuthenticationException
 from azureml.core.authentication import AzureCliAuthentication
 from azureml.core.authentication import InteractiveLoginAuthentication
-from azureml.core.authentication import AuthenticationException
-
-from dotenv import set_key, get_key
-import logging
+from azureml.core.authentication import ServicePrincipalAuthentication
+from dotenv import get_key
 
 
 def read_csv_gz(url, **kwargs):
@@ -49,8 +54,7 @@ def round_sample_strat(X, strat, **kwargs):
 
 
 def random_merge(A, B, N=20, on='AnswerId', key='key', n='n'):
-    """Pair all rows of A with 1 matching row on "on" and N-1 random rows from B
-    """
+    """Pair all rows of A with 1 matching row on "on" and N-1 random rows from B"""
     assert key not in A and key not in B
     X = A.copy()
     X[key] = A[on]
@@ -61,7 +65,7 @@ def random_merge(A, B, N=20, on='AnswerId', key='key', n='n'):
     df_list = [match]
     for i in A.index:
         X = A.loc[[i]]
-        Y = B[B[on] != X[on].iloc[0]].sample(N-1)
+        Y = B[B[on] != X[on].iloc[0]].sample(N - 1)
         X[key] = 1
         Y[key] = 1
         Z = X.merge(Y, how='outer', on=key).drop(key, axis=1)
@@ -89,6 +93,7 @@ def read_questions(path, id, answerid):
     questions = questions.set_index(id, drop=False)
     questions.sort_index(inplace=True)
     return questions
+
 
 def get_auth(env_path):
     logger = logging.getLogger(__name__)
