@@ -1,8 +1,15 @@
+"""
+- configuraitonui.py
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the MIT License.
+"""
+
 from tkinter import * 
 from configuration import ProjectConfiguration
 
 class SettingsUpdate(Frame):
-    '''
+    """
         UI Wrapper for project configuration settings. 
 
         Provide a configuraiton file as described in configuration.ProjectConfiguration.
@@ -13,7 +20,7 @@ class SettingsUpdate(Frame):
         Final row of the grid has a save and cancel button. 
 
         Save updates the configuration file with any settings put on the UI.
-    '''
+    """
     def __init__(self, project_configuration, master):
         Frame.__init__(self, master=master)
         '''
@@ -40,7 +47,7 @@ class SettingsUpdate(Frame):
         current_row = 0
         for setting in self.configuration.get_settings():
 
-            if isinstance(setting, dict) == False:
+            if not isinstance(setting, dict):
                 print("Found setting does not match pattern...")
                 continue
             
@@ -73,20 +80,20 @@ class SettingsUpdate(Frame):
         close_button.grid(row=current_row, column=2, columnspan=1, sticky='nwse' )
 
     def cancel(self):
-        '''
+        """
             Cancel clicked, just close the window.
-        '''
+        """
         self.master_win.destroy()
 
     def save_setting(self):
-        '''
+        """
             Save clicked
                 - For each row, collect the setting name and user input.
                     - Clean user input
                 - Set values for all settings
                 - Save configuration
                 - Close window
-        '''
+        """
         for setting in self.settings.keys():
             user_entered = self.settings[setting].get("1.0",END)
             user_entered = user_entered.strip().replace('\n', '')

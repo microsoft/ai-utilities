@@ -1,4 +1,11 @@
-'''
+"""
+- notebook_config.py
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the MIT License.
+"""
+
+"""
     Import the needed functionality
     - tkinter : 
         Python GUI library
@@ -7,14 +14,23 @@
     - configurationui.SettingsUpdate
         tkinter based UI that dynamically loads any appropriate configuration file
         and displays it to the user to alter the settings.
-'''
+"""
+import typing 
 from tkinter import * 
 from configuration import ProjectConfiguration
 from configurationui import SettingsUpdate
 
 project_configuration_file = "./project.yml"
 
-def configure_settings(configuration_yaml = None):
+def configure_settings(configuration_yaml : str = None) -> None:
+    """
+        Launch a tkinter UI to configure the project settings in the provided
+        configuration_yaml file. If a file is not provided, the default ./project.yml
+        file will be created for the caller.
+
+        configuration_yaml -> Disk location of the configuration file to modify.
+    """
+
     '''
         ProjectConfiguration will open an existing YAML file or create a new one. It is
         suggested that your project simply create a simple configuration file containing
@@ -37,7 +53,15 @@ def configure_settings(configuration_yaml = None):
     app = SettingsUpdate(project_configuration, window)
     app.mainloop()
 
-def get_settings(configuration_yaml = None):
+def get_settings(configuration_yaml : str = None) -> ProjectConfiguration:
+    """
+        Aquire the project settings from the provided configuration_yaml file. 
+        If a file is not provided, the default ./project.yml will be created and 
+        and empty set of settings will be returned to the user.
+
+        configuration_yaml -> Disk location of the configuration file to modify.
+    """
+
     '''
         ProjectConfiguration will open an existing YAML file or create a new one. It is
         suggested that your project simply create a simple configuration file containing
