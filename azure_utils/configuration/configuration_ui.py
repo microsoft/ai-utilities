@@ -1,37 +1,44 @@
 """
-ai-utilities - azure_utils/configurationui.py
+- configuraitonui.py
 
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
+
 from tkinter import *
 
-from azure_utils.configuration import ProjectConfiguration
+from azure_utils.configuration.project_configuration import ProjectConfiguration
 
 
 class SettingsUpdate(Frame):
     """
-        UI Wrapper for project configuration settings.
+    UI Wrapper for project configuration settings.
 
-        Provide a configuraiton file as described in configuration.ProjectConfiguration.
+    Provide a configuraiton file as described in configuration.ProjectConfiguration.
 
-        A UI is built using a grid where each row consists of:
-            setting_description | Text control to show accept values
+    A UI is built using a grid where each row consists of:
+        setting_description | Text control to show accept values
 
-        Final row of the grid has a save and cancel button.
+    Final row of the grid has a save and cancel button.
 
-        Save updates the configuration file with any settings put on the UI.
+    Save updates the configuration file with any settings put on the UI.
     """
 
     def __init__(self, project_configuration, master):
+        """
+        Create new Configuration UI
+
+        :param project_configuration: path to project configuration
+        :param master: Main Widget
+        """
         Frame.__init__(self, master=master)
-        '''
+        """
             self.configuration  = Instance of ProjectConfiguration and master
             self.master_win     = Instance of Tk application. 
             self.settings       = Will be a dictionary where
                                     key = Setting name
                                     value = Text control   
-        '''
+        """
         self.configuration = project_configuration
         self.master_win = master
         self.settings = {}
@@ -48,6 +55,11 @@ class SettingsUpdate(Frame):
         '''
         current_row = 0
         for setting in self.configuration.get_settings():
+
+            if not isinstance(setting, dict):
+                print("Found setting does not match pattern...")
+                continue
+
             # Only can be one key as they are sinletons with a list
             # of values
             if len(setting.keys()) == 1:
@@ -77,9 +89,7 @@ class SettingsUpdate(Frame):
         close_button.grid(row=current_row, column=2, columnspan=1, sticky='nwse')
 
     def cancel(self):
-        """
-            Cancel clicked, just close the window.
-        """
+        """ Cancel clicked, just close the window. """
         self.master_win.destroy()
 
     def save_setting(self):

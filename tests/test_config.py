@@ -6,7 +6,7 @@ Licensed under the MIT License.
 """
 import os
 
-from azure_utils.configuration import ProjectConfiguration
+from azure_utils.configuration.project_configuration import ProjectConfiguration
 
 
 def test_config():
@@ -14,7 +14,7 @@ def test_config():
     project_name = "Test Project"
 
     # Make sure file doesn't exist
-    removeConfigFile(new_config_file)
+    remove_config_file(new_config_file)
 
     # Create a new one with a specific name and two settings
     proj_config = ProjectConfiguration(new_config_file)
@@ -42,10 +42,10 @@ def test_config():
     proj_config.set_value('sub_id', 'new_sub')
     assert proj_config.get_value('sub_id') == 'new_sub'
 
-    removeConfigFile(new_config_file)
+    remove_config_file(new_config_file)
 
 
-def removeConfigFile(conf_file: str):
+def remove_config_file(conf_file: str):
     """
     Clean up configuration file
 

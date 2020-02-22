@@ -1,10 +1,13 @@
 """
-ai-utilities - azure_utils/configuration.py
+- project_configuration.py
 
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
+
 import os
+from typing import Optional, Dict
+
 import yaml
 
 
@@ -22,33 +25,39 @@ class ProjectConfiguration:
             - value: <>
         etc....
     """
+    configuration: Dict[str, Optional[str]]
     project_key = "project_name"
     settings_key = "settings"
     setting_value = 'value'
     setting_description = 'description'
 
-    def __init__(self, configuration_file):
+    def __init__(self, configuration_file: str):
         """
-            Sets up the configuration file. If it does not exist, it is created
-            with a default name and no settings.
+        Sets up the configuration file. If it does not exist, it is created
+        with a default name and no settings.
+
+        :param configuration_file: File path to configuration file
         """
         self.configuration_file = configuration_file
-        self.configuration = None
+        self.configuration = {}
 
         if not os.path.isfile(self.configuration_file):
-            self.configuration = {ProjectConfiguration.project_key : "Default Settings", ProjectConfiguration.settings_key : None}
+            self.configuration = {ProjectConfiguration.project_key: "Default Settings",
+                                  ProjectConfiguration.settings_key: None}
             self.save_configuration()
 
         self._load_configuration()
 
-    def _validate_configuration(self, key_name):
+    def _validate_configuration(self, key_name: str):
         """
-            Ensure configuration has been loaded with load_configuration, and
-            that the given top level key exists.
+        Ensure configuration has been loaded with load_configuration, and
+        that the given top level key exists.
 
-            There are only two keys we care about:
-                ProjectConfiguration.project_key
-                ProjectConfiguration.settings_key
+        There are only two keys we care about:
+            ProjectConfiguration.project_key
+            ProjectConfiguration.settings_key
+
+        :param key_name: Configuration key who's existence will be checked.
         """
         if self.configuration is None:
             raise Exception("Load configuration file first")
@@ -58,60 +67,73 @@ class ProjectConfiguration:
 
     def _load_configuration(self):
         """
-            Load the configuration file from disk, there is no security around this. Although
-            it will be called from the constructor, which will create a default file for the user.
+        Load the configuration file from disk, there is no security around this. Although
+        it will be called from the constructor, which will create a default file for the user.
         """
         with open(self.configuration_file, 'r') as ymlfile:
             self.configuration = yaml.load(ymlfile, Loader=yaml.BaseLoader)
 
         assert self.configuration
 
-    def project_name(self):
+    def project_name(self) -> str:
         """
-            Get the configured project name
+        Get the configured project name
+
+        :return: Configured Project Name
         """
         self._validate_configuration(ProjectConfiguration.project_key)
         return self.configuration[ProjectConfiguration.project_key]
 
-    def set_project_name(self, project_name):
+    def set_project_name(self, project_name: str):
         """
-            Set the project name
+        Set the project name
+
+        :param project_name: Project Configuration Name
         """
         self._validate_configuration(ProjectConfiguration.project_key)
         self.configuration[ProjectConfiguration.project_key] = project_name
 
-    def get_settings(self):
+    def get_settings(self) -> Optional[str]:
         """
-            Get all of the settings (UI Configuration)
+        Get all of the settings (UI Configuration)
+
+        :return:  Return UI Configuration
         """
         self._validate_configuration(ProjectConfiguration.settings_key)
         return self.configuration[ProjectConfiguration.settings_key]
 
-    def add_setting(self, setting_name, description, value):
+    def add_setting(self, setting_name: str, description: str, value: str):
         """
-            Add a setting to the configuration. A setting consists of:
-                {
-                    name: [
-                        {ProjectConfiguration.setting_description : description},
-                        {ProjectConfiguration.setting_value : value}
-                    ]
-                }
+        Add a setting to the configuration. A setting consists of:
+            {
+                name: [
+                    {ProjectConfiguration.setting_description : description},
+                    {ProjectConfiguration.setting_value : value}
+                ]
+            }
+
+        :param setting_name: Name of setting key
+        :param description: Text describing the setting
+        :param value: Value of setting to saving in configuration
         """
         self._validate_configuration(ProjectConfiguration.settings_key)
 
-        if isinstance(self.configuration[ProjectConfiguration.settings_key], list) == False:
+        if not isinstance(self.configuration[ProjectConfiguration.settings_key], list):
             self.configuration[ProjectConfiguration.settings_key] = []
 
-        new_setting = {setting_name : []}
-        new_setting[setting_name].append({ProjectConfiguration.setting_description : description})
-        new_setting[setting_name].append({ProjectConfiguration.setting_value : value})
+        new_setting = {setting_name: []}
+        new_setting[setting_name].append({ProjectConfiguration.setting_description: description})
+        new_setting[setting_name].append({ProjectConfiguration.setting_value: value})
         self.configuration[ProjectConfiguration.settings_key].append(new_setting)
 
-    def get_value(self, setting_name):
-        '''
-            Get the value of a specific setting. If the file has no settings or does not contain
-            this specific setting return None, otherwise return the value.
-        '''
+    def get_value(self, setting_name: str) -> str:
+        """
+        Get the value of a specific setting. If the file has no settings or does not contain
+        this specific setting return None, otherwise return the value.
+
+        :param setting_name: Key of setting to return
+        :return: Value of requested setting_name
+        """
         self._validate_configuration(ProjectConfiguration.settings_key)
 
         return_value = None
@@ -125,11 +147,14 @@ class ProjectConfiguration:
 
         return return_value
 
-    def set_value(self, setting_name, value):
-        '''
-            Set the value of a specific setting. However, if this is just created there is no setting to set
-            and the request is silently ignored.
-        '''
+    def set_value(self, setting_name: str, value: str):
+        """
+        Set the value of a specific setting. However, if this is just created there is no setting to set
+        and the request is silently ignored.
+
+        :param setting_name: Key of setting to set
+        :param value: Value of setting to set
+        """
         self._validate_configuration(ProjectConfiguration.settings_key)
 
         if isinstance(self.configuration[ProjectConfiguration.settings_key], list):
@@ -139,12 +164,10 @@ class ProjectConfiguration:
                 if len(current_value) == 1:
                     current_value[0][ProjectConfiguration.setting_value] = value
                 else:
-                    value_setting = {ProjectConfiguration.setting_value : value}
+                    value_setting = {ProjectConfiguration.setting_value: value}
                     setting[0][setting_name].append(value_setting)
 
     def save_configuration(self):
-        """
-            Save the configuration file
-        """
+        """ Save the configuration file """
         with open(self.configuration_file, 'w') as ymlfile:
             yaml.dump(self.configuration, ymlfile)
