@@ -22,7 +22,7 @@ from configurationui import SettingsUpdate
 
 project_configuration_file = "./project.yml"
 
-def configure_settings(configuration_yaml : str = None) -> None:
+def configure_settings(configuration_yaml : str = project_configuration_file):
     """
         Launch a tkinter UI to configure the project settings in the provided
         configuration_yaml file. If a file is not provided, the default ./project.yml
@@ -39,10 +39,6 @@ def configure_settings(configuration_yaml : str = None) -> None:
         In this instance, we assume that the default configuration file is called project.yml.
         This will be used if the user passes nothing else in. 
     '''
-    global project_configuration_file
-    if configuration_yaml:
-        project_configuration_file = configuration_yaml
-
     project_configuration = ProjectConfiguration(project_configuration_file)
 
     '''
@@ -53,7 +49,7 @@ def configure_settings(configuration_yaml : str = None) -> None:
     app = SettingsUpdate(project_configuration, window)
     app.mainloop()
 
-def get_settings(configuration_yaml : str = None) -> ProjectConfiguration:
+def get_settings(configuration_yaml : str = project_configuration_file) -> ProjectConfiguration:
     """
         Aquire the project settings from the provided configuration_yaml file. 
         If a file is not provided, the default ./project.yml will be created and 
@@ -70,10 +66,6 @@ def get_settings(configuration_yaml : str = None) -> ProjectConfiguration:
         In this instance, we assume that the default configuration file is called project.yml.
         This will be used if the user passes nothing else in. 
     '''
-    global project_configuration_file
-    if configuration_yaml:
-        project_configuration_file = configuration_yaml
-
     return ProjectConfiguration(project_configuration_file)
 
 if __name__ == '__main__':
