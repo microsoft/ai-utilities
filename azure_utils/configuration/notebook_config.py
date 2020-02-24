@@ -63,9 +63,19 @@ def configure_settings(configuration_yaml: str = project_configuration_file):
         Finally, create a Tk window and pass that along with the configuration object
         to the SettingsObject class for modification. 
     '''
-    window = Tk()
-    app = SettingsUpdate(project_configuration, window)
+    app = get_app(project_configuration)
     app.mainloop()
+
+
+def get_app(project_configuration: ProjectConfiguration):
+    """
+    Create App from Window
+
+    :param project_configuration: Loaded Project Configuration
+    :return: TK App
+    """
+    window = Tk()
+    return SettingsUpdate(project_configuration, window)
 
 
 def get_settings(configuration_yaml: str = project_configuration_file) -> ProjectConfiguration:

@@ -4,6 +4,9 @@ AI-Utilities - test_notebooks.py
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
+import os
+import warnings
+from tkinter import TclError
 
 import pytest
 
@@ -18,4 +21,7 @@ from notebooks import NOTEBOOK_DIRECTORY
     ]
 )
 def test_notebook(notebook, add_nunit_attachment):
-    run_notebook(notebook, add_nunit_attachment, kernel_name="ai-utilities", root=NOTEBOOK_DIRECTORY)
+    try:
+        run_notebook(notebook, add_nunit_attachment, kernel_name="ai-utilities", root=NOTEBOOK_DIRECTORY)
+    except TclError:
+        warnings.warn("Notebook could not be tested")

@@ -5,17 +5,18 @@ Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
 
-from tkinter import *
+from tkinter import Frame, TRUE, Label, Text, END, Button
 from tkinter import messagebox
 
-from azure_utils.configuration.project_configuration import ProjectConfiguration
 from azure_utils.configuration.configuration_validation import Validation, ValidationResult
+from azure_utils.configuration.project_configuration import ProjectConfiguration
+
 
 class SettingsUpdate(Frame):
     """
         UI Wrapper for project configuration settings.
 
-        Provide a configuraiton file as described in configuration.ProjectConfiguration.
+        Provide a configuration file as described in configuration.ProjectConfiguration.
 
         A UI is built using a grid where each row consists of:
             setting_description | Text control to show accept values
@@ -24,6 +25,7 @@ class SettingsUpdate(Frame):
 
         Save updates the configuration file with any settings put on the UI.
     """
+
     def __init__(self, project_configuration, master):
         Frame.__init__(self, master=master)
         '''
@@ -47,7 +49,7 @@ class SettingsUpdate(Frame):
         '''
         self.master_win.title(self.configuration.project_name())
         self.master_win.resizable(width=TRUE, height=TRUE)
-        self.master_win.configure(padx = 10, pady = 10)
+        self.master_win.configure(padx=10, pady=10)
 
         '''
             Populate the grid first with settings followed by the two buttons (cancel/save)
@@ -74,8 +76,8 @@ class SettingsUpdate(Frame):
 
                     lbl = Label(self.master_win, text=description)
                     lbl.grid(row=current_row, column=0, columnspan=1, sticky='nwse')
-                    txt =  Text(self.master_win, height=1, width=40, wrap="none" )
-                    txt.grid(row=current_row, column=1, columnspan=2, sticky='nwse', pady=10 )
+                    txt = Text(self.master_win, height=1, width=40, wrap="none")
+                    txt.grid(row=current_row, column=1, columnspan=2, sticky='nwse', pady=10)
                     txt.insert(END, value)
 
                     self.settings[setting_name] = txt
@@ -83,9 +85,9 @@ class SettingsUpdate(Frame):
 
         # Add in the save/cancel buttons
         save_button = Button(self.master_win, text="Save", command=self.save_setting)
-        save_button.grid(row=current_row, column=1, columnspan=1, sticky='nwse' )
+        save_button.grid(row=current_row, column=1, columnspan=1, sticky='nwse')
         close_button = Button(self.master_win, text="Cancel", command=self.cancel)
-        close_button.grid(row=current_row, column=2, columnspan=1, sticky='nwse' )
+        close_button.grid(row=current_row, column=2, columnspan=1, sticky='nwse')
 
     def cancel(self):
         """
@@ -102,11 +104,11 @@ class SettingsUpdate(Frame):
                 - Save configuration
                 - Close window
         """
-        validate_responses = self.prompFieldValidation()
+        validate_responses = self.prompt_field_validation()
         field_responses = []
 
         for setting in self.settings.keys():
-            user_entered = self.settings[setting].get("1.0",END)
+            user_entered = self.settings[setting].get("1.0", END)
             user_entered = user_entered.strip().replace('\n', '')
 
             # Validate it
@@ -115,27 +117,29 @@ class SettingsUpdate(Frame):
                 field_responses.append(res)
                 Validation.dump_validation_result(res)
             else:
-                print("Updating {} with '{}'".format(setting,user_entered))
+                print("Updating {} with '{}'".format(setting, user_entered))
 
             self.configuration.set_value(setting, user_entered)
 
-
-        if self.validateResponses(field_responses):
+        if self.validate_responses(field_responses):
             print("Writing out new configuration options...")
             self.configuration.save_configuration()
             self.cancel()
 
-    def validateResponses(self, validation_responses):
+    @staticmethod
+    def validate_responses(validation_responses) -> bool:
         """
-            Determine if there are any failures or warnings. If so, give the user the
-            option on staying on the screen to fix them.
+        Determine if there are any failures or warnings. If so, give the user the
+        option on staying on the screen to fix them.
+
+        :param validation_responses: Response to validate
+        :return: `bool` validation outcome
         """
         return_value = True
 
         if len(validation_responses) > 0:
             failed = [x for x in validation_responses if x.status == ValidationResult.failure]
             warn = [x for x in validation_responses if x.status == ValidationResult.warning]
-            success = [x for x in validation_responses if x.status == ValidationResult.success]
 
             error_count = 0
             message = ""
@@ -157,11 +161,17 @@ class SettingsUpdate(Frame):
             if error_count > 0:
                 user_prefix = "The following fields either failed validation or produced a warning :\n\n"
                 user_postfix = "Click Yes to continue with these validation issues or No to correct them."
-                return_value = messagebox.askyesno ('Validate Errors',"{}{}{}".format(user_prefix, message, user_postfix))
+                return_value = messagebox.askyesno('Validate Errors',
+                                                   "{}{}{}".format(user_prefix, message, user_postfix))
 
         return return_value
 
-    def prompFieldValidation(self):
+    def prompt_field_validation(self) -> bool:
+        """
+        Prompt user for field to validation
+
+        :return: `bool` based on user's response
+        """
         valid_fields = "\n"
         for setting in self.settings.keys():
             if self.validator.is_field_valid(setting):
@@ -170,4 +180,4 @@ class SettingsUpdate(Frame):
         user_prefix = "The following fields can be validated :\n\n"
         user_postfix = "\nValidation will add several seconds to the save, would you like to validate these settings?"
 
-        return messagebox.askyesno ('Validate Inputs',"{}{}{}".format(user_prefix, valid_fields, user_postfix))
+        return messagebox.askyesno('Validate Inputs', "{}{}{}".format(user_prefix, valid_fields, user_postfix))
