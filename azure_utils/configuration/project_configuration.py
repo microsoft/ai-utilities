@@ -174,9 +174,9 @@ class ProjectConfiguration:
             yaml.dump(self.configuration, ymlfile)
 
 
-def transverse_up(file: str, search_depth=5):
+def transverse_up(file: str, search_depth: int = 5):
     """
-    Transverse up directories to try and find configuration file
+    Check if file is in directory, and if not recursive call up to 5 times
 
     :param file: Configuration File Name
     :param search_depth: Number of directories to search up through
@@ -186,7 +186,7 @@ def transverse_up(file: str, search_depth=5):
         return False
     if not os.path.isfile(file):
         os.chdir("../")
-        transverse_up(file, search_depth=search_depth-1)
+        transverse_up(file, search_depth=search_depth - 1)
     if os.path.isfile(file):
         return True
     return False
@@ -206,4 +206,3 @@ def find_file(file: str):
         file_dir = curdir
     os.chdir(curdir)
     return found, file_dir
-
