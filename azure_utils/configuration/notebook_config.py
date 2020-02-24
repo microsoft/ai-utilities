@@ -13,11 +13,12 @@ Import the needed functionality
     tkinter based UI that dynamically loads any appropriate configuration file
     and displays it to the user to alter the settings.
 """
+from azure_utils import DIRECTORY
 from azure_utils.configuration.configuration_ui import SettingsUpdate
 from azure_utils.configuration.project_configuration import ProjectConfiguration
 from tkinter import *
 
-project_configuration_file = "./project.yml"
+project_configuration_file = DIRECTORY.replace("azure_utils", "project.yml")
 
 
 def configure_settings(configuration_yaml: str = project_configuration_file):
