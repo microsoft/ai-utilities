@@ -10,7 +10,7 @@ from azureml.core import Run
 from azure_utils.machine_learning.item_selector import ItemSelector
 from azure_utils.machine_learning.label_rank import label_rank
 
-if __name__ == '__main__':
+def main():
     # Define the arguments.
     parser = argparse.ArgumentParser(description='Fit and evaluate a model based on train-test datasets.')
     parser.add_argument('-d', '--train_data', help='the training dataset name', default='balanced_pairs_train.tsv')
