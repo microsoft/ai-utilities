@@ -5,11 +5,7 @@ This project is a sample showcasing how to create a common repository for utilit
 ## Build Project
 
 ```bash
-python setup.py install
-```
-
-```bash
-pip install -e azure_utils
+pip install -e .\AI-Utilities\
 ```
 
 ## Run Unit Tests with Conda
