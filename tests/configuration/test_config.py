@@ -6,7 +6,7 @@ Licensed under the MIT License.
 """
 import os
 
-from azure_utils.configuration.project_configuration import ProjectConfiguration
+from azure_utils.configuration.project_configuration import ProjectConfiguration, find_file
 
 
 def test_config():
@@ -43,6 +43,23 @@ def test_config():
     assert proj_config.get_value('sub_id') == 'new_sub'
 
     remove_config_file(new_config_file)
+
+
+def test_find_file():
+    file1 = "this_is_file.txt"
+    open(file1, "w+")
+    found, path = find_file(file1)
+    assert found
+    os.remove(file1)
+
+    found, path = find_file("not_this_is_file.txt")
+    assert not found
+
+    file2 = "../this_is_higher_file.txt"
+    open(file2, "w+")
+    found, path = find_file(file2)
+    assert found
+    os.remove(file2)
 
 
 def remove_config_file(conf_file: str):

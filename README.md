@@ -16,12 +16,12 @@ pip install -e azure_utils
 ```bash
 conda env create -f environment.yml
 conda activate ai-utilities
-python -m ipykernal install --prefix=[anaconda-root-dir]\envs\ai-utilities --name ai-utilities
+python -m ipykernel install --prefix=[anaconda-root-dir]\envs\ai-utilities --name ai-utilities
 pytest tests
 ```
 
 Example Anaconda Root Dir
-C:\Users\dcibo\Anaconda3
+
 
 # Contributing
 
