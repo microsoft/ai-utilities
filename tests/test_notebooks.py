@@ -7,7 +7,7 @@ Licensed under the MIT License.
 import warnings
 
 import pytest
-from papermill import PapermillException
+from papermill import PapermillExecutionError
 
 from azure_utils.dev_ops.testing_utilities import run_notebook
 from notebooks import NOTEBOOK_DIRECTORY
@@ -22,5 +22,5 @@ from notebooks import NOTEBOOK_DIRECTORY
 def test_notebook(notebook, add_nunit_attachment):
     try:
         run_notebook(notebook, add_nunit_attachment, kernel_name="ai-utilities", root=NOTEBOOK_DIRECTORY)
-    except PapermillException:
+    except PapermillExecutionError:
         warnings.warn("Notebook could not be tested")
