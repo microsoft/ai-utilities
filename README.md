@@ -21,7 +21,7 @@ pytest tests
 ```
 
 Example Anaconda Root Dir
-
+C:\Users\dcibo\Anaconda3
 
 # Contributing
 
