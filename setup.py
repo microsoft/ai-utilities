@@ -16,5 +16,5 @@ setup(
     license="MIT",
     packages=find_packages(),
     install_requires=['azureml-core', 'python-dotenv', 'nbformat', 'papermill', 'nbconvert', 'junit_xml', 'PyYAML',
-                      'pytest', 'lightgbm==2.1.2']
+                      'pytest', 'lightgbm==2.1.2', 'azure-core', 'azure-cli']
 )
