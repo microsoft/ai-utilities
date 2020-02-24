@@ -1,16 +1,25 @@
-import os
+"""
+ai-utilities - machine_learning/create_model.py
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the MIT License.
+"""
 import argparse
+import os
+
+from azureml.core import Run
 import pandas as pd
-import lightgbm as lgb
+from sklearn.externals import joblib
 from sklearn.feature_extraction import text
 from sklearn.pipeline import Pipeline, FeatureUnion, make_pipeline
-from sklearn.externals import joblib
-from azureml.core import Run
+import lightgbm as lgb
 
 from azure_utils.machine_learning.item_selector import ItemSelector
 from azure_utils.machine_learning.label_rank import label_rank
 
+
 def main():
+    """ Main Method to use with AzureML"""
     # Define the arguments.
     parser = argparse.ArgumentParser(description='Fit and evaluate a model based on train-test datasets.')
     parser.add_argument('-d', '--train_data', help='the training dataset name', default='balanced_pairs_train.tsv')
@@ -76,7 +85,7 @@ def main():
     label_order = pd.DataFrame({'label': labels})
 
     # Collect the parts of the training data by role.
-    train_X = train[feature_columns]
+    train_x = train[feature_columns]
     train_y = train[label_column]
     sample_weight = train[weight_column]
 
@@ -91,7 +100,7 @@ def main():
     # Verify that the hyperparameter values are valid.
     assert n_estimators > 0
     assert min_child_samples > 1
-    assert type(ngram_range) is tuple and len(ngram_range) == 2
+    assert isinstance(ngram_range) is tuple and len(ngram_range) == 2
     assert ngram_range[0] > 0 and ngram_range[0] <= ngram_range[1]
 
     # Define the pipeline that featurizes the text columns.
@@ -115,7 +124,7 @@ def main():
 
     # Fit the model.
     print('Training...')
-    model.fit(train_X, train_y, model__sample_weight=sample_weight)
+    model.fit(train_x, train_y, model__sample_weight=sample_weight)
 
     # Save the model to a file, and report on its size.
     if args.save:
@@ -131,18 +140,17 @@ def main():
 
     # Collect the model predictions. This step should take about 1 minute on a Standard NC6 DLVM.
     print('Testing...')
-    test_X = test[feature_columns]
-    test['probabilities'] = model.predict_proba(test_X)[:, 1]
+    test_x = test[feature_columns]
+    test['probabilities'] = model.predict_proba(test_x)[:, 1]
 
     # Collect the probabilities for each duplicate question, ordered by the original question ids.
     # Order the testing data by duplicate question id and original question id.
     test.sort_values([duplicates_id_column, answer_id_column], inplace=True)
 
     # Extract the ordered probabilities.
-    probabilities = (
-        test.probabilities
-            .groupby(test[duplicates_id_column], sort=False)
-            .apply(lambda x: tuple(x.values)))
+    probabilities = (test.probabilities
+                     .groupby(test[duplicates_id_column], sort=False)
+                     .apply(lambda x: tuple(x.values)))
 
     # Create a data frame with one row per duplicate question, and make it contain the model's predictions for each
     # duplicate.

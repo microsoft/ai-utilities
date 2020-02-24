@@ -1,6 +1,6 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
+"""
+AI-Utilities - azureml_tools/__init__.py
 
-from deepseismic_interpretation.azureml_tools.workspace import workspace_for_user
-from deepseismic_interpretation.azureml_tools.experiment import PyTorchExperiment
-
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the MIT License.
+"""

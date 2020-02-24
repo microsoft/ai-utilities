@@ -15,6 +15,8 @@ dependencies:
   - pip:
     - papermill
     - azureml-core==1.0.85
+    - azure-cli==2.0.81
+    - azure-cli-ml
     - pylint-junit
     - pytest-nunit
     - nbconvert
@@ -22,3 +24,6 @@ dependencies:
     - nbformat
     - python-dotenv
     - PyYAML
+    - msrestazure
+    - azure-common
+    - lightgbm
