@@ -9,18 +9,18 @@ from tkinter import *
 from tkinter import messagebox
 
 from azure_utils.configuration.project_configuration import ProjectConfiguration
-from azure_utils.configuration.configurationvalidation import Validation, ValidationResult
+from azure_utils.configuration.configuration_validation import Validation, ValidationResult
 
 class SettingsUpdate(Frame):
     """
-        UI Wrapper for project configuration settings. 
+        UI Wrapper for project configuration settings.
 
         Provide a configuraiton file as described in configuration.ProjectConfiguration.
 
         A UI is built using a grid where each row consists of:
             setting_description | Text control to show accept values
 
-        Final row of the grid has a save and cancel button. 
+        Final row of the grid has a save and cancel button.
 
         Save updates the configuration file with any settings put on the UI.
     """
@@ -58,10 +58,10 @@ class SettingsUpdate(Frame):
             if not isinstance(setting, dict):
                 print("Found setting does not match pattern...")
                 continue
-            
-            # Only can be one key as they are sinletons with a list 
+
+            # Only can be one key as they are sinletons with a list
             # of values
-            if len(setting.keys()) == 1: 
+            if len(setting.keys()) == 1:
                 for setting_name in setting.keys():
                     details = setting[setting_name]
                     description = None
@@ -111,15 +111,15 @@ class SettingsUpdate(Frame):
 
             # Validate it
             if validate_responses:
-                res = self.validator.validateInput(setting, user_entered)
+                res = self.validator.validate_input(setting, user_entered)
                 field_responses.append(res)
-                Validation.dumpValidationResult(res)
+                Validation.dump_validation_result(res)
             else:
                 print("Updating {} with '{}'".format(setting,user_entered))
 
             self.configuration.set_value(setting, user_entered)
 
-        
+
         if self.validateResponses(field_responses):
             print("Writing out new configuration options...")
             self.configuration.save_configuration()
@@ -127,8 +127,8 @@ class SettingsUpdate(Frame):
 
     def validateResponses(self, validation_responses):
         """
-            Determine if there are any failures or warnings. If so, give the user the 
-            option on staying on the screen to fix them. 
+            Determine if there are any failures or warnings. If so, give the user the
+            option on staying on the screen to fix them.
         """
         return_value = True
 
@@ -149,7 +149,7 @@ class SettingsUpdate(Frame):
             if len(warn):
                 message += "WARNINGS:\n"
                 for resp in warn:
-                    if resp.reason != Validation.FIELD_NOT_RECOTNIZED:
+                    if resp.reason != Validation.FIELD_NOT_RECOGNIZED:
                         error_count += 1
                         message += "   {}:\n{}\n\n".format(resp.type, resp.reason)
                 message += '\n'
@@ -157,17 +157,17 @@ class SettingsUpdate(Frame):
             if error_count > 0:
                 user_prefix = "The following fields either failed validation or produced a warning :\n\n"
                 user_postfix = "Click Yes to continue with these validation issues or No to correct them."
-                return_value = messagebox.askyesno ('Validate Errors',"{}{}{}".format(user_prefix, message, user_postfix)) 
-        
+                return_value = messagebox.askyesno ('Validate Errors',"{}{}{}".format(user_prefix, message, user_postfix))
+
         return return_value
 
     def prompFieldValidation(self):
         valid_fields = "\n"
         for setting in self.settings.keys():
-            if self.validator.isFieldValid(setting):
+            if self.validator.is_field_valid(setting):
                 valid_fields += "{}\n".format(setting)
 
         user_prefix = "The following fields can be validated :\n\n"
         user_postfix = "\nValidation will add several seconds to the save, would you like to validate these settings?"
 
-        return messagebox.askyesno ('Validate Inputs',"{}{}{}".format(user_prefix, valid_fields, user_postfix))    
+        return messagebox.askyesno ('Validate Inputs',"{}{}{}".format(user_prefix, valid_fields, user_postfix))
