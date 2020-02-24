@@ -14,9 +14,7 @@ dependencies:
   - numpy
   - pip:
     - papermill
-    - azureml-core==1.0.85.
-    - azure-core
-    - azure-cli
+    - azureml-core==1.0.85
     - pylint-junit
     - pytest-nunit
     - nbconvert

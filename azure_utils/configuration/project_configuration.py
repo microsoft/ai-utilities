@@ -38,10 +38,11 @@ class ProjectConfiguration:
 
         :param configuration_file: File path to configuration file
         """
-        self.configuration_file = configuration_file
+        found, file_dir = find_file(configuration_file)
+        self.configuration_file = file_dir + "/" + configuration_file
         self.configuration = {}
 
-        if not os.path.isfile(self.configuration_file):
+        if not found:
             self.configuration = {ProjectConfiguration.project_key: "Default Settings",
                                   ProjectConfiguration.settings_key: None}
             self.save_configuration()
@@ -171,3 +172,37 @@ class ProjectConfiguration:
         """ Save the configuration file """
         with open(self.configuration_file, 'w') as ymlfile:
             yaml.dump(self.configuration, ymlfile)
+
+
+def transverse_up(file: str, search_depth: int = 5):
+    """
+    Check if file is in directory, and if not recursive call up to 5 times
+
+    :param file: Configuration File Name
+    :param search_depth: Number of directories to search up through
+    """
+
+    if search_depth == 0:
+        return False
+    if not os.path.isfile(file):
+        os.chdir("../")
+        transverse_up(file, search_depth=search_depth - 1)
+    if os.path.isfile(file):
+        return True
+    return False
+
+
+def find_file(file: str):
+    """
+    Transverse up directories to try and find configuration file
+
+    :param file: Configuration File Name
+    """
+    curdir = os.path.abspath(os.curdir)
+    found = transverse_up(file)
+    if found:
+        file_dir = os.path.abspath(os.curdir)
+    else:
+        file_dir = curdir
+    os.chdir(curdir)
+    return found, file_dir

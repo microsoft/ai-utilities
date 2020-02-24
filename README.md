@@ -1,6 +1,28 @@
 # AI Utilities Sample Project
 This project is a sample showcasing how to create a common repository for utilities that can be used by other AI projects. 
 
+# Working with Project
+## Build Project
+
+```bash
+python setup.py install
+```
+
+```bash
+pip install -e azure_utils
+```
+
+## Run Unit Tests with Conda
+```bash
+conda env create -f environment.yml
+conda activate ai-utilities
+python -m ipykernal install --prefix=[anaconda-root-dir]\envs\ai-utilities --name ai-utilities
+pytest tests
+```
+
+Example Anaconda Root Dir
+C:\Users\dcibo\Anaconda3
+
 # Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
