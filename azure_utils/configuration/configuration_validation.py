@@ -33,14 +33,12 @@ class ValidationResult(Enum):
     failure = "FAILED"
 
 
-'''
-    Result returned from Validation.validateInput()
-
-    type - Named type passed in
-    value - Value passed in
-    status - bool indicating success or failure
-    reason - Detailed explaination of what happened.
-'''
+# Result returned from Validation.validateInput()
+#
+# type - Named type passed in
+# value - Value passed in
+# status - bool indicating success or failure
+# reason - Detailed explanation of what happened.
 VALIDATION_RESULT = collections.namedtuple('validation_result', 'type value status reason')
 
 
@@ -159,13 +157,12 @@ class Validation:
     Unknown types are automatically passed straight through with a success.
     """
 
-    '''
-    Restrictions to be mapped internally in self.type_restrictions
-    length          - If not none, it's a list with two values [low,high] indicating 
-                      acceptable name lengths.
-    invalid_charset - If not none, a list of invalid characters for a given field.
-    custom_validator- If not none, a routine to call if length and content checks pass.
-    '''
+    # Restrictions to be mapped internally in self.type_restrictions
+    # length          - If not none, it's a list with two values [low,high] indicating
+    #                   acceptable name lengths.
+    # invalid_charset - If not none, a list of invalid characters for a given field.
+    # custom_validator- If not none, a routine to call if length and content checks pass.
+
     FIELD_NOT_RECOGNIZED = "Field not recognized/validated."
     VALIDATION_RESTRICTIONS = collections.namedtuple('validation_restrictions',
                                                      'length regex_pattern invalid_charset custom_validator')
@@ -182,22 +179,18 @@ class Validation:
 
             ValidationType.subscription_id: Validation.VALIDATION_RESTRICTIONS(None, False, "<>",
                                                                                self._validate_subscription),
-            ValidationType.resource_group: Validation.VALIDATION_RESTRICTIONS([1, 90], True, "^[-\w\._\(\)]+$",
+            ValidationType.resource_group: Validation.VALIDATION_RESTRICTIONS([1, 90], True, r"^[-\w\._\(\)]+$",
                                                                               self._validate_resource_group),
-            ValidationType.workspace_name: Validation.VALIDATION_RESTRICTIONS([1, 260], False, "<>*%&:?+/\\", None),
-            ValidationType.storage_account: Validation.VALIDATION_RESTRICTIONS([1, 260], True, "^[a-zA-Z0-9_\-]+$",
+            ValidationType.workspace_name: Validation.VALIDATION_RESTRICTIONS([1, 260], False, r"<>*%&:?+/\\", None),
+            ValidationType.storage_account: Validation.VALIDATION_RESTRICTIONS([1, 260], True, r"^[a-zA-Z0-9_\-]+$",
                                                                                None)
         }
 
-        '''
-            Get names of fields validated for checks by user.
-        '''
+        # Get names of fields validated for checks by user.
         self.default_field_value = default_field_value
         self.validated_fields = [x.name for x in self.type_restrictions.keys()]
 
-        '''
-            Used if subscription is validated, custom validation routine 
-        '''
+        # Used if subscription is validated, custom validation routine
         self.current_subscription = None
 
     def is_field_valid(self, field_name: str) -> bool:
@@ -223,13 +216,11 @@ class Validation:
 
         validation_type = self._get_validation_type(type_name)
         if validation_type:
-            '''
-            Type is valid, perform the following checks
-
-            1. Validate length requirements, if provided
-            2. Validate content against invalid characters, if provided
-            3. Custom validation, if provided
-            '''
+            # Type is valid, perform the following checks
+            #
+            # 1. Validate length requirements, if provided
+            # 2. Validate content against invalid characters, if provided
+            # 3. Custom validation, if provided
             if not self._validate_length(self.type_restrictions[validation_type], value):
                 return_result = ResultsGenerator.create_length_failure(
                     type_name, value, self.type_restrictions[validation_type].length
@@ -251,9 +242,8 @@ class Validation:
             else:
                 return_result = ResultsGenerator.create_warning(type_name, value, Validation.FIELD_NOT_RECOGNIZED)
 
-        '''
-            If passed through to here with no return_result, all tests passed.
-        '''
+        # If passed through to here with no return_result, all tests passed.
+
         if not return_result:
             return_result = ResultsGenerator.create_success(type_name, value, "")
 
@@ -271,10 +261,8 @@ class Validation:
         if result.reason:
             print("  {}".format(result.reason))
 
-    '''
-    Methods below this point are purely used to enable validateInput or any supporting
-    customized validations.
-    '''
+    # Methods below this point are purely used to enable validateInput or any supporting
+    # customized validations.
 
     @staticmethod
     def _validate_length(validation_restriction: VALIDATION_RESTRICTIONS, value: str) -> bool:
@@ -290,7 +278,7 @@ class Validation:
         return_value = True
         if validation_restriction.length:
             return_value = (len(value) >= validation_restriction.length[0]) and (
-                    len(value) <= validation_restriction.length[1])
+                len(value) <= validation_restriction.length[1])
         return return_value
 
     @staticmethod
@@ -329,16 +317,9 @@ class Validation:
         :param type_name: Type name to look up :class:`ValidationType`
         :return: :class:`ValidationType` for input type name
         """
-        return_validation_type = None
-        try:
-            return_validation_type = ValidationType(type_name)
-        except ValueError as ex:
-            pass
-        return return_validation_type
+        return ValidationType(type_name)
 
-    '''
-    Custom validators : Subscription
-    '''
+    # Custom validators : Subscription
 
     @staticmethod
     def _get_data_as_json(command: str) -> Optional[dict]:
@@ -393,9 +374,7 @@ class Validation:
                                                                     sub_id, current_sub))
         return return_result
 
-    '''
-    Custom validators : resource group
-    '''
+    # Custom validators : resource group
 
     def _validate_resource_group(self, type_name, group_name) -> VALIDATION_RESULT:
         """

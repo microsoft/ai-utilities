@@ -12,14 +12,13 @@ Import the needed functionality
 - configurationui.SettingsUpdate
     tkinter based UI that dynamically loads any appropriate configuration file
     and displays it to the user to alter the settings.
-"""
 
-'''
+
     If you wish to run this file locally, uncomment the section below and then run
-    the Python script directly from this directory. This will utilize the 
+    the Python script directly from this directory. This will utilize the
     azure_utils\configuration\project.yml file as the configuration file under test.
-'''
-''' LOCAL_ONLY
+
+LOCAL_ONLY
 import os
 import sys
 if __name__ == "__main__":
@@ -27,12 +26,12 @@ if __name__ == "__main__":
     az_utils = os.path.split(current)
     while not az_utils[0].endswith("AI-Utilities"):
         az_utils = os.path.split(az_utils[0])
-    
+
     if az_utils[0] not in sys.path:
         sys.path.append(az_utils[0])
-'''
+"""
 
-from tkinter import *
+from tkinter import Tk
 
 from azure_utils.configuration.configuration_ui import SettingsUpdate
 from azure_utils.configuration.project_configuration import ProjectConfiguration
@@ -59,23 +58,12 @@ def configure_settings(configuration_yaml: str = project_configuration_file):
     """
     project_configuration = ProjectConfiguration(configuration_yaml)
 
-    '''
-        Finally, create a Tk window and pass that along with the configuration object
-        to the SettingsObject class for modification. 
-    '''
-    app = get_app(project_configuration)
-    app.mainloop()
+    # Finally, create a Tk window and pass that along with the configuration object
+    # to the SettingsObject class for modification.
 
-
-def get_app(project_configuration: ProjectConfiguration):
-    """
-    Create App from Window
-
-    :param project_configuration: Loaded Project Configuration
-    :return: TK App
-    """
     window = Tk()
-    return SettingsUpdate(project_configuration, window)
+    app = SettingsUpdate(project_configuration, window)
+    app.mainloop()
 
 
 def get_settings(configuration_yaml: str = project_configuration_file) -> ProjectConfiguration:

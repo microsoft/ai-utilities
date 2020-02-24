@@ -1,12 +1,15 @@
-# Copyright (C) Microsoft Corporation. All rights reserved.
-# 23456789012345678901234567890123456789012345678901234567890123456789012345678
+"""
+ai-utilities - machine_learning/duplicate_model.py
 
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the MIT License.
+"""
 import pandas as pd
 from sklearn.externals import joblib
 
 
-class DuplicateModel(object):
-
+class DuplicateModel:
+    """ Create Copy of Model """
     questions_cols = ['Id', 'AnswerId', 'Text']
     dup_col = 'Text_x'
     id_col = 'Id_y'
@@ -25,15 +28,21 @@ class DuplicateModel(object):
         self.questions.columns = [
             self.id_col, self.answerId_col, self.orig_col]
 
-    def score(self, Text):
+    def score(self, text):
+        """
+        Score Text Input
+
+        :param text: Text Input
+        :return: Input with Scores
+        """
         # Create a scoring dataframe.
         test = self.questions.copy()
-        test[self.dup_col] = Text
-        test_X = test[self.feature_cols]
+        test[self.dup_col] = text
+        test_x = test[self.feature_cols]
 
         # Score the text.
         test[self.probabilities_col] = self.model.predict_proba(
-            test_X)[:, 1]
+            test_x)[:, 1]
 
         # Order the data by descending probability.
         test.sort_values(by=self.probabilities_col, ascending=False,

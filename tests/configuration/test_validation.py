@@ -4,11 +4,11 @@ AI-Utilities - test_validation.py
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
-from azure_utils import DIRECTORY
+from azure_utils import directory
 from azure_utils.configuration.configuration_validation import Validation, ValidationResult
 from azure_utils.machine_learning.utils import load_configuration
 
-cfg = load_configuration(DIRECTORY + "/../workspace_conf.yml")
+cfg = load_configuration(directory + "/../workspace_conf.yml")
 v = Validation()
 
 

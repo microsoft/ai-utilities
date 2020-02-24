@@ -1,13 +1,16 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
+"""
+AI-Utilities - azureml_tools/config.py
 
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the MIT License.
+"""
 
 import ast
 import logging
 
 from dotenv import dotenv_values, find_dotenv, set_key
 
-_DEFAULTS = {
+defaults = {
     "CLUSTER_NAME": "gpucluster24rv3",
     "CLUSTER_VM_SIZE": "Standard_NC24rs_v3",
     "CLUSTER_MIN_NODES": 0,
@@ -50,12 +53,12 @@ class AzureMLConfig:
     def __init__(self):
         self._dot_env_path = find_dotenv(raise_error_if_not_found=True)
 
-        for k, v in load_config(dot_env_path=self._dot_env_path).items():
-            self.__dict__[k] = _convert(v)
+        for key, value in load_config(dot_env_path=self._dot_env_path).items():
+            self.__dict__[key] = _convert(value)
 
-        for k, v in _DEFAULTS.items():
-            if k not in self.__dict__:
-                setattr(self, k, v)
+        for key, value in defaults.items():
+            if key not in self.__dict__:
+                setattr(self, key, value)
 
     def __setattr__(self, name, value):
         if name not in self._reserved:

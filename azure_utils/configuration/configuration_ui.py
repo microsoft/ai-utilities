@@ -28,32 +28,27 @@ class SettingsUpdate(Frame):
 
     def __init__(self, project_configuration, master):
         Frame.__init__(self, master=master)
-        '''
-            self.configuration  = Instance of ProjectConfiguration and master
-            self.master_win     = Instance of Tk application. 
-            self.settings       = Will be a dictionary where
-                                    key = Setting name
-                                    value = Text control   
-        '''
+
+        # self.configuration  = Instance of ProjectConfiguration and master
+        # self.master_win     = Instance of Tk application.
+        # self.settings       = Will be a dictionary where
+        #                         key = Setting name
+        #                         value = Text control
+
         self.configuration = project_configuration
         self.master_win = master
         self.settings = {}
 
-        '''
-            Set up validator
-        '''
+        # Set up validator
         self.validator = Validation()
 
-        '''
-            Set up some window options
-        '''
+        # Set up some window options
+
         self.master_win.title(self.configuration.project_name())
         self.master_win.resizable(width=TRUE, height=TRUE)
         self.master_win.configure(padx=10, pady=10)
 
-        '''
-            Populate the grid first with settings followed by the two buttons (cancel/save)
-        '''
+        # Populate the grid first with settings followed by the two buttons (cancel/save)
         current_row = 0
         for setting in self.configuration.get_settings():
 
