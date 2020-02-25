@@ -343,9 +343,9 @@ class Validation:
         :return: JSON of output
         """
         account_stream = os.popen(command)
-        command_output = account_stream.read()
+        command_output = account_stream.read().replace("[0m", "")
         account_stream.close()
-        if bool(command_output):
+        if not bool(command_output):
             return {}
         return json.loads(command_output)
 
