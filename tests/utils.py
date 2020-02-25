@@ -4,7 +4,7 @@ ai-utilities - utils.py
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
-from azure_utils import DIRECTORY
+from azure_utils import directory
 from azure_utils.machine_learning.utils import load_configuration, get_or_create_workspace
 
 
@@ -16,7 +16,7 @@ def init_test_vars():
     BLOB_DATASTORE_NAME
     :rtype: Union[Dict[Hashable, Any], list, None], str, str, str, str, Workspace, str, str
     """
-    cfg = load_configuration(DIRECTORY + "/../workspace_conf.yml")
+    cfg = load_configuration(directory + "/../workspace_conf.yml")
 
     subscription_id = cfg['subscription_id']
     resource_group = cfg['resource_group']

@@ -8,11 +8,11 @@ import os
 
 from azureml.core import Workspace
 
-from azure_utils import DIRECTORY
+from azure_utils import directory
 from azure_utils.machine_learning.utils import load_configuration, get_or_create_workspace, \
     get_workspace_from_config
 
-filepath = DIRECTORY
+filepath = directory
 
 
 def test_load_configuration():

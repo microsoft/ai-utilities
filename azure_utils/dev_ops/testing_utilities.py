@@ -11,10 +11,10 @@ import sys
 
 import nbformat
 from nbconvert import MarkdownExporter, RSTExporter
-import papermill as pm
 from junit_xml import TestCase, TestSuite
+import papermill as pm
 
-NOTEBOOK_OUTPUT_EXT = ".output_ipynb"
+notebook_output_ext = ".output_ipynb"
 
 
 def run_notebook(input_notebook, add_nunit_attachment, parameters=None, kernel_name="ai-architecture-template",
@@ -31,7 +31,7 @@ def run_notebook(input_notebook, add_nunit_attachment, parameters=None, kernel_n
     :param root:
     """
 
-    output_notebook = input_notebook.replace(".ipynb", NOTEBOOK_OUTPUT_EXT)
+    output_notebook = input_notebook.replace(".ipynb", notebook_output_ext)
     try:
         results = pm.execute_notebook(
             os.path.join(root, input_notebook),
@@ -61,10 +61,10 @@ def run_notebook(input_notebook, add_nunit_attachment, parameters=None, kernel_n
                     TestCase(name=group[0] + " creation", classname=input_notebook, elapsed_sec=float(group[2]),
                              status="Success"))
 
-            ts = TestSuite("my test suite", test_cases)
+            test_suite = TestSuite("my test suite", test_cases)
 
-            with open('test-timing-output.xml', 'w') as f:
-                TestSuite.to_file(f, [ts], prettyprint=False)
+            with open('test-timing-output.xml', 'w') as file:
+                TestSuite.to_file(file, [test_suite], prettyprint=False)
 
 
 def export_notebook(exporter, jupyter_output, output_notebook, add_nunit_attachment, file_ext, root='.'):
@@ -78,13 +78,13 @@ def export_notebook(exporter, jupyter_output, output_notebook, add_nunit_attachm
     :param file_ext:
     :param root:
     """
-    (body, resources) = exporter.from_notebook_node(jupyter_output)
-    with open(os.path.join(root, output_notebook.replace(NOTEBOOK_OUTPUT_EXT, file_ext)), "w") as text_file:
+    (body, _) = exporter.from_notebook_node(jupyter_output)
+    with open(os.path.join(root, output_notebook.replace(notebook_output_ext, file_ext)), "w") as text_file:
         sys.stderr.write(body)
         text_file.write(body)
 
     if add_nunit_attachment is not None:
-        path = os.path.join(root, output_notebook.replace(NOTEBOOK_OUTPUT_EXT, file_ext))
+        path = os.path.join(root, output_notebook.replace(notebook_output_ext, file_ext))
         add_nunit_attachment(path, output_notebook)
 
 
