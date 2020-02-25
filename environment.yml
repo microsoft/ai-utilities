@@ -25,3 +25,4 @@ dependencies:
     - PyYAML
     - msrestazure
     - azure-common
+    - Deprecated
