@@ -14,6 +14,7 @@ from azureml.core.authentication import InteractiveLoginAuthentication, ServiceP
 from deprecated import deprecated
 
 from azure_utils import directory
+from azure_utils.configuration.notebook_config import project_configuration_file
 from azure_utils.configuration.project_configuration import ProjectConfiguration
 
 
@@ -105,7 +106,7 @@ def get_or_create_workspace_from_project(project_configuration: ProjectConfigura
                                    auth=auth)
 
 
-def get_or_create_workspace_from_file(configuration_file: str = "../project.yml",
+def get_or_create_workspace_from_file(configuration_file: str = "../" + project_configuration_file,
                                       auth: Union[InteractiveLoginAuthentication, ServicePrincipalAuthentication] =
                                       InteractiveLoginAuthentication()) -> Workspace:
     """

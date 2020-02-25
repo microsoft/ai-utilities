@@ -16,7 +16,7 @@ Import the needed functionality
 
     If you wish to run this file locally, uncomment the section below and then run
     the Python script directly from this directory. This will utilize the
-    azure_utils/configuration/project_sample.yml file as the configuration file under test.
+    project.yml file as the configuration file under test.
 
 LOCAL_ONLY
 import os
@@ -36,12 +36,12 @@ from tkinter import Tk
 from azure_utils.configuration.configuration_ui import SettingsUpdate
 from azure_utils.configuration.project_configuration import ProjectConfiguration
 
-project_configuration_file = "project_sample.yml"
+project_configuration_file = "project.yml"
 
 
 def get_or_configure_settings(configuration_yaml: str = project_configuration_file):
     """
-    Only configure the settings if the subscripton ID has not been provided yet.
+    Only configure the settings if the subscription ID has not been provided yet.
     This will help with automation in which the configuration file is provided.
 
     :param configuration_yaml: Location of configuration yaml
@@ -58,7 +58,7 @@ def get_or_configure_settings(configuration_yaml: str = project_configuration_fi
 def configure_settings(configuration_yaml: str = project_configuration_file):
     """
         Launch a tkinter UI to configure the project settings in the provided
-        configuration_yaml file. If a file is not provided, the default ./project_sample.yml
+        configuration_yaml file. If a file is not provided, the default ./project.yml
         file will be created for the caller.
 
         configuration_yaml -> Disk location of the configuration file to modify.
@@ -67,7 +67,7 @@ def configure_settings(configuration_yaml: str = project_configuration_file):
         suggested that your project simply create a simple configuration file containing
         all of you settings so that the user simply need to modify it with the UI.
 
-        In this instance, we assume that the default configuration file is called project_sample.yml.
+        In this instance, we assume that the default configuration file is called project.yml.
         This will be used if the user passes nothing else in.
 
         :param configuration_yaml: Location of configuration yaml
@@ -85,7 +85,7 @@ def configure_settings(configuration_yaml: str = project_configuration_file):
 def get_settings(configuration_yaml: str = project_configuration_file) -> ProjectConfiguration:
     """
         Aquire the project settings from the provided configuration_yaml file.
-        If a file is not provided, the default ./project_sample.yml will be created and
+        If a file is not provided, the default ./project.yml will be created and
         and empty set of settings will be returned to the user.
 
         configuration_yaml -> Disk location of the configuration file to modify.
@@ -94,7 +94,7 @@ def get_settings(configuration_yaml: str = project_configuration_file) -> Projec
         suggested that your project simply create a simple configuration file containing
         all of you settings so that the user simply need to modify it with the UI.
 
-        In this instance, we assume that the default configuration file is called project_sample.yml.
+        In this instance, we assume that the default configuration file is called project.yml.
         This will be used if the user passes nothing else in.
 
         :param configuration_yaml: Project configuration yml
