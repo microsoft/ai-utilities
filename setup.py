@@ -15,7 +15,22 @@ setup(
     url="https://github.com/microsoft/AI-Utilities",
     license="MIT",
     packages=find_packages(),
-    install_requires=['azureml-core', 'azure-cli==2.0.81', 'python-dotenv', 'nbformat', 'papermill', 'nbconvert',
-                      'junit_xml', 'PyYAML', 'pytest', 'lightgbm==2.1.2', 'pandas', 'sklearn', 'msrestazure',
-                      'azure-common', 'deprecated']
+    install_requires=[
+        'azureml-core',
+        'azure-cli==2.0.81',
+        'python-dotenv',
+        'nbformat',
+        'papermill',
+        'nbconvert',
+        'junit_xml',
+        'PyYAML',
+        'pytest',
+        'lightgbm==2.1.2',
+        'pandas',
+        'sklearn',
+        'msrestazure',
+        'azure-common',
+        'azure-cli-ml',
+        'deprecated'
+    ]
 )

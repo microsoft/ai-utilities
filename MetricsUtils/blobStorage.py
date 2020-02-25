@@ -18,41 +18,35 @@ from azure.storage.blob import BlockBlobService, PublicAccess, BlobPermissions
 __version__ = "0.1"
 
 
-class blobStorageAccount:
+class BlobStorageAccount:
     '''
         Constructor that recieves a MetricsUtils.storagutils.storageConnection instance
     '''
 
-    def __init__(self, storageConnection):
-        self.connection = storageConnection
+    def __init__(self, storage_connection):
+        self.connection = storage_connection
         self.service = BlockBlobService(self.connection.AccountName, self.connection.AccountKey)
 
-    '''
-        Creates a new storage container in the Azure Storage account
-    '''
+    # Creates a new storage container in the Azure Storage account
 
-    def createContainer(self, containerName):
+    def create_container(self, container_name):
         if self.connection and self.service:
-            self.service.create_container(containerName)
-            self.service.set_container_acl(containerName, public_access=PublicAccess.Blob)
+            self.service.create_container(container_name)
+            self.service.set_container_acl(container_name, public_access=PublicAccess.Blob)
 
-    '''
-        Retrieve a blob SAS token on a specific blob
-    '''
+    # Retrieve a blob SAS token on a specific blob
 
-    def getBlobSasToken(self, containerName, blobName):
-        returnToken = None
+    def get_blob_sas_token(self, container_name, blob_name):
+        return_token = None
         if self.connection and self.service:
-            returnToken = self.service.generate_blob_shared_access_signature(containerName, blobName,
-                                                                             BlobPermissions.READ,
-                                                                             datetime.utcnow() + timedelta(hours=1))
+            return_token = self.service.generate_blob_shared_access_signature(container_name, blob_name,
+                                                                              BlobPermissions.READ,
+                                                                              datetime.utcnow() + timedelta(hours=1))
 
-        return returnToken
+        return return_token
 
-    '''
-        Retrieves a list of storage container names in the specific storage account pointed to by
-        the storageConnection object
-    '''
+    # Retrieves a list of storage container names in the specific storage account pointed to by
+    # the storageConnection object
 
     def getContainers(self):
         returnList = []
@@ -63,10 +57,8 @@ class blobStorageAccount:
 
         return returnList
 
-    '''
-        Retrieves a list of storage blob names in a container in the specific storage account pointed to by
-        the storageConnection object
-    '''
+    # Retrieves a list of storage blob names in a container in the specific storage account pointed to by
+    # the storageConnection object
 
     def getBlobs(self, containerName):
         returnList = []
@@ -76,17 +68,13 @@ class blobStorageAccount:
                 returnList.append(blob.name)
         return returnList
 
-    '''
-        Upload text to a blob (fileContent is a simple string)
-    '''
+    # Upload text to a blob (fileContent is a simple string)
 
     def uploadBlob(self, containerName, blobName, fileContent):
         if self.connection and self.service:
             self.service.create_blob_from_text(containerName, blobName, fileContent)
 
-    '''
-        Download the blob as a string.
-    '''
+    # Download the blob as a string.
 
     def downloadBlob(self, containerName, blobName):
         returnContent = None

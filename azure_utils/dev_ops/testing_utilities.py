@@ -41,7 +41,7 @@ def run_notebook(input_notebook, add_nunit_attachment, parameters=None, kernel_n
         )
 
         for cell in results.cells:
-            if cell.cell_type is "code":
+            if cell.cell_type == "code":
                 assert not cell.metadata.papermill.exception, "Error in Python Notebook"
     finally:
         with open(os.path.join(root, output_notebook)) as json_file:

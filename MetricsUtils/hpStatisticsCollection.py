@@ -18,7 +18,7 @@ import json
 from datetime import datetime
 from enum import Enum
 
-from MetricsUtils.blobStorage import blobStorageAccount
+from MetricsUtils.blobStorage import BlobStorageAccount
 from MetricsUtils.storageutils import storageConnection
 
 __version__ = "0.1"
@@ -79,9 +79,9 @@ class statisticsCollector:
         """
         Ends a task using one of the enumerators. If the start time was previously recorded using
         startTask() an entry for the specific enumeration is added to the __metrics__ collection that
-        will be used to upload data to Azure Storage. 
+        will be used to upload data to Azure Storage.
 
-        :param collection_entry: an instance of a CollectionEntry enum 
+        :param collection_entry: an instance of a CollectionEntry enum
         """
         if collection_entry.value in statisticsCollector.__runningTasks__.keys():
             timeDiff = datetime.utcnow() - statisticsCollector.__runningTasks__[collection_entry.value]
@@ -151,10 +151,10 @@ class statisticsCollector:
     @staticmethod
     def uploadContent(connectionString):
         connectionObject = storageConnection(connectionString)
-        storageAccount = blobStorageAccount(connectionObject)
+        storageAccount = BlobStorageAccount(connectionObject)
         containers = storageAccount.getContainers()
         if statisticsCollector.__statscontainer__ not in containers:
-            storageAccount.createContainer(statisticsCollector.__statscontainer__)
+            storageAccount.create_container(statisticsCollector.__statscontainer__)
         storageAccount.uploadBlob(statisticsCollector.__statscontainer__, statisticsCollector.__statsblob__,
                                   statisticsCollector.getCollection())
 
@@ -174,7 +174,7 @@ class statisticsCollector:
     def retrieveContent(connectionString):
         returnContent = None
         connectionObject = storageConnection(connectionString)
-        storageAccount = blobStorageAccount(connectionObject)
+        storageAccount = BlobStorageAccount(connectionObject)
         containers = storageAccount.getContainers()
         if statisticsCollector.__statscontainer__ in containers:
             returnContent = storageAccount.downloadBlob(statisticsCollector.__statscontainer__,

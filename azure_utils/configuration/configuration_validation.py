@@ -50,7 +50,7 @@ class ValidationResult(Enum):
 # value - Value passed in
 # status - bool indicating success or failure
 # reason - Detailed explanation of what happened.
-VALIDATION_RESULT = collections.namedtuple('validation_result', 'type value status reason')
+validationResult = collections.namedtuple('validation_result', 'type value status reason')
 
 
 class ResultsGenerator:
@@ -58,7 +58,7 @@ class ResultsGenerator:
     NAMES_LINK = "https://docs.microsoft.com/azure/azure-resource-manager/management/resource-name-rules"
 
     @staticmethod
-    def create_length_failure(type_name, value, length) -> VALIDATION_RESULT:
+    def create_length_failure(type_name, value, length) -> validationResult:
         """
         Failure due to Field Length
 
@@ -68,14 +68,14 @@ class ResultsGenerator:
         :param length: Length to validate
         :return: Returns a VALIDATION_RESULT failure object
         """
-        return VALIDATION_RESULT(
+        return validationResult(
             type_name,
             value,
             ValidationResult.failure,
             "Field failed length validation : {} \n    See: {}".format(length, ResultsGenerator.NAMES_LINK))
 
     @staticmethod
-    def create_content_failure(type_name, value, content) -> VALIDATION_RESULT:
+    def create_content_failure(type_name, value, content) -> validationResult:
         """
         Failure due to Content Validation
 
@@ -85,7 +85,7 @@ class ResultsGenerator:
         :param content: Content to validate against
         :return: Returns a VALIDATION_RESULT failure object
         """
-        return VALIDATION_RESULT(
+        return validationResult(
             type_name,
             value,
             ValidationResult.failure,
@@ -93,7 +93,7 @@ class ResultsGenerator:
                 content, ResultsGenerator.NAMES_LINK))
 
     @staticmethod
-    def create_success(type_name, value, content) -> VALIDATION_RESULT:
+    def create_success(type_name, value, content) -> validationResult:
         """
         Create Successful Result
 
@@ -103,7 +103,7 @@ class ResultsGenerator:
         :param content: Content that succeeded validate
         :return: Returns a VALIDATION_RESULT success object
         """
-        return VALIDATION_RESULT(
+        return validationResult(
             type_name,
             value,
             ValidationResult.success,
@@ -120,14 +120,14 @@ class ResultsGenerator:
         :param content: Content that failed validate
         :return: Returns a VALIDATION_RESULT failure object
         """
-        return VALIDATION_RESULT(
+        return validationResult(
             type_name,
             value,
             ValidationResult.failure,
             content)
 
     @staticmethod
-    def create_warning(type_name, value, content) -> VALIDATION_RESULT:
+    def create_warning(type_name, value, content) -> validationResult:
         """
         Create Warning Result
 
@@ -137,14 +137,14 @@ class ResultsGenerator:
         :param content: Content that passed validate with warnings
         :return: Returns a VALIDATION_RESULT warning object
         """
-        return VALIDATION_RESULT(
+        return validationResult(
             type_name,
             value,
             ValidationResult.warning,
             content)
 
     @staticmethod
-    def create_generic_format_failure(type_name, value) -> VALIDATION_RESULT:
+    def create_generic_format_failure(type_name, value) -> validationResult:
         """
         Create Warning Result
 
@@ -153,7 +153,7 @@ class ResultsGenerator:
         :param value: Value to validate.
         :return: Returns a generic VALIDATION_RESULT failure object
         """
-        return VALIDATION_RESULT(
+        return validationResult(
             type_name,
             value,
             ValidationResult.failure,
@@ -199,7 +199,7 @@ class Validation:
 
         # Get names of fields validated for checks by user.
         self.default_field_value = default_field_value
-        self.validated_fields = [x.name for x in self.type_restrictions.keys()]
+        self.validated_fields = [x.name for x in self.type_restrictions]
 
         # Used if subscription is validated, custom validation routine
         self.current_subscription = None
@@ -213,7 +213,7 @@ class Validation:
         """
         return field_name in self.validated_fields
 
-    def validate_input(self, type_name: str, value: str) -> VALIDATION_RESULT:
+    def validate_input(self, type_name: str, value: str) -> validationResult:
         """
         Validates the 'value' passed in for a given 'type_name'. If the type name is not
         a valid field in the enum class ValidationType, the check immediately passes.
@@ -261,7 +261,7 @@ class Validation:
         return return_result
 
     @staticmethod
-    def dump_validation_result(result: VALIDATION_RESULT):
+    def dump_validation_result(result: validationResult):
         """
         Print out validation results
 
@@ -288,8 +288,8 @@ class Validation:
         """
         return_value = True
         if validation_restriction.length:
-            return_value = (len(value) >= validation_restriction.length[0]) and (
-                    len(value) <= validation_restriction.length[1])
+            return_value = (len(value) >= validation_restriction.length[0]) \
+                           and (len(value) <= validation_restriction.length[1])
         return return_value
 
     @staticmethod
@@ -343,9 +343,9 @@ class Validation:
         :return: JSON of output
         """
         account_stream = os.popen(command)
-        command_output = account_stream.read()
+        command_output = account_stream.read().replace("[0m", "")
         account_stream.close()
-        if bool(command_output):
+        if not bool(command_output):
             return {}
         return json.loads(command_output)
 
@@ -363,7 +363,7 @@ class Validation:
             self.current_subscription = result['id']
         return self.current_subscription
 
-    def _validate_subscription(self, type_name, sub_id) -> VALIDATION_RESULT:
+    def _validate_subscription(self, type_name, sub_id) -> validationResult:
         """
         Check that the current subscription is the subscription in the configuration
 
@@ -388,7 +388,7 @@ class Validation:
 
     # Custom validators : resource group
 
-    def _validate_resource_group(self, type_name, group_name) -> VALIDATION_RESULT:
+    def _validate_resource_group(self, type_name, group_name) -> validationResult:
         """
         Validate Resource Group
 

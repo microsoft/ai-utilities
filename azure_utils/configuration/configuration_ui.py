@@ -102,7 +102,7 @@ class SettingsUpdate(Frame):
         validate_responses = self.prompt_field_validation()
         field_responses = []
 
-        for setting in self.settings.keys():
+        for setting in self.settings:
             user_entered = self.settings[setting].get("1.0", END)
             user_entered = user_entered.strip().replace('\n', '')
 
@@ -138,14 +138,14 @@ class SettingsUpdate(Frame):
 
             error_count = 0
             message = ""
-            if len(failed):
+            if failed:
                 message += "ERRORS:\n"
                 for resp in failed:
                     error_count += 1
                     message += "   {}\n".format(resp.type)
                 message += '\n'
 
-            if len(warn):
+            if warn:
                 message += "WARNINGS:\n"
                 for resp in warn:
                     if resp.reason != Validation.FIELD_NOT_RECOGNIZED:
@@ -168,7 +168,7 @@ class SettingsUpdate(Frame):
         :return: `bool` based on user's response
         """
         valid_fields = "\n"
-        for setting in self.settings.keys():
+        for setting in self.settings:
             if self.validator.is_field_valid(setting):
                 valid_fields += "{}\n".format(setting)
 

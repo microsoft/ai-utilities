@@ -16,7 +16,7 @@ Import the needed functionality
 
     If you wish to run this file locally, uncomment the section below and then run
     the Python script directly from this directory. This will utilize the
-    azure_utils\configuration\project.yml file as the configuration file under test.
+    azure_utils/configuration/project.yml file as the configuration file under test.
 
 LOCAL_ONLY
 import os
