@@ -13,6 +13,7 @@ from typing import Optional
 
 from azure.common.client_factory import get_client_from_cli_profile
 from azure.mgmt.resource import ResourceManagementClient
+from msrestazure.azure_exceptions import CloudError
 
 
 class ValidationType(Enum):
@@ -24,6 +25,16 @@ class ValidationType(Enum):
     resource_group = "resource_group"
     workspace_name = "workspace_name"
     storage_account = "storage_account"
+
+    @classmethod
+    def has_value(cls, value):
+        """
+        Check if ENUM has value
+
+        :param value:
+        :return:
+        """
+        return value in cls._value2member_map_
 
 
 class ValidationResult(Enum):
@@ -278,7 +289,7 @@ class Validation:
         return_value = True
         if validation_restriction.length:
             return_value = (len(value) >= validation_restriction.length[0]) and (
-                len(value) <= validation_restriction.length[1])
+                    len(value) <= validation_restriction.length[1])
         return return_value
 
     @staticmethod
@@ -310,19 +321,21 @@ class Validation:
         return return_value
 
     @staticmethod
-    def _get_validation_type(type_name: str) -> ValidationType:
+    def _get_validation_type(type_name: str) -> Optional[ValidationType]:
         """
         Get the Validation Type from a type name
 
         :param type_name: Type name to look up :class:`ValidationType`
         :return: :class:`ValidationType` for input type name
         """
-        return ValidationType(type_name)
+        if ValidationType.has_value(type_name):
+            return ValidationType(type_name)
+        return None
 
     # Custom validators : Subscription
 
     @staticmethod
-    def _get_data_as_json(command: str) -> Optional[dict]:
+    def _get_data_as_json(command: str) -> dict:
         """
         Run CLI Command and get output as JSON
 
@@ -331,10 +344,9 @@ class Validation:
         """
         account_stream = os.popen(command)
         command_output = account_stream.read()
-
-        if len(command_output) == 0:
-            return None
-
+        account_stream.close()
+        if bool(command_output):
+            return {}
         return json.loads(command_output)
 
     def _get_current_subscription(self) -> str:
@@ -397,7 +409,7 @@ class Validation:
                 res = rmc_client.resource_groups.check_existence(group_name)
                 if res:
                     return_result = ResultsGenerator.create_warning(type_name, group_name, "Resource Group Exists")
-            except Exception:
+            except CloudError:
                 return_result = ResultsGenerator.create_generic_format_failure(type_name, group_name)
 
         return return_result
