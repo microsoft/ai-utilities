@@ -52,6 +52,8 @@ def get_or_configure_settings(configuration_yaml: str = project_configuration_fi
     if sub_id == '<>':
         configure_settings(configuration_yaml)
 
+    return get_settings(configuration_yaml)
+
 
 def configure_settings(configuration_yaml: str = project_configuration_file):
     """
