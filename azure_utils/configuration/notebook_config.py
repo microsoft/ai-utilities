@@ -39,6 +39,22 @@ from azure_utils.configuration.project_configuration import ProjectConfiguration
 project_configuration_file = "project.yml"
 
 
+def get_or_configure_settings(configuration_yaml: str = project_configuration_file):
+    """
+    Only configure the settings if the subscripton ID has not been provided yet.
+    This will help with automation in which the configuration file is provided.
+
+    :param configuration_yaml: Location of configuration yaml
+    """
+    settings_object = get_settings(configuration_yaml)
+    sub_id = settings_object.get_value('subscription_id')
+
+    if sub_id == '<>':
+        configure_settings(configuration_yaml)
+
+    return get_settings(configuration_yaml)
+
+
 def configure_settings(configuration_yaml: str = project_configuration_file):
     """
         Launch a tkinter UI to configure the project settings in the provided
