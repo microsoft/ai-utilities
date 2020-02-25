@@ -16,7 +16,7 @@ Import the needed functionality
 
     If you wish to run this file locally, uncomment the section below and then run
     the Python script directly from this directory. This will utilize the
-    azure_utils/configuration/project.yml file as the configuration file under test.
+    project.yml file as the configuration file under test.
 
 LOCAL_ONLY
 import os
@@ -41,7 +41,7 @@ project_configuration_file = "project.yml"
 
 def get_or_configure_settings(configuration_yaml: str = project_configuration_file):
     """
-    Only configure the settings if the subscripton ID has not been provided yet.
+    Only configure the settings if the subscription ID has not been provided yet.
     This will help with automation in which the configuration file is provided.
 
     :param configuration_yaml: Location of configuration yaml
