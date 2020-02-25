@@ -105,6 +105,35 @@ def get_or_create_workspace_from_project(project_configuration: ProjectConfigura
                                    auth=auth)
 
 
+def get_or_create_workspace_from_file(configuration_file: str = "../project.yml",
+                                      auth: Union[InteractiveLoginAuthentication, ServicePrincipalAuthentication] =
+                                      InteractiveLoginAuthentication()) -> Workspace:
+    """
+    Create a new Azure Machine Learning workspace. If the workspace already exists, the existing workspace will be
+    returned. Also create a CONFIG file to quickly reload the workspace.
+
+    This uses the :class:`azureml.core.authentication.InteractiveLoginAuthentication` or will default to use the
+
+    :class:`azureml.core.authentication.AzureCliAuthentication` for logging into Azure.
+
+    Run az login from the CLI in the project directory to avoid authentication when running the program.
+
+    :param configuration_file: File path to project configuration file. default: ../project.yml
+    :param auth: Derived classes provide different means to authenticate and acquire a token based on their targeted
+    use case.
+    For examples of authentication, see https://aka.ms/aml-notebook-auth.
+    :type auth: azureml.core.authentication.AbstractAuthentication
+    :return: Returns a :class:`azureml.core.Workspace` object, a pointer to Azure Machine Learning Workspace
+    Learning Workspace
+    """
+    project_configuration = ProjectConfiguration(configuration_file)
+    return get_or_create_workspace(project_configuration.get_value('workspace_name'),
+                                   project_configuration.get_value('subscription_id'),
+                                   project_configuration.get_value('resource_group'),
+                                   project_configuration.get_value('workspace_region'),
+                                   auth=auth)
+
+
 def get_workspace_from_config():
     """
     Retrieve an AML Workspace from a previously saved configuration
