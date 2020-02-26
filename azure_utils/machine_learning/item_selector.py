@@ -52,7 +52,7 @@ class ItemSelector(BaseEstimator, TransformerMixin):
             raise TypeError('keys is not hashable')
         self.keys = keys
 
-    def fit(self, input_x):
+    def fit(self, input_x, *args, **kwargs):
         """
 
         :param input_x: Set of items to fit with keys
@@ -65,7 +65,7 @@ class ItemSelector(BaseEstimator, TransformerMixin):
             raise KeyError('key not in data')
         return self
 
-    def transform(self, data_dict):
+    def transform(self, data_dict, *args, **kwargs):
         """
         Transform data based on keys
 
