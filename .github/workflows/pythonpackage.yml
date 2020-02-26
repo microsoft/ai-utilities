@@ -35,4 +35,3 @@ jobs:
         force: true
         message: 'Update version number for next release.'
         pattern: setup.py
-
