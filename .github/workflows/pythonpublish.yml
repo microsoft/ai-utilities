@@ -42,14 +42,4 @@ jobs:
 
         version=0.$major.$minor
 
-        sed -i "s/version=['\"]\([^'\"]*\)['\"] *,.*/version=\"$version\",/" ./setup.py
-
-    - name: Add & Commit
-      uses: EndBug/add-and-commit@v3.1.0
-      with:
-        # The name of the user that will be displayed as the author of the commit
-        author_name: ${{ secrets.USER_NAME }}
-        # The email of the user that will be displayed as the author of the commit
-        author_email: ${{ secrets.USER_EMAIL }}        
-        force: true
-        message: Update version number for next release.
+        sed -i "s/version=['\"]\([^'\"]*\)['\"] *,.*/version=\"$version\",/" ./setup.py        
