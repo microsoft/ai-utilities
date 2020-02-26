@@ -100,8 +100,8 @@ def main():
     # Verify that the hyperparameter values are valid.
     assert n_estimators > 0
     assert min_child_samples > 1
-    assert isinstance(ngram_range) is tuple and len(ngram_range) == 2
-    assert ngram_range[0] > 0 and ngram_range[0] <= ngram_range[1]
+    assert isinstance(ngram_range, tuple) and len(ngram_range) == 2
+    assert 0 < ngram_range[0] <= ngram_range[1]
 
     # Define the pipeline that featurizes the text columns.
     featurization = [

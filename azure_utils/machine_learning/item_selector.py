@@ -45,7 +45,7 @@ class ItemSelector(BaseEstimator, TransformerMixin):
     """
 
     def __init__(self, keys):
-        if isinstance(keys) is list:
+        if isinstance(keys, list):
             if any([getattr(key, '__hash__', None) is None for key in keys]):
                 raise TypeError('Not all keys are hashable')
         elif getattr(keys, '__hash__', None) is None:
@@ -58,7 +58,7 @@ class ItemSelector(BaseEstimator, TransformerMixin):
         :param input_x: Set of items to fit with keys
         :return: self
         """
-        if isinstance(self.keys) is list:
+        if isinstance(self.keys, list):
             if not all([key in input_x for key in self.keys]):
                 raise KeyError('Not all keys in data')
         elif self.keys not in input_x:
