@@ -31,9 +31,9 @@ jobs:
       uses: github-actions-x/commit@v2.4
       with:
         # Github Token with commit access
-        github-token: ${{ secrets.TOKEN4GITHUB }}
-        # Specify commit message
-        commit-message: "Update version number for next release."
-        files: ./setup.py
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        push-branch: 'master'
+        commit-message: 'Update version number for next release.'
+        files: setup.py
         email: ${{ secrets.USER_NAME }}
         name: ${{ secrets.USER_EMAIL }}
