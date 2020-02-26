@@ -44,6 +44,12 @@ jobs:
 
         sed -i "s/version=['\"]\([^'\"]*\)['\"] *,.*/version=\"$version\",/" ./setup.py
 
-        git add setup.py
-        git commit -m "update version number for next release"
-        git push
+    - name: Add & Commit
+      uses: EndBug/add-and-commit@v3.1.0
+      with:
+        # The name of the user that will be displayed as the author of the commit
+        author_name: ${{ secrets.USER_NAME }}
+        # The email of the user that will be displayed as the author of the commit
+        author_email: ${{ secrets.USER_EMAIL }}        
+        force: true
+        message: Update version number for next release.
