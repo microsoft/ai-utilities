@@ -33,6 +33,7 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         push-branch: master
         commit-message: 'Update version number for next release.'
+        force-push: true
         files: setup.py
         email: ${{ secrets.USER_EMAIL }}
         name: ${{ secrets.USER_NAME }}
