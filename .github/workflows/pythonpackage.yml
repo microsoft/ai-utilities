@@ -27,6 +27,14 @@ jobs:
 
         sed -i "s/version=['\"]\([^'\"]*\)['\"] *,.*/version=\"$version\",/" ./setup.py
 
-        git add setup.py
-        git commit -m "update version number for next release"
-        git push
+    - name: Git Commit on Workflow
+      uses: matheusalbino/git-commit@v1.0.1
+      with:
+        # Github Token
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        # Git user.name
+        user-name: ${{ secrets.USER_NAME }}
+        # Git user.email
+        user-email: ${{ secrets.USER_EMAIL }}
+        # Git message
+        message: Update version number for next release.
