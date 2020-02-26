@@ -35,3 +35,6 @@ jobs:
         force: true
         message: 'Update version number for next release.'
         pattern: setup.py
+      env:
+    # This is necessary in order to push a commit to the repo
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Leave this line unchanged
