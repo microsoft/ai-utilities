@@ -28,7 +28,7 @@ jobs:
         sed -i "s/version=['\"]\([^'\"]*\)['\"] *,.*/version=\"$version\",/" ./setup.py
 
     - name: Git Commit and Push
-      uses: github-actions-x/commit@v2.4
+      uses: dciborow/commit@0.0.1
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         push-branch: master
