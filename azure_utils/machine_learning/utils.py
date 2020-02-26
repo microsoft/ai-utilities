@@ -72,7 +72,8 @@ def get_or_create_workspace(workspace_name: str, subscription_id: str, resource_
     Learning Workspace
     :rtype: azureml.core.Workspace
     """
-    print("AML SDK Version:", azureml.core.VERSION)
+    if log:
+        print("AML SDK Version:", azureml.core.VERSION)
 
     workspace = Workspace.create(name=workspace_name, subscription_id=subscription_id, resource_group=resource_group,
                                  location=workspace_region, create_resource_group=True, auth=auth, exist_ok=True)
