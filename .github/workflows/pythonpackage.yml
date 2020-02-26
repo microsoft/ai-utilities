@@ -33,7 +33,11 @@ jobs:
         # Github Token with commit access
         github-token: ${{ secrets.TOKEN4GITHUB }}
         # Specify commit message
-        commit-message: Update version number for next release.
+        commit-message: |
+          Update version number for next release.
+          
+          
+          skip-checks: true"
         files: ./setup.py
         email: ${{ secrets.USER_NAME }}
         name: ${{ secrets.USER_EMAIL }}
