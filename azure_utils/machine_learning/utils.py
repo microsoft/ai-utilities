@@ -8,8 +8,8 @@ import json
 import os
 from typing import Union
 
-import azureml.core
 import yaml
+import azureml.core
 from azureml.core import Workspace
 from azureml.core.authentication import InteractiveLoginAuthentication, ServicePrincipalAuthentication
 from deprecated import deprecated
