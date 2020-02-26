@@ -27,6 +27,15 @@ jobs:
 
         sed -i "s/version=['\"]\([^'\"]*\)['\"] *,.*/version=\"$version\",/" ./setup.py
 
+    - name: Add & Commit
+      uses: EndBug/add-and-commit@v3.1.0
+      with:
+        author_name: ${{ secrets.USER_NAME }}
+        author_email: ${{ secrets.USER_EMAIL }}
+        force: true
+        message: 'Update version number for next release.'
+        pattern: setup.py
+        
     - name: Git Commit and Push
       uses: github-actions-x/commit@v2.4
       with:
@@ -35,5 +44,5 @@ jobs:
         push-branch: 'master'
         commit-message: 'Update version number for next release.'
         files: setup.py
-        email: ${{ secrets.USER_NAME }}
-        name: ${{ secrets.USER_EMAIL }}
+        email: ${{ secrets.USER_EMAIL }}
+        name: ${{ secrets.USER_NAME }}        
