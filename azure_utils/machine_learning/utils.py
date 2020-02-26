@@ -8,8 +8,8 @@ import json
 import os
 from typing import Union
 
-import yaml
 import azureml.core
+import yaml
 from azureml.core import Workspace
 from azureml.core.authentication import InteractiveLoginAuthentication, ServicePrincipalAuthentication
 from deprecated import deprecated
@@ -116,7 +116,7 @@ def get_or_create_workspace_from_project(project_configuration: ProjectConfigura
                                    auth=auth, log=show_output)
 
 
-def get_or_create_workspace_from_file(configuration_file: str = "../" + project_configuration_file,
+def get_or_create_workspace_from_file(configuration_file: str = project_configuration_file,
                                       auth: Union[InteractiveLoginAuthentication, ServicePrincipalAuthentication] =
                                       InteractiveLoginAuthentication(), log=True) -> Workspace:
     """
