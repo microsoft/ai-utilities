@@ -89,7 +89,7 @@ def get_or_create_workspace(workspace_name: str, subscription_id: str, resource_
 
 def get_or_create_workspace_from_project(project_configuration: ProjectConfiguration,
                                          auth: Union[InteractiveLoginAuthentication, ServicePrincipalAuthentication] =
-                                         InteractiveLoginAuthentication(), log=True) -> Workspace:
+                                         InteractiveLoginAuthentication(), show_output=True) -> Workspace:
     """
     Create a new Azure Machine Learning workspace. If the workspace already exists, the existing workspace will be
     returned. Also create a CONFIG file to quickly reload the workspace.
@@ -105,7 +105,7 @@ def get_or_create_workspace_from_project(project_configuration: ProjectConfigura
     use case.
     For examples of authentication, see https://aka.ms/aml-notebook-auth.
     :type auth: azureml.core.authentication.AbstractAuthentication
-    :param log: enable print output
+    :param show_output: enable print output
     :return: Returns a :class:`azureml.core.Workspace` object, a pointer to Azure Machine Learning Workspace
     Learning Workspace
     """
@@ -113,7 +113,7 @@ def get_or_create_workspace_from_project(project_configuration: ProjectConfigura
                                    project_configuration.get_value('subscription_id'),
                                    project_configuration.get_value('resource_group'),
                                    project_configuration.get_value('workspace_region'),
-                                   auth=auth, log=log)
+                                   auth=auth, log=show_output)
 
 
 def get_or_create_workspace_from_file(configuration_file: str = "../" + project_configuration_file,
