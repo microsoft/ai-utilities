@@ -29,15 +29,17 @@ def get_or_create_image(configuration_file: str = project_configuration_file, sh
     :param dependencies: List of files to include in image
     :return: New or Existing Docker Image for deployment to Kubernetes Compute
     """
-    if not models:
-        models = []
     project_configuration = ProjectConfiguration(configuration_file)
-    workspace = get_or_create_workspace_from_project(project_configuration, show_output=show_output)
+    assert project_configuration.has_settings("image_name")
 
     image_name = project_configuration.get_value("image_name")
+    if not models:
+        models = []
+
+    workspace = get_or_create_workspace_from_project(project_configuration, show_output=show_output)
 
     workspace_images = workspace.images
-    if image_name in workspace_images:
+    if image_name in workspace_images and workspace_images[image_name].creation_state != "Failed":
         return workspace_images[image_name]
 
     image_config = create_lightgbm_image_config(dependencies=dependencies)
@@ -46,6 +48,7 @@ def get_or_create_image(configuration_file: str = project_configuration_file, sh
 
     image = ContainerImage.create(name=image_name, models=models, image_config=image_config, workspace=workspace)
     image.wait_for_creation(show_output=show_output)
+    assert image.creation_state != "Failed"
     if show_output:
         deployment_time_secs = str(time.time() - image_create_start)
         print("Deployed Image with name " + image_name + ". Took " + deployment_time_secs + " seconds.")
@@ -69,7 +72,7 @@ def create_lightgbm_image_config(conda_file="lgbmenv.yml", execution_script="sco
     create_lightgbm_conda_file(conda_file)
 
     with open("dockerfile", "w") as file:
-        file.write("RUN apt-get install gcc")
+        file.write("RUN apt update -y && apt upgrade -y && apt install -y build-essential")
 
     return ContainerImage.image_configuration(
         execution_script=execution_script,

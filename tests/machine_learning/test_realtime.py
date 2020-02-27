@@ -7,16 +7,45 @@ Licensed under the MIT License.
 This are long tests and are not currently tested in this SDK.
 """
 from azure_utils.machine_learning.realtime.image import get_or_create_image
-from azure_utils.machine_learning.realtime.kubernetes import get_or_create_aks_service
+from azure_utils.machine_learning.realtime.kubernetes import get_or_create_aks_service, get_or_create_service, \
+    get_or_create_aks
 
 
 def test_get_or_create_image():
     """Test Get or Create Machine Learning Docker Image"""
     image = get_or_create_image()
-    assert image
+    assert image.creation_state != "Failed"
 
 
-def get_or_create_aks_service_test():
+def test_get_or_create_aks_service():
     """Test Get Or Create Kubernetes Compute and Web Service"""
+
+    score_py = """
+import json
+import logging
+
+
+def init():
+    logger = logging.getLogger("scoring_script")
+    logger.info("init")
+
+
+def run(body):
+    logger = logging.getLogger("scoring_script")
+    logger.info("run")
+    return json.dumps({'call': True})
+
+"""
+    with open("score.py", "w") as file:
+        file.write(score_py)
+
     aks_webservice = get_or_create_aks_service()
     assert aks_webservice
+
+
+def test_get_or_create_aks():
+    get_or_create_aks()
+
+
+def test_get_or_create_service():
+    get_or_create_service()

@@ -29,35 +29,40 @@ def get_or_create_aks_service(configuration_file: str = project_configuration_fi
     :param show_output: toggle on/off standard output. default: `True`
     :return: New or Existing Kubernetes Web Service
     """
-    project_configuration = ProjectConfiguration(configuration_file)
+    aks_target = get_or_create_aks(configuration_file, vm_size, node_count, show_output)
 
-    aks_target = get_or_create_aks(project_configuration, vm_size, node_count, show_output)
-
-    return get_or_create_service(project_configuration, aks_target, num_replicas, cpu_cores, show_output)
+    return get_or_create_service(configuration_file, aks_target, num_replicas, cpu_cores, show_output)
 
 
-def get_or_create_service(project_configuration, aks_target, num_replicas: int = 2,
+def get_or_create_service(configuration_file: str = project_configuration_file, aks_target=None, num_replicas: int = 2,
                           cpu_cores: int = 1, show_output: bool = True) -> AksWebservice:
     """
     Get or Create new Machine Learning Webservice
 
-    :param project_configuration: Project configuration settings container
+    :param configuration_file: Project configuration settings file. default: project.yml
     :param aks_target: Kubernetes compute to target for deployment
     :param num_replicas: number of replicas in Kubernetes cluster. default: 2
     :param cpu_cores: cpu cores for web service. default: 1
     :param show_output: toggle on/off standard output. default: `True`
     :return: New or Existing Kubernetes Web Service
     """
-    workspace = get_or_create_workspace_from_project(project_configuration, show_output=show_output)
+    project_configuration = ProjectConfiguration(configuration_file)
+    assert project_configuration.has_settings("aks_service_name")
+    assert project_configuration.has_settings("image_name")
 
     aks_service_name = project_configuration.get_value("aks_service_name")
     image_name = project_configuration.get_value("image_name")
+
+    workspace = get_or_create_workspace_from_project(project_configuration, show_output=show_output)
 
     if aks_service_name in workspace.webservices:
         return workspace.webservices[aks_service_name]
 
     aks_config = AksWebservice.deploy_configuration(num_replicas=num_replicas, cpu_cores=cpu_cores)
+
+    assert workspace.images[image_name]
     image = workspace.images[image_name]
+
     deploy_from_image_start = time.time()
     aks_service = Webservice.deploy_from_image(workspace=workspace, name=aks_service_name, image=image,
                                                deployment_config=aks_config, deployment_target=aks_target)
@@ -71,17 +76,22 @@ def get_or_create_service(project_configuration, aks_target, num_replicas: int =
     return aks_service
 
 
-def get_or_create_aks(project_configuration, vm_size: str = "Standard_D4_v2", node_count: int = 4,
-                      show_output: bool = True) -> AksCompute:
+def get_or_create_aks(configuration_file: str = project_configuration_file, vm_size: str = "Standard_D4_v2",
+                      node_count: int = 4, show_output: bool = True) -> AksCompute:
     """
     Get or Create Azure Machine Learning Kubernetes Compute
 
-    :param project_configuration: Project configuration settings container
+    :param configuration_file: Project configuration settings container
     :param vm_size: skew of vms in Kubernetes cluster. default: Standard_D4_v2
     :param node_count: number of nodes in Kubernetes cluster. default: 4
     :param show_output: toggle on/off standard output. default: `True`
     :return: New or Existing Kubernetes Compute
     """
+    project_configuration = ProjectConfiguration(configuration_file)
+    assert project_configuration.has_settings("aks_name")
+    assert project_configuration.has_settings("aks_service_name")
+    assert project_configuration.has_settings("workspace_region")
+
     workspace = get_or_create_workspace_from_project(project_configuration, show_output=show_output)
 
     aks_name = project_configuration.get_value("aks_name")
