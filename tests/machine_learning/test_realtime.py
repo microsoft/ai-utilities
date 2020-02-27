@@ -16,7 +16,7 @@ def test_get_or_create_image():
     assert image
 
 
-def test_get_or_create_aks_service():
+def get_or_create_aks_service_test():
     """Test Get Or Create Kubernetes Compute and Web Service"""
     aks_webservice = get_or_create_aks_service()
     assert aks_webservice
