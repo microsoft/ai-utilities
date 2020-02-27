@@ -74,6 +74,22 @@ def create_lightgbm_image_config(conda_file="lgbmenv.yml", execution_script="sco
     with open("dockerfile", "w") as file:
         file.write("RUN apt update -y && apt upgrade -y && apt install -y build-essential")
 
+    with open("score.py", 'w') as file:
+        file.write("""        
+import json
+import logging
+
+
+def init():
+    logger = logging.getLogger("scoring_script")
+    logger.info("init")
+
+
+def run(body):
+    logger = logging.getLogger("scoring_script")
+    logger.info("run")
+    return json.dumps({'call': True})
+""")
     return ContainerImage.image_configuration(
         execution_script=execution_script,
         runtime="python",
