@@ -37,10 +37,7 @@ def get_or_create_image(configuration_file: str = project_configuration_file, sh
     if image_name in workspace_images:
         return workspace_images[image_name]
 
-    models = []
-    model = Model(workspace, name=model_name)
-    if model:
-        models += model
+    models = [Model(workspace, name=model_name)]
 
     image_config = create_lightgbm_image_config()
 
