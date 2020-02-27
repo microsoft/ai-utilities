@@ -10,13 +10,13 @@ from azure_utils.machine_learning.realtime.image import get_or_create_image
 from azure_utils.machine_learning.realtime.kubernetes import get_or_create_aks_service
 
 
-def get_or_create_image_test():
+def test_get_or_create_image():
     """Test Get or Create Machine Learning Docker Image"""
     image = get_or_create_image()
     assert image
 
 
-def get_or_create_aks_service_test():
+def test_get_or_create_aks_service():
     """Test Get Or Create Kubernetes Compute and Web Service"""
     aks_webservice = get_or_create_aks_service()
     assert aks_webservice

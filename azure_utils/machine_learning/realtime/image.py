@@ -19,15 +19,18 @@ from azure_utils.utilities import text_to_json
 
 
 def get_or_create_image(configuration_file: str = project_configuration_file, show_output: bool = True,
-                        model_name='question_match_model') -> ContainerImage:
+                        models: list = None, dependencies=None) -> ContainerImage:
     """
     Get or Create new Docker Image from Machine Learning Workspace
 
     :param configuration_file: path to project configuration file. default: project.yml
     :param show_output: toggle on/off standard output. default: `True`
-    :param model_name: Name of Model to package with Image from Machine Learning Workspace
+    :param models Name of Model to package with Image from Machine Learning Workspace
+    :param dependencies: List of files to include in image
     :return: New or Existing Docker Image for deployment to Kubernetes Compute
     """
+    if not models:
+        models = []
     project_configuration = ProjectConfiguration(configuration_file)
     workspace = get_or_create_workspace_from_project(project_configuration, show_output=show_output)
 
@@ -37,9 +40,7 @@ def get_or_create_image(configuration_file: str = project_configuration_file, sh
     if image_name in workspace_images:
         return workspace_images[image_name]
 
-    models = [Model(workspace, name=model_name)]
-
-    image_config = create_lightgbm_image_config()
+    image_config = create_lightgbm_image_config(dependencies=dependencies)
 
     image_create_start = time.time()
 
@@ -54,16 +55,21 @@ def get_or_create_image(configuration_file: str = project_configuration_file, sh
     return image
 
 
-def create_lightgbm_image_config(conda_file="lgbmenv.yml", execution_script="score.py") -> ContainerImageConfig:
+def create_lightgbm_image_config(conda_file="lgbmenv.yml", execution_script="score.py",
+                                 dependencies=None) -> ContainerImageConfig:
     """
     Image Configuration for running LightGBM in Azure Machine Learning Workspace
 
     :param conda_file: file name of LightGBM Conda Env File. This file is created if it does not exist.
      default: lgbmenv.yml
     :param execution_script: webservice file. default: score.py
+    :param dependencies: Files required for image.
     :return: new image configuration for Machine Learning Workspace
     """
     create_lightgbm_conda_file(conda_file)
+
+    with open("dockerfile", "w") as file:
+        file.write("RUN apt-get install gcc")
 
     return ContainerImage.image_configuration(
         execution_script=execution_script,
@@ -74,10 +80,15 @@ def create_lightgbm_image_config(conda_file="lgbmenv.yml", execution_script="sco
             "area": "text",
             "type": "lightgbm"
         },
-        dependencies=[
-            "./notebooks/data_folder/questions.tsv"
-        ],
+        dependencies=dependencies,
+        docker_file="dockerfile"
     )
+
+
+def get_model(model_name, configuration_file=project_configuration_file, show_output=True):
+    project_configuration = ProjectConfiguration(configuration_file)
+    workspace = get_or_create_workspace_from_project(project_configuration, show_output=show_output)
+    return Model(workspace, name=model_name)
 
 
 def create_lightgbm_conda_file(conda_file="lgbmenv.yml"):
