@@ -30,16 +30,16 @@ from azureml.core import ScriptRunConfig
 from azureml.core.runconfig import RunConfiguration
 
 from azure_utils import directory
-from azure_utils.machine_learning.realtime.image import get_model
+from azure_utils.machine_learning.realtime.image import get_model, has_model
 from azure_utils.machine_learning.utils import get_workspace_from_config
 
 
 def train_local(model_name="question_match_model", num_estimators="1", experiment_name="mlaks-train-on-local",
                 model_path="./outputs/model.pkl", script="create_model.py", source_directory="./script",
                 show_output=True):
-    model = get_model(model_name)
+    model = has_model(model_name)
     if model:
-        return model
+        return get_model(model_name)
 
     ws = get_workspace_from_config()
     if show_output:
