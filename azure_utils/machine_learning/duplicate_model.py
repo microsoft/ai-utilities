@@ -13,7 +13,7 @@ class DuplicateModel:
     questions_cols = ['Id', 'AnswerId', 'Text']
     dup_col = 'Text_x'
     id_col = 'Id_y'
-    answerId_col = 'AnswerId_y'
+    answer_id_col = 'AnswerId_y'
     orig_col = 'Text_y'
     feature_cols = [dup_col, orig_col]
     probabilities_col = 'probabilities'
@@ -26,7 +26,7 @@ class DuplicateModel:
                                      encoding='latin1')
         self.questions = self.questions[self.questions_cols]
         self.questions.columns = [
-            self.id_col, self.answerId_col, self.orig_col]
+            self.id_col, self.answer_id_col, self.orig_col]
 
     def score(self, text):
         """

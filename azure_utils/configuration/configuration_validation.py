@@ -15,6 +15,8 @@ from azure.common.client_factory import get_client_from_cli_profile
 from azure.mgmt.resource import ResourceManagementClient
 from msrestazure.azure_exceptions import CloudError
 
+AZURE_WITH_AZ_LOGIN_ = "Log into azure with 'az login'"
+
 
 class ValidationType(Enum):
     """
@@ -159,6 +161,8 @@ class ResultsGenerator:
             ValidationResult.failure,
             "See: {}".format(ResultsGenerator.NAMES_LINK))
 
+VALIDATION_RESTRICTIONS_ = collections.namedtuple('validation_restrictions',
+                                                 'length regex_pattern invalid_charset custom_validator')
 
 class Validation:
     """
@@ -175,8 +179,6 @@ class Validation:
     # custom_validator- If not none, a routine to call if length and content checks pass.
 
     FIELD_NOT_RECOGNIZED = "Field not recognized/validated."
-    VALIDATION_RESTRICTIONS = collections.namedtuple('validation_restrictions',
-                                                     'length regex_pattern invalid_charset custom_validator')
 
     def __init__(self, default_field_value: str = '<>'):
         """
@@ -237,11 +239,10 @@ class Validation:
                     type_name, value, self.type_restrictions[validation_type].length
                 )
 
-            if not return_result:
-                if not self._validate_content(self.type_restrictions[validation_type], value):
-                    return_result = ResultsGenerator.create_content_failure(
-                        type_name, value, self.type_restrictions[validation_type].invalid_charset
-                    )
+            if not return_result and not self._validate_content(self.type_restrictions[validation_type], value):
+                return_result = ResultsGenerator.create_content_failure(
+                    type_name, value, self.type_restrictions[validation_type].invalid_charset
+                )
 
             if not return_result:
                 if self.type_restrictions[validation_type].custom_validator:
@@ -276,7 +277,7 @@ class Validation:
     # customized validations.
 
     @staticmethod
-    def _validate_length(validation_restriction: VALIDATION_RESTRICTIONS, value: str) -> bool:
+    def _validate_length(validation_restriction: VALIDATION_RESTRICTIONS_, value: str) -> bool:
         """
         Validates the length of the field IF
         1. There exists a valid VALIDATION_RESTRICTION
@@ -293,7 +294,7 @@ class Validation:
         return return_value
 
     @staticmethod
-    def _validate_content(validation_restriction: VALIDATION_RESTRICTIONS, value: str) -> bool:
+    def _validate_content(validation_restriction: VALIDATION_RESTRICTIONS_, value: str) -> bool:
         """
         Validates the contents of the field IF
         1. There exists a valid VALIDATION_RESTRICTION
@@ -372,18 +373,17 @@ class Validation:
         :param sub_id: Azure Subscription ID
         :return: Validation Results
         """
-        return_result = ResultsGenerator.create_success(type_name, sub_id, "Log into azure with 'az login'")
+        return_result = ResultsGenerator.create_success(type_name, sub_id, AZURE_WITH_AZ_LOGIN_)
 
         current_sub = self._get_current_subscription()
         if not current_sub:
-            return_result = ResultsGenerator.create_failure(type_name, sub_id, "Log into azure with 'az login'")
+            return_result = ResultsGenerator.create_failure(type_name, sub_id, AZURE_WITH_AZ_LOGIN_)
 
-        if not return_result:
-            if sub_id != current_sub:
-                return_result = ResultsGenerator.create_warning(type_name, sub_id,
-                                                                "Subscription {} is not your current sub {}. Use 'az "
-                                                                "account set -s <subid>'".format(
-                                                                    sub_id, current_sub))
+        if not return_result and sub_id != current_sub:
+            return_result = ResultsGenerator.create_warning(type_name, sub_id,
+                                                            "Subscription {} is not your current sub {}. Use 'az "
+                                                            "account set -s <subid>'".format(
+                                                                sub_id, current_sub))
         return return_result
 
     # Custom validators : resource group
@@ -397,11 +397,11 @@ class Validation:
         :param group_name: Resource Group to check.
         :return: Validation Results
         """
-        return_result = ResultsGenerator.create_success(type_name, group_name, "Log into azure with 'az login'")
+        return_result = ResultsGenerator.create_success(type_name, group_name, AZURE_WITH_AZ_LOGIN_)
 
         current_sub = self._get_current_subscription()
         if not current_sub:
-            return_result = ResultsGenerator.create_failure(type_name, group_name, "Log into azure with 'az login'")
+            return_result = ResultsGenerator.create_failure(type_name, group_name, AZURE_WITH_AZ_LOGIN_)
 
         if not return_result:
             rmc_client = get_client_from_cli_profile(ResourceManagementClient)

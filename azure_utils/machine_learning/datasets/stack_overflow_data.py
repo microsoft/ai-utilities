@@ -144,10 +144,10 @@ def save_data(balanced_pairs_test, balanced_pairs_train, dupes_test, dupes_test_
 
     # Save the data.
     balanced_pairs_train_path = os.path.join(outputs_path, "balanced_pairs_train.tsv")
-    print("Writing {:,} to {}".format(balanced_pairs_train.shape[0], balanced_pairs_train_path))
+    print(f"Writing {balanced_pairs_train.shape[0]:,} to {balanced_pairs_train_path}")
     balanced_pairs_train.to_csv(balanced_pairs_train_path, sep="\t", header=True, index=False)
     balanced_pairs_test_path = os.path.join(outputs_path, "balanced_pairs_test.tsv")
-    print("Writing {:,} to {}".format(balanced_pairs_test.shape[0], balanced_pairs_test_path))
+    print(f"Writing {balanced_pairs_test.shape[0]:,} to {balanced_pairs_test_path}")
     balanced_pairs_test.to_csv(balanced_pairs_test_path, sep="\t", header=True, index=False)
     # Save original questions to be used for scoring later.
     if show_output:

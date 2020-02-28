@@ -25,10 +25,6 @@ class AILabWorkspace(Workspace):
     @staticmethod
     def get_or_or_create_realtime_endpoint():
         raise NotImplementedError
-        AILabWorkspace.get_or_create_workspace()
-        AILabWorkspace.get_or_create_model()
-        AILabWorkspace.get_or_create_image()
-        AILabWorkspace.get_or_create_service()
 
     @staticmethod
     def get_or_create_workspace(**kwargs):

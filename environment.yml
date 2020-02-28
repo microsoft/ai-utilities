@@ -43,3 +43,5 @@ dependencies:
     - locustio==0.11.0
     - prompt-toolkit==2.0.9
     - PyOpenSSL
+    - nb-clean
+    - git-pylint-commit-hook
