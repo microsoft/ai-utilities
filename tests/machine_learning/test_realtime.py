@@ -7,8 +7,7 @@ Licensed under the MIT License.
 This are long tests and are not currently tested in this SDK.
 """
 from azure_utils.machine_learning.realtime.image import get_or_create_image
-from azure_utils.machine_learning.realtime.kubernetes import get_or_create_aks_service, get_or_create_service, \
-    get_or_create_aks
+from azure_utils.machine_learning.realtime.kubernetes import get_or_create_aks_service, get_or_create_aks
 
 
 def test_get_or_create_image():
@@ -38,14 +37,11 @@ def run(body):
 """
     with open("score.py", "w") as file:
         file.write(score_py)
-
+    get_or_create_image()
     aks_webservice = get_or_create_aks_service()
     assert aks_webservice
 
 
 def test_get_or_create_aks():
+    get_or_create_image()
     get_or_create_aks()
-
-
-def test_get_or_create_service():
-    get_or_create_service()
