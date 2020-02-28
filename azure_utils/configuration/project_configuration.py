@@ -94,6 +94,17 @@ class ProjectConfiguration:
         self._validate_configuration(ProjectConfiguration.project_key)
         self.configuration[ProjectConfiguration.project_key] = project_name
 
+    def has_settings(self, setting_name: str) -> bool:
+        """
+        Get all of the settings (UI Configuration)
+
+        :param setting_name: Key of setting to return
+        :return:  Return UI Configuration
+        """
+        if self.get_value(setting_name):
+            return True
+        return False
+
     def get_settings(self) -> Optional[str]:
         """
         Get all of the settings (UI Configuration)
