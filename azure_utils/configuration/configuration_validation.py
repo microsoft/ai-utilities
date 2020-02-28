@@ -161,8 +161,6 @@ class ResultsGenerator:
             ValidationResult.failure,
             "See: {}".format(ResultsGenerator.NAMES_LINK))
 
-VALIDATION_RESTRICTIONS_ = collections.namedtuple('validation_restrictions',
-                                                 'length regex_pattern invalid_charset custom_validator')
 
 class Validation:
     """
@@ -179,6 +177,8 @@ class Validation:
     # custom_validator- If not none, a routine to call if length and content checks pass.
 
     FIELD_NOT_RECOGNIZED = "Field not recognized/validated."
+    VALIDATION_RESTRICTIONS = collections.namedtuple('validation_restrictions',
+                                                     'length regex_pattern invalid_charset custom_validator')
 
     def __init__(self, default_field_value: str = '<>'):
         """
@@ -277,7 +277,7 @@ class Validation:
     # customized validations.
 
     @staticmethod
-    def _validate_length(validation_restriction: VALIDATION_RESTRICTIONS_, value: str) -> bool:
+    def _validate_length(validation_restriction: VALIDATION_RESTRICTIONS, value: str) -> bool:
         """
         Validates the length of the field IF
         1. There exists a valid VALIDATION_RESTRICTION
@@ -294,7 +294,7 @@ class Validation:
         return return_value
 
     @staticmethod
-    def _validate_content(validation_restriction: VALIDATION_RESTRICTIONS_, value: str) -> bool:
+    def _validate_content(validation_restriction: VALIDATION_RESTRICTIONS, value: str) -> bool:
         """
         Validates the contents of the field IF
         1. There exists a valid VALIDATION_RESTRICTION
