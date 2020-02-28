@@ -43,8 +43,7 @@ class ProjectConfiguration:
         self.configuration = {}
 
         if not found:
-            self.configuration = {ProjectConfiguration.project_key: "Default Settings",
-                                  ProjectConfiguration.settings_key: None}
+            self.configuration = ProjectConfiguration("project_sample.yml").configuration
             self.save_configuration()
 
         self._load_configuration()

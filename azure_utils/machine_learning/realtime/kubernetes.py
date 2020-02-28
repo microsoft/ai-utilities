@@ -93,6 +93,7 @@ def get_or_create_aks(configuration_file: str = project_configuration_file, vm_s
     project_configuration = ProjectConfiguration(configuration_file)
     assert project_configuration.has_settings("aks_name")
     assert project_configuration.has_settings("aks_service_name")
+    assert "_" not in project_configuration.get_value("aks_service_name"), "aks_service_name can not contain _"
     assert project_configuration.has_settings("workspace_region")
 
     workspace = get_or_create_workspace_from_project(project_configuration, show_output=show_output)

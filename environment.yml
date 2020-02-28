@@ -12,7 +12,11 @@ dependencies:
   - pandas
   - scikit-learn
   - numpy
+  - urllib3
+  - cudatoolkit==9.0
+  - tensorflow-gpu==1.14.0
   - pip:
+    - resnet
     - papermill
     - azureml-core==1.0.85
     - azure-cli==2.0.81
@@ -28,3 +32,14 @@ dependencies:
     - azure-common
     - lightgbm
     - Deprecated
+    - Pillow==6.1.0
+    - wget==3.2
+    - matplotlib==3.1.1
+    - toolz==0.9.0
+    - tqdm==4.32.2
+    - azure-core
+    - keras==2.2.0
+    - azureml-contrib-services
+    - locustio==0.11.0
+    - prompt-toolkit==2.0.9
+    - PyOpenSSL

@@ -14,7 +14,9 @@ from notebooks import notebook_directory
 @pytest.mark.parametrize(
     "notebook",
     [
-        notebook_directory + "/exampleconfiguration.ipynb"
+        notebook_directory + "/exampleconfiguration.ipynb",
+        notebook_directory + "/ai-deep-realtime-score.ipynb",
+        notebook_directory + "/ai-ml-realtime-score.ipynb"
     ]
 )
 def test_notebook(notebook, add_nunit_attachment):

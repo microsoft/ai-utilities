@@ -110,6 +110,12 @@ def get_model(model_name, configuration_file=project_configuration_file, show_ou
     return Model(workspace, name=model_name)
 
 
+def has_model(model_name, configuration_file=project_configuration_file, show_output=True):
+    project_configuration = ProjectConfiguration(configuration_file)
+    workspace = get_or_create_workspace_from_project(project_configuration, show_output=show_output)
+    return model_name in workspace.models
+
+
 def create_lightgbm_conda_file(conda_file="lgbmenv.yml"):
     """
     Create new Conda File with LightGBM requirements.

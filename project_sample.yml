@@ -24,3 +24,24 @@ settings:
 - aks_location:
   - description: AKS Azure Region
   - value: <>
+- vm_size:
+  - description: skew of vms in Kubernetes cluster
+  - value: Standard_D4_v2
+- node_count:
+  - description: number of nodes in Kubernetes cluster
+  - value: 4
+- num_replicas:
+  - description: number of replicas in Kubernetes cluster
+  - value: 2
+- cpu_cores:
+  - description: cpu cores for web service
+  - value: 1
+- num_estimators:
+  - description: number of replicas in Kubernetes cluster
+  - value: 2
+- experiment_name:
+  - description: cpu cores for web service
+  - value: "mlaks-train-on-local"
+- script:
+  - description: cpu cores for web service
+  - value: "create_model.py"
