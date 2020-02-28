@@ -19,7 +19,7 @@ __version__ = "0.1"
         AccountKey
         EndpointSuffix
 '''
-class storageConnection:
+class StorageConnection:
     '''
         Constructor taking the connection string to parse.
 
@@ -27,9 +27,9 @@ class storageConnection:
         DefaultEndpointsProtocol=https;AccountName=STGACCT_NAME;AccountKey=STGACCT_KEY;EndpointSuffix=core.windows.net
 
     '''
-    def __init__(self, connectionString):
-        parsedConnectionString = self._parseConnectionString(connectionString)
-        for key, value in parsedConnectionString.items():
+    def __init__(self, connection_string):
+        parsed_connection_string = self._parse_connection_string(connection_string)
+        for key, value in parsed_connection_string.items():
             self.__setattr__(key, value)
 
 
@@ -39,16 +39,16 @@ class storageConnection:
         EX:
         DefaultEndpointsProtocol=https;AccountName=STGACCT_NAME;AccountKey=STGACCT_KEY;EndpointSuffix=core.windows.net
     '''
-    def _parseConnectionString(self,connectionString):
-        returnValue = {}
-        if connectionString:
-                segments = connectionString.split(';')
+    def _parse_connection_string(self, connection_string):
+        return_value = {}
+        if connection_string:
+                segments = connection_string.split(';')
                 for segment in segments:
-                        splitIndex = segment.index('=')
-                        secondPart = (len(segment) - splitIndex - 1) * -1
-                        returnValue[segment[:splitIndex]] = segment[secondPart:]
+                        split_index = segment.index('=')
+                        second_part = (len(segment) - split_index - 1) * -1
+                        return_value[segment[:split_index]] = segment[second_part:]
 
-        return returnValue        
+        return return_value
 
     '''
         Method to return the full connection string to an Azure Storage account give the resource group name and storage account
@@ -57,20 +57,20 @@ class storageConnection:
         Method expects that the environment has been logged into Azue and the subscription has been set to match the incoming
         resource group and storage account. 
     '''
-    @staticmethod 
-    def getConnectionStringWithAzCredentials(resourceGroupName, storageAccountName):
-        connectionStringTemplate = "DefaultEndpointsProtocol=https;AccountName={};AccountKey={};EndpointSuffix=core.windows.net"
-        returnValue = None
+    @staticmethod
+    def get_connection_string_with_az_credentials(resource_group_name, storage_account_name):
+        connection_string_template = "DefaultEndpointsProtocol=https;AccountName={};AccountKey={};EndpointSuffix=core.windows.net"
+        return_value = None
 
         client = get_client_from_cli_profile(StorageManagementClient)
-        keys = client.storage_accounts.list_keys(resourceGroupName,storageAccountName)
+        keys = client.storage_accounts.list_keys(resource_group_name, storage_account_name)
         key_value = None
         for key in keys.keys:
             key_value = key.value
             break
-        
-        if key_value is not None:
-            returnValue = connectionStringTemplate.format(storageAccountName, key_value)
 
-        return returnValue
+        if key_value is not None:
+            return_value = connection_string_template.format(storage_account_name, key_value)
+
+        return return_value
 

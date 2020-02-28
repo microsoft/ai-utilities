@@ -1,5 +1,5 @@
 """
-- configuraitonui.py
+- configuration_ui.py
 
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
@@ -56,7 +56,7 @@ class SettingsUpdate(Frame):
                 print("Found setting does not match pattern...")
                 continue
 
-            # Only can be one key as they are sinletons with a list
+            # Only can be one key as they are singletons with a list
             # of values
             if len(setting.keys()) == 1:
                 for setting_name in setting.keys():

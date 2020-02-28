@@ -36,9 +36,7 @@ def _get_auth():
     return auth
 
 
-def create_workspace(
-    workspace_name, resource_group, subscription_id, workspace_region, filename="azml_config.json",
-):
+def create_workspace(workspace_name, resource_group, subscription_id, workspace_region, filename="azml_config.json", ):
     """Creates Azure Machine Learning workspace."""
     logger = logging.getLogger(__name__)
     auth = _get_auth()
@@ -61,34 +59,33 @@ def create_workspace(
 def load_workspace(path):
     """Loads Azure Machine Learning workspace from a config file."""
     auth = _get_auth()
-    ws = azureml.core.Workspace.from_config(auth=auth, path=path)
+    workspace = azureml.core.Workspace.from_config(auth=auth, path=path)
     logger = logging.getLogger(__name__)
     logger.info(
         "\n".join(
             [
-                "Workspace name: " + str(ws.name),
-                "Azure region: " + str(ws.location),
-                "Subscription id: " + str(ws.subscription_id),
-                "Resource group: " + str(ws.resource_group),
+                "Workspace name: " + str(workspace.name),
+                "Azure region: " + str(workspace.location),
+                "Subscription id: " + str(workspace.subscription_id),
+                "Resource group: " + str(workspace.resource_group),
             ]
         )
     )
-    return ws
+    return workspace
 
 
-def workspace_for_user(
-    workspace_name, resource_group, subscription_id, workspace_region, config_path=_DEFAULT_AML_PATH,
-):
+def workspace_for_user(workspace_name, resource_group, subscription_id, workspace_region,
+                       config_path=_DEFAULT_AML_PATH):
     """Returns Azure Machine Learning workspace."""
     if os.path.isfile(config_path):
         return load_workspace(config_path)
-    else:
-        path_obj = Path(config_path)
-        filename = path_obj.name
-        return create_workspace(
-            workspace_name,
-            resource_group,
-            subscription_id=subscription_id,
-            workspace_region=workspace_region,
-            filename=filename,
-        )
+
+    path_obj = Path(config_path)
+    filename = path_obj.name
+    return create_workspace(
+        workspace_name,
+        resource_group,
+        subscription_id=subscription_id,
+        workspace_region=workspace_region,
+        filename=filename,
+    )

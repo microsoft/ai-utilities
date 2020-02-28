@@ -18,8 +18,9 @@ from azure_utils.machine_learning.utils import get_or_create_workspace_from_proj
 from azure_utils.utilities import text_to_json
 
 
-def get_or_create_image(configuration_file: str = project_configuration_file, show_output: bool = True,
-                        models: list = None, dependencies=None) -> ContainerImage:
+def get_or_create_lightgbm_image(configuration_file: str = project_configuration_file, show_output: bool = True,
+                                 models: list = None, dependencies=None,
+                                 image_settings_name="image_name") -> ContainerImage:
     """
     Get or Create new Docker Image from Machine Learning Workspace
 
@@ -27,14 +28,24 @@ def get_or_create_image(configuration_file: str = project_configuration_file, sh
     :param show_output: toggle on/off standard output. default: `True`
     :param models Name of Model to package with Image from Machine Learning Workspace
     :param dependencies: List of files to include in image
+    :param image_settings_name: Setting from Project Configuration
     :return: New or Existing Docker Image for deployment to Kubernetes Compute
     """
-    project_configuration = ProjectConfiguration(configuration_file)
-    assert project_configuration.has_settings("image_name")
+    image_config = create_lightgbm_image_config(dependencies=dependencies)
 
-    image_name = project_configuration.get_value("image_name")
     if not models:
         models = []
+
+    return get_or_create_image(image_config, image_settings_name, models, show_output,
+                               configuration_file)
+
+
+def get_or_create_image(image_config, image_settings_name, models, show_output,
+                        configuration_file: str = project_configuration_file):
+    project_configuration = ProjectConfiguration(configuration_file)
+
+    assert project_configuration.has_settings(image_settings_name)
+    image_name = project_configuration.get_value(image_settings_name)
 
     workspace = get_or_create_workspace_from_project(project_configuration, show_output=show_output)
 
@@ -42,10 +53,7 @@ def get_or_create_image(configuration_file: str = project_configuration_file, sh
     if image_name in workspace_images and workspace_images[image_name].creation_state != "Failed":
         return workspace_images[image_name]
 
-    image_config = create_lightgbm_image_config(dependencies=dependencies)
-
     image_create_start = time.time()
-
     image = ContainerImage.create(name=image_name, models=models, image_config=image_config, workspace=workspace)
     image.wait_for_creation(show_output=show_output)
     assert image.creation_state != "Failed"
@@ -105,12 +113,26 @@ def run(body):
 
 
 def get_model(model_name, configuration_file=project_configuration_file, show_output=True):
+    """
+
+    :param model_name:
+    :param configuration_file:
+    :param show_output:
+    :return:
+    """
     project_configuration = ProjectConfiguration(configuration_file)
     workspace = get_or_create_workspace_from_project(project_configuration, show_output=show_output)
     return Model(workspace, name=model_name)
 
 
 def has_model(model_name, configuration_file=project_configuration_file, show_output=True):
+    """
+
+    :param model_name:
+    :param configuration_file:
+    :param show_output:
+    :return:
+    """
     project_configuration = ProjectConfiguration(configuration_file)
     workspace = get_or_create_workspace_from_project(project_configuration, show_output=show_output)
     return model_name in workspace.models

@@ -25,7 +25,7 @@ def test_config():
     assert proj_config.project_name() == project_name
     assert proj_config.get_value('sub_id') == 'my_sub'
     assert proj_config.get_value('workspace') == 'my_ws'
-    assert len(proj_config.get_settings()) == 2
+    assert len(proj_config.get_settings()) == 17
 
     # Save it and ensure the file exists
     proj_config.save_configuration()
@@ -36,7 +36,7 @@ def test_config():
     assert proj_config.project_name() == project_name
     assert proj_config.get_value('sub_id') == 'my_sub'
     assert proj_config.get_value('workspace') == 'my_ws'
-    assert len(proj_config.get_settings()) == 2
+    assert len(proj_config.get_settings()) == 17
 
     # Change a setting and test we get the right value
     proj_config.set_value('sub_id', 'new_sub')

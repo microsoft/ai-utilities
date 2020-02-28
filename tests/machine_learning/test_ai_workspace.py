@@ -6,7 +6,7 @@ Licensed under the MIT License.
 """
 import os
 
-from azure_utils.machine_learning.ai_workspace import AILabWorkspace, DeepRTSWorkspace, RTSWorkspace
+from azure_utils.machine_learning.ai_workspace import DeepRTSWorkspace, RTSWorkspace
 
 
 def test_get_or_create():
@@ -19,7 +19,7 @@ def test_create_stack_overflow_data():
     print(questions)
 
 
-def test_train_local():
+def test_get_or_create_model():
     if not os.path.isfile("script/create_model.py"):
         os.makedirs("script", exist_ok=True)
 
@@ -28,7 +28,7 @@ def test_train_local():
         with open("script/create_model.py", "w") as file:
             file.write(create_model_py)
 
-    model = RTSWorkspace.train_local()
+    model = RTSWorkspace.get_or_create_model()
     assert model
 
 

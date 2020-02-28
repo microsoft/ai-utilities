@@ -132,7 +132,7 @@ class BaseExperiment(object):
 
         profile = select_subscription(sub_name_or_id=config.SUBSCRIPTION_ID)
         profile_credentials, subscription_id, _ = profile.get_login_credentials()
-        rg = create_resource_group(profile_credentials, subscription_id, config.REGION, config.RESOURCE_GROUP)
+
         prem_str, storage_keys = create_premium_storage(
             profile_credentials, subscription_id, config.REGION, config.RESOURCE_GROUP, config.ACCOUNT_NAME,
         )
