@@ -8,14 +8,15 @@ import os
 
 from azureml.core import Workspace
 
-from azure_utils import DIRECTORY
+from azure_utils import directory
 from azure_utils.machine_learning.utils import load_configuration, get_or_create_workspace, \
-    get_workspace_from_config
+    get_workspace_from_config, get_or_create_workspace_from_file
 
-filepath = DIRECTORY
+filepath = directory
 
 
 def test_load_configuration():
+    """Test Loading Configuration to check sample file contents"""
 
     cfg = load_configuration(filepath + "/../sample_workspace_conf.yml")
     assert cfg
@@ -54,6 +55,15 @@ def test_get_workspace_from_config():
 
     get_or_create_workspace(cfg['workspace_name'], cfg['subscription_id'], cfg['resource_group'],
                             cfg['workspace_region'])
+
+    workspace = get_workspace_from_config()
+    assert isinstance(workspace, Workspace)
+
+
+def test_get_workspace_from_project_config():
+    """ Test Get Workspace From Project File"""
+
+    get_or_create_workspace_from_file()
 
     workspace = get_workspace_from_config()
     assert isinstance(workspace, Workspace)

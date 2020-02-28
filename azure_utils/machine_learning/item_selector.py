@@ -1,4 +1,12 @@
-# From: http://scikit-learn.org/0.18/auto_examples/hetero_feature_union.html
+"""
+ai-utilities - machine_learning/item_selector.py
+
+From: http://scikit-learn.org/0.18/auto_examples/hetero_feature_union.html
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the MIT License.
+"""
+
 from sklearn.base import BaseEstimator, TransformerMixin
 
 
@@ -13,7 +21,7 @@ class ItemSelector(BaseEstimator, TransformerMixin):
     >> len(data[keys]) == n_samples
 
     Please note that this is the opposite convention to scikit-learn
-    feature matrixes (where the first index corresponds to sample).
+    feature matrices (where the first index corresponds to sample).
 
     ItemSelector only requires that the collection implement getitem
     (data[keys]).  Examples include: a dict of lists, 2D numpy array,
@@ -37,23 +45,39 @@ class ItemSelector(BaseEstimator, TransformerMixin):
     """
 
     def __init__(self, keys):
-        if type(keys) is list:
+        if isinstance(keys, list):
             if any([getattr(key, '__hash__', None) is None for key in keys]):
                 raise TypeError('Not all keys are hashable')
         elif getattr(keys, '__hash__', None) is None:
             raise TypeError('keys is not hashable')
         self.keys = keys
 
-    def fit(self, x, *args, **kwargs):
-        if type(self.keys) is list:
-            if not all([key in x for key in self.keys]):
+    def fit(self, input_x, *args, **kwargs):
+        """
+
+        :param input_x: Set of items to fit with keys
+        :return: self
+        """
+        if isinstance(self.keys, list):
+            if not all([key in input_x for key in self.keys]):
                 raise KeyError('Not all keys in data')
-        elif self.keys not in x:
+        elif self.keys not in input_x:
             raise KeyError('key not in data')
         return self
 
     def transform(self, data_dict, *args, **kwargs):
+        """
+        Transform data based on keys
+
+        :param data_dict: Data to Transform
+        :return: Transformed data
+        """
         return data_dict[self.keys]
 
     def get_feature_names(self):
+        """
+        Get Feature Names
+
+        :return: get keys
+        """
         return self.keys

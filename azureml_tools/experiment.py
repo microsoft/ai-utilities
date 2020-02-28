@@ -7,20 +7,16 @@ import logging.config
 import os
 
 import azureml.core
-from azure.common.credentials import get_cli_profile
 from azureml.core import Datastore, Environment
 from azureml.core.compute import AmlCompute, ComputeTarget
 from azureml.core.compute_target import ComputeTargetException
-from azureml.core.conda_dependencies import CondaDependencies
-from azureml.core.runconfig import EnvironmentDefinition
 from azureml.train.dnn import Gloo, Nccl, PyTorch
-from toolz import curry
-
 from deepseismic_interpretation.azureml_tools import workspace_for_user
 from deepseismic_interpretation.azureml_tools.config import experiment_config
 from deepseismic_interpretation.azureml_tools.resource_group import create_resource_group
 from deepseismic_interpretation.azureml_tools.storage import create_premium_storage
 from deepseismic_interpretation.azureml_tools.subscription import select_subscription
+from toolz import curry
 
 _GPU_IMAGE = "mcr.microsoft.com/azureml/base-gpu:openmpi3.1.2-cuda10.0-cudnn7-ubuntu16.04"
 
@@ -58,7 +54,7 @@ def _create_cluster(workspace, cluster_name, vm_size, min_nodes, max_nodes):
 
 @curry
 def _create_estimator(
-    estimator_class, project_folder, entry_script, compute_target, script_params, node_count, env_def, distributed,
+        estimator_class, project_folder, entry_script, compute_target, script_params, node_count, env_def, distributed,
 ):
     logger = logging.getLogger(__name__)
 
@@ -77,7 +73,7 @@ def _create_estimator(
 
 
 def _create_datastore(
-    aml_workspace, datastore_name, container_name, account_name, account_key, create_if_not_exists=True,
+        aml_workspace, datastore_name, container_name, account_name, account_key, create_if_not_exists=True,
 ):
     """Creates datastore
 
@@ -130,7 +126,6 @@ def _check_config(config):
 
 class BaseExperiment(object):
     def __init__(self, experiment_name, config=experiment_config):
-
         self._logger = logging.getLogger(__name__)
         self._logger.info("SDK version:" + str(azureml.core.VERSION))
         _check_config(config)
@@ -187,13 +182,13 @@ def _get_distributed(distributed_string):
 def create_environment_from_local(name="amlenv", conda_env_name=None):
     """Creates environment from environment
 
-    If no value is passed in to the conda_env_name it will simply select the 
+    If no value is passed in to the conda_env_name it will simply select the
     currently running environment
-    
+
     Args:
         name (str, optional): name of environment. Defaults to "amlenv".
         conda_env_name (str, optional): name of the environment to use. Defaults to None.
-    
+
     Returns:
         azureml.core.Environment
     """
@@ -203,11 +198,11 @@ def create_environment_from_local(name="amlenv", conda_env_name=None):
 
 def create_environment_from_conda_file(conda_path, name="amlenv"):
     """Creates environment from supplied conda file
-    
+
     Args:
         conda_path (str): path to conda environment file
         name (str, optional): name of environment. Defaults to "amlenv".
-    
+
     Returns:
         azureml.core.Environment
     """
@@ -216,7 +211,7 @@ def create_environment_from_conda_file(conda_path, name="amlenv"):
 
 class PyTorchExperiment(BaseExperiment):
     """Creates Experiment object that can be used to create clusters and submit experiments
-    
+
     Returns:
         PyTorchExperiment: PyTorchExperiment object
     """
@@ -232,14 +227,14 @@ class PyTorchExperiment(BaseExperiment):
         return {key: _replace(value) for key, value in script_params.items()}
 
     def submit(
-        self,
-        project_folder,
-        entry_script,
-        script_params,
-        node_count=1,
-        workers_per_node=1,
-        distributed=None,
-        environment=None,
+            self,
+            project_folder,
+            entry_script,
+            script_params,
+            node_count=1,
+            workers_per_node=1,
+            distributed=None,
+            environment=None,
     ):
         """Submit experiment for remote execution on AzureML clusters.
 
@@ -252,7 +247,7 @@ class PyTorchExperiment(BaseExperiment):
             node_count (int, optional): [description].
             wait_for_completion (bool, optional): Whether to block until experiment is done. Defaults to True.
             docker_args (tuple, optional): Docker arguments to pass. Defaults to ().
-        
+
         Returns:
             azureml.core.Run: AzureML Run object
         """
@@ -281,4 +276,3 @@ class PyTorchExperiment(BaseExperiment):
 
         self._logger.debug(estimator.conda_dependencies.__dict__)
         return self._experiment.submit(estimator)
-
