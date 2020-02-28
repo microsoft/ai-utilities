@@ -4,20 +4,14 @@ AI-Utilities - create_deep_model.py
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
-import logging
 
 import numpy as np
 import wget
-from IPython import get_ipython
 from PIL import Image, ImageOps
-from azure.cli.command_modules.ml.service._docker_utils import get_docker_client
-from azure.mgmt.containerregistry import ContainerRegistryManagementClient
-from azureml._model_management._util import pull_docker_image
 from azureml.core import ComputeTarget
 from azureml.core.compute import AksCompute
 from azureml.core.conda_dependencies import CondaDependencies
 from azureml.core.image import ContainerImage
-from azureml.core.model import Model
 from azureml.core.webservice import Webservice, AksWebservice
 from keras.applications.imagenet_utils import preprocess_input
 from resnet import ResNet152
@@ -252,116 +246,116 @@ def get_or_create_deep_aks(ws, aks_name):
     return aks_target
 
 
-def test_driver(ws, get_model_api):
-    logging.basicConfig(level=logging.DEBUG)
-    get_ipython().magic('run driver.py')
-    print(ws.name, ws.resource_group, ws.location, ws.subscription_id, sep="\n")
-    # Get the model and score against an example image
-    # In[ ]:
-    model_path = Model.get_model_path("resnet_model", _workspace=ws)
-    IMAGEURL = "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/220px-Lynx_lynx_poing.jpg"
-    # Always make sure you don't have any lingering notebooks running. Otherwise it may cause GPU memory issue.
-    process_and_score = get_model_api()
-    resp = process_and_score({"lynx": open("220px-Lynx_lynx_poing.jpg", "rb")})
-    # Clear GPU memory
-    from keras import backend as K
-    # In[ ]:
-    K.clear_session()
-
-
-def test_image(image, resource_group, ws):
-    # - Pull the image from ACR registry to local host
-    # - Start a container
-    # - Test API call
-    # In[ ]:
-    # Getting your container details
-    container_reg = ws.get_details()["containerRegistry"]
-    reg_name = container_reg.split("/")[-1]
-    container_url = "\"" + image.image_location + "\","
-    subscription_id = ws.subscription_id
-    client = ContainerRegistryManagementClient(ws._auth, subscription_id)
-    result = client.registries.list_credentials(resource_group, reg_name, custom_headers=None, raw=False)
-    username = result.username
-    password = result.passwords[0].value
-    print('ContainerURL:{}'.format(image.image_location))
-    print('Servername: {}'.format(reg_name))
-    print('Username: {}'.format(username))
-    print('Password: {}'.format(password))
-    dc = get_docker_client()
-    pull_docker_image(dc, image.image_location, username, password)
-    # In[ ]:
-    # make sure port 80 is not occupied
-    container_labels = {'containerName': 'kerasgpu'}
-    container = dc.containers.run(image.image_location,
-                                  detach=True,
-                                  ports={'5001/tcp': 80},
-                                  labels=container_labels,
-                                  runtime='nvidia')
-    for log_msg in container.logs(stream=True):
-        str_msg = log_msg.decode('UTF8')
-        print(str_msg)
-        if "Model loading time:" in str_msg:
-            print('Model loaded and container ready')
-            break
-    client = docker.APIClient()
-    details = client.inspect_container(container.id)
-    service_ip = details['NetworkSettings']['Ports']['5001/tcp'][0]['HostIp']
-    service_port = details['NetworkSettings']['Ports']['5001/tcp'][0]['HostPort']
-    # Wait a few seconds for the application to spin up and then check that everything works.
-    print('Checking service on {} port {}'.format(service_ip, service_port))
-    endpoint = "http://__service_ip:__service_port"
-    endpoint = endpoint.replace('__service_ip', service_ip)
-    endpoint = endpoint.replace('__service_port', service_port)
-    max_attempts = 50
-    output_str = wait_until_ready(endpoint, max_attempts)
-    print(output_str)
-    # In[ ]:
-    get_ipython().system("curl 'http://{service_ip}:{service_port}/'")
-    IMAGEURL = "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/220px-Lynx_lynx_poing.jpg"
-    # In[ ]:
-    plt.imshow(to_img(IMAGEURL))
-    # In[ ]:
-    with open('220px-Lynx_lynx_poing.jpg', 'rb') as f:
-        img_data = f.read()
-    # In[ ]:
-    get_ipython().magic("time r = requests.post('http://0.0.0.0:80/score', files={'image': img_data})")
-    print(r)
-    r.json()
-    # In[ ]:
-    images = (
-        "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/220px-Lynx_lynx_poing.jpg",
-        "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/Roadster_2.5_windmills_trimmed.jpg",
-        "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/Harmony_of_the_Seas_(ship,_2016)_001.jpg",
-    )
-    url = "http://0.0.0.0:80/score"
-    results = [
-        requests.post(url, files={'image': read_image_from(img).read()}) for img in images
-    ]
-    plot_predictions(images, results)
-    image_data = list(map(lambda img: read_image_from(img).read(), images))  # Retrieve the images and data
-    timer_results = list()
-    for img in image_data:
-        res = get_ipython().magic("timeit -r 1 -o -q requests.post(url, files={'image': img})")
-        timer_results.append(res.best)
-    # In[ ]:
-    print("Average time taken: {0:4.2f} ms".format(10 ** 3 * np.mean(timer_results)))
-    # In[ ]:
-    container.stop()
-    # remove stopped container
-    get_ipython().system('docker system prune -f')
-    # We can now move on to [Create kubenetes cluster and deploy web service](04_DeployOnAKS.ipynb) with the image we
-    # just built.
-
-
-def test_web_service(aks_service):
-    IMAGEURL = "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/220px-Lynx_lynx_poing.jpg"
-    plt.imshow(to_img(IMAGEURL))
-    service_keys = aks_service.get_keys()
-    headers = {}
-    headers["Authorization"] = "Bearer " + service_keys[0]
-    resp = requests.post(
-        aks_service.scoring_uri,
-        headers=headers,
-        files={"image": read_image_from(IMAGEURL).read()},
-    )
-    print(resp.json())
+# def test_driver(ws, get_model_api):
+#     logging.basicConfig(level=logging.DEBUG)
+#     get_ipython().magic('run driver.py')
+#     print(ws.name, ws.resource_group, ws.location, ws.subscription_id, sep="\n")
+#     # Get the model and score against an example image
+#     # In[ ]:
+#     model_path = Model.get_model_path("resnet_model", _workspace=ws)
+#     IMAGEURL = "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/220px-Lynx_lynx_poing.jpg"
+#     # Always make sure you don't have any lingering notebooks running. Otherwise it may cause GPU memory issue.
+#     process_and_score = get_model_api()
+#     resp = process_and_score({"lynx": open("220px-Lynx_lynx_poing.jpg", "rb")})
+#     # Clear GPU memory
+#     from keras import backend as K
+#     # In[ ]:
+#     K.clear_session()
+#
+#
+# def test_image(image, resource_group, ws):
+#     # - Pull the image from ACR registry to local host
+#     # - Start a container
+#     # - Test API call
+#     # In[ ]:
+#     # Getting your container details
+#     container_reg = ws.get_details()["containerRegistry"]
+#     reg_name = container_reg.split("/")[-1]
+#     container_url = "\"" + image.image_location + "\","
+#     subscription_id = ws.subscription_id
+#     client = ContainerRegistryManagementClient(ws._auth, subscription_id)
+#     result = client.registries.list_credentials(resource_group, reg_name, custom_headers=None, raw=False)
+#     username = result.username
+#     password = result.passwords[0].value
+#     print('ContainerURL:{}'.format(image.image_location))
+#     print('Servername: {}'.format(reg_name))
+#     print('Username: {}'.format(username))
+#     print('Password: {}'.format(password))
+#     dc = get_docker_client()
+#     pull_docker_image(dc, image.image_location, username, password)
+#     # In[ ]:
+#     # make sure port 80 is not occupied
+#     container_labels = {'containerName': 'kerasgpu'}
+#     container = dc.containers.run(image.image_location,
+#                                   detach=True,
+#                                   ports={'5001/tcp': 80},
+#                                   labels=container_labels,
+#                                   runtime='nvidia')
+#     for log_msg in container.logs(stream=True):
+#         str_msg = log_msg.decode('UTF8')
+#         print(str_msg)
+#         if "Model loading time:" in str_msg:
+#             print('Model loaded and container ready')
+#             break
+#     client = docker.APIClient()
+#     details = client.inspect_container(container.id)
+#     service_ip = details['NetworkSettings']['Ports']['5001/tcp'][0]['HostIp']
+#     service_port = details['NetworkSettings']['Ports']['5001/tcp'][0]['HostPort']
+#     # Wait a few seconds for the application to spin up and then check that everything works.
+#     print('Checking service on {} port {}'.format(service_ip, service_port))
+#     endpoint = "http://__service_ip:__service_port"
+#     endpoint = endpoint.replace('__service_ip', service_ip)
+#     endpoint = endpoint.replace('__service_port', service_port)
+#     max_attempts = 50
+#     output_str = wait_until_ready(endpoint, max_attempts)
+#     print(output_str)
+#     # In[ ]:
+#     get_ipython().system("curl 'http://{service_ip}:{service_port}/'")
+#     IMAGEURL = "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/220px-Lynx_lynx_poing.jpg"
+#     # In[ ]:
+#     plt.imshow(to_img(IMAGEURL))
+#     # In[ ]:
+#     with open('220px-Lynx_lynx_poing.jpg', 'rb') as f:
+#         img_data = f.read()
+#     # In[ ]:
+#     get_ipython().magic("time r = requests.post('http://0.0.0.0:80/score', files={'image': img_data})")
+#     print(r)
+#     r.json()
+#     # In[ ]:
+#     images = (
+#         "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/220px-Lynx_lynx_poing.jpg",
+#         "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/Roadster_2.5_windmills_trimmed.jpg",
+#         "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/Harmony_of_the_Seas_(ship,_2016)_001.jpg",
+#     )
+#     url = "http://0.0.0.0:80/score"
+#     results = [
+#         requests.post(url, files={'image': read_image_from(img).read()}) for img in images
+#     ]
+#     plot_predictions(images, results)
+#     image_data = list(map(lambda img: read_image_from(img).read(), images))  # Retrieve the images and data
+#     timer_results = list()
+#     for img in image_data:
+#         res = get_ipython().magic("timeit -r 1 -o -q requests.post(url, files={'image': img})")
+#         timer_results.append(res.best)
+#     # In[ ]:
+#     print("Average time taken: {0:4.2f} ms".format(10 ** 3 * np.mean(timer_results)))
+#     # In[ ]:
+#     container.stop()
+#     # remove stopped container
+#     get_ipython().system('docker system prune -f')
+#     # We can now move on to [Create kubenetes cluster and deploy web service](04_DeployOnAKS.ipynb) with the image we
+#     # just built.
+#
+#
+# def test_web_service(aks_service):
+#     IMAGEURL = "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/220px-Lynx_lynx_poing.jpg"
+#     plt.imshow(to_img(IMAGEURL))
+#     service_keys = aks_service.get_keys()
+#     headers = {}
+#     headers["Authorization"] = "Bearer " + service_keys[0]
+#     resp = requests.post(
+#         aks_service.scoring_uri,
+#         headers=headers,
+#         files={"image": read_image_from(IMAGEURL).read()},
+#     )
+#     print(resp.json())
