@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="Microsoft-AI-Azure-Utility-Samples",  # This is the name of your PyPI-package.
-    version="0.3.6",
+    version="0.3.7",
     description="Utility Samples for AI Solutions",
     author="Daniel Ciborowski & Daniel Grecoe",
     author_email="dciborow@microsoft.com",
