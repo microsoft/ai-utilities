@@ -14,6 +14,7 @@ from azureml.core.webservice import AksWebservice
 
 from azure_utils.configuration.notebook_config import project_configuration_file
 from azure_utils.configuration.project_configuration import ProjectConfiguration
+from azure_utils.machine_learning.realtime.image import get_or_create_image
 from azure_utils.machine_learning.utils import get_or_create_workspace_from_project
 from azure_utils.utilities import text_to_json
 
@@ -63,7 +64,8 @@ def get_or_create_service(configuration_file: str = project_configuration_file, 
 
     aks_config = AksWebservice.deploy_configuration(num_replicas=num_replicas, cpu_cores=cpu_cores)
 
-    assert workspace.images[image_name]
+    if image_name not in workspace.images:
+        get_or_create_image()
     image = workspace.images[image_name]
 
     deploy_from_image_start = time.time()

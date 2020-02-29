@@ -10,7 +10,7 @@ from azure_utils.machine_learning.datasets.stack_overflow_data import create_sta
 from azure_utils.machine_learning.deep.create_deep_model import create_deep_model, develop_model_driver, build_image, \
     deploy_on_aks
 from azure_utils.machine_learning.realtime.image import get_or_create_image
-from azure_utils.machine_learning.realtime.kubernetes import get_or_create_aks_service
+from azure_utils.machine_learning.realtime.kubernetes import get_or_create_aks_service, get_or_create_aks
 from azure_utils.machine_learning.train_local import train_local, create_stack_overflow_model_script
 from azure_utils.machine_learning.utils import get_or_create_workspace_from_file
 
@@ -59,7 +59,7 @@ class RTSWorkspace(AILabWorkspace):
     def get_or_create_model():
         RTSWorkspace.create_stack_overflow_data()
         RTSWorkspace.create_stack_overflow_model_script()
-        AILabWorkspace.train_local()
+        RTSWorkspace.train_local()
 
     @staticmethod
     def get_or_create_image(**kwargs):
@@ -82,6 +82,10 @@ class RTSWorkspace(AILabWorkspace):
     @staticmethod
     def train_local():
         return train_local()
+
+    @staticmethod
+    def get_or_create_aks(**kwargs):
+        return get_or_create_aks()
 
     @staticmethod
     def get_or_or_create_realtime_endpoint():
@@ -113,7 +117,7 @@ class DeepRTSWorkspace(AILabWorkspace):
 
     @staticmethod
     def get_or_or_create_realtime_endpoint():
-        RTSWorkspace.get_or_create_workspace()
-        RTSWorkspace.get_or_create_model()
-        RTSWorkspace.get_or_create_image()
-        RTSWorkspace.get_or_create_service()
+        DeepRTSWorkspace.get_or_create_workspace()
+        DeepRTSWorkspace.get_or_create_model()
+        DeepRTSWorkspace.get_or_create_image()
+        DeepRTSWorkspace.get_or_create_service()

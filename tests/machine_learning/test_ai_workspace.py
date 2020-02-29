@@ -6,7 +6,7 @@ Licensed under the MIT License.
 """
 import os
 
-from azure_utils.machine_learning.ai_workspace import AILabWorkspace, DeepRTSWorkspace, RTSWorkspace
+from azure_utils.machine_learning.ai_workspace import DeepRTSWorkspace, RTSWorkspace
 
 
 def test_get_or_create():
