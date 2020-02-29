@@ -47,12 +47,11 @@ class AILabWorkspace(Workspace):
 
     @staticmethod
     def get_or_create_model():
+        """Get Or Create Model"""
         raise NotImplementedError
 
 
 class RTSWorkspace(AILabWorkspace):
-    def __init__(self, ws):
-        super().__init__(ws)
 
     @staticmethod
     def get_or_create_model():
