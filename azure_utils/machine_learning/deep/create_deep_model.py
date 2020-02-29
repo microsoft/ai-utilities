@@ -23,6 +23,11 @@ from azure_utils.machine_learning.utils import get_or_create_workspace_from_proj
 
 
 def create_deep_model(configuration_file: str = project_configuration_file):
+    """
+
+    :param configuration_file:
+    :return:
+    """
     project_configuration = ProjectConfiguration(configuration_file)
 
     # If you see error msg "InternalError: Dst tensor is not initialized.", it indicates there are not enough memory.
@@ -58,12 +63,16 @@ def create_deep_model(configuration_file: str = project_configuration_file):
     print(model.name, model.description, model.version)
 
     # Clear GPU memory
-    from keras import backend as K
+    from keras import backend
 
-    K.clear_session()
+    backend.clear_session()
 
 
 def download_test_image():
+    """
+
+    :return:
+    """
     wget.download("https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/220px-Lynx_lynx_poing.jpg")
     img_path = "220px-Lynx_lynx_poing.jpg"
     print(Image.open(img_path).size)
@@ -79,22 +88,20 @@ def download_test_image():
 
 
 def develop_model_driver():
-    # coding: utf-8
+    """
+    Develop Model Driver
 
-    # # Develop Model Driver
-    #
-    # In this notebook, we will develop the API that will call our model. This module initializes the model,
-    # transforms the input so that it is in the appropriate format and defines the scoring method that will produce
-    # the predictions. The API will expect the input to be passed as an image. Once a request is received,
-    # the API will convert load the image preprocess it and pass it to the model. There are two main functions in the
-    # API: init() and run(). The init() function loads the model and returns a scoring function. The run() function
-    # processes the images and uses the first function to score them.
-    #
-    #     Note: Always make sure you don't have any lingering notebooks running (Shutdown previous notebooks).
-    #     Otherwise it may cause GPU memory issue.
+    In this notebook, we will develop the API that will call our model. This module initializes the model,
+    transforms the input so that it is in the appropriate format and defines the scoring method that will produce
+    the predictions. The API will expect the input to be passed as an image. Once a request is received,
+    the API will convert load the image preprocess it and pass it to the model. There are two main functions in the
+    API: init() and run(). The init() function loads the model and returns a scoring function. The run() function
+    processes the images and uses the first function to score them.
 
-    # In[ ]:
+        Note: Always make sure you don't have any lingering notebooks running (Shutdown previous notebooks).
+        Otherwise it may cause GPU memory issue.
 
+    """
     # ## Write and save driver script
     with open('driver.py', "w") as file:
         file.write('\nfrom resnet152 import ResNet152\nfrom keras.preprocessing import image\nfrom '
@@ -188,6 +195,11 @@ def build_image(configuration_file: str = project_configuration_file):
 
 
 def deploy_on_aks(configuration_file: str = project_configuration_file):
+    """
+
+    :param configuration_file:
+    :return:
+    """
     project_configuration = ProjectConfiguration(configuration_file)
     assert project_configuration.has_settings("deep_image_name")
     assert project_configuration.has_settings("deep_aks_service_name")
@@ -227,6 +239,11 @@ def deploy_on_aks(configuration_file: str = project_configuration_file):
 
 
 def get_or_create_deep_aks(configuration_file: str = project_configuration_file):
+    """
+
+    :param configuration_file:
+    :return:
+    """
     project_configuration = ProjectConfiguration(configuration_file)
     assert project_configuration.has_settings("deep_aks_name")
 

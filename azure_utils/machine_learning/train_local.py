@@ -25,7 +25,7 @@ Licensed under the MIT License.
 import os
 import sys
 
-from azureml.core import Experiment
+from azureml.core import Experiment, Model
 from azureml.core import ScriptRunConfig
 from azureml.core.runconfig import RunConfiguration
 
@@ -36,7 +36,19 @@ from azure_utils.machine_learning.utils import get_workspace_from_config
 
 def train_local(model_name="question_match_model", num_estimators="1", experiment_name="mlaks-train-on-local",
                 model_path="./outputs/model.pkl", script="create_model.py", source_directory="./script",
-                show_output=True):
+                show_output=True) -> Model:
+    """
+    Train Model Locally
+
+    :param model_name:
+    :param num_estimators:
+    :param experiment_name:
+    :param model_path:
+    :param script:
+    :param source_directory:
+    :param show_output:
+    :return:
+    """
     model = has_model(model_name)
     if model:
         return get_model(model_name)
@@ -75,6 +87,7 @@ def train_local(model_name="question_match_model", num_estimators="1", experimen
 
 
 def create_stack_overflow_model_script():
+    """ Create Model Script for LightGBM with Stack Overflow Data """
     if not os.path.isfile("script/create_model.py"):
         os.makedirs("script", exist_ok=True)
 
@@ -85,6 +98,11 @@ def create_stack_overflow_model_script():
 
 
 def get_run_configuration():
+    """
+    Get Local Run Config
+
+    :return:
+    """
     # Editing a run configuration property on-fly.
     run_config_user_managed = RunConfiguration()
     run_config_user_managed.environment.python.user_managed_dependencies = True

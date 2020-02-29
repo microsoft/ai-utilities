@@ -21,6 +21,10 @@ from dotenv import get_key
 
 
 def check_login():
+    """
+
+    :return:
+    """
     try:
         os.popen("az account show")
         return True
@@ -45,6 +49,11 @@ def clean_text(text):
 
 
 def replace_link(match):
+    """
+
+    :param match:
+    :return:
+    """
     if re.match(r'[a-z]+://', match.group(1)):
         return ''
     return match.group(1)
@@ -64,39 +73,50 @@ def round_sample_strat(input_dataframe, strat, **kwargs):
 def random_merge(dataframe_a, dataframe_b, number_to_merge=20, on='AnswerId', key='key', n='n'):
     """Pair all rows of A with 1 matching row on "on" and N-1 random rows from B"""
     assert key not in dataframe_a and key not in dataframe_b
-    X = dataframe_a.copy()
-    X[key] = dataframe_a[on]
-    Y = dataframe_b.copy()
-    Y[key] = dataframe_b[on]
-    match = X.merge(Y, on=key).drop(key, axis=1)
+    x = dataframe_a.copy()
+    x[key] = dataframe_a[on]
+    y = dataframe_b.copy()
+    y[key] = dataframe_b[on]
+    match = x.merge(y, on=key).drop(key, axis=1)
     match[n] = 0
     df_list = [match]
     for i in dataframe_a.index:
-        X = dataframe_a.loc[[i]]
-        Y = dataframe_b[dataframe_b[on] != X[on].iloc[0]].sample(number_to_merge - 1)
-        X[key] = 1
-        Y[key] = 1
-        Z = X.merge(Y, how='outer', on=key).drop(key, axis=1)
-        Z[n] = range(1, number_to_merge)
-        df_list.append(Z)
+        x = dataframe_a.loc[[i]]
+        y = dataframe_b[dataframe_b[on] != x[on].iloc[0]].sample(number_to_merge - 1)
+        x[key] = 1
+        y[key] = 1
+        z = x.merge(y, how='outer', on=key).drop(key, axis=1)
+        z[n] = range(1, number_to_merge)
+        df_list.append(z)
     df = pd.concat(df_list, ignore_index=True)
     return df
 
 
 def text_to_json(text):
+    """
+
+    :param text:
+    :return:
+    """
     return json.dumps({'input': '{0}'.format(text)})
 
 
 def write_json_to_file(json_dict, filename, mode='w'):
+    """
+
+    :param json_dict:
+    :param filename:
+    :param mode:
+    """
     with open(filename, mode) as outfile:
         json.dump(json_dict, outfile, indent=4, sort_keys=True)
         outfile.write('\n\n')
 
 
-def read_questions(path, id, answerid):
+def read_questions(path, question_id, answerid):
     """Read in a questions file with at least Id and AnswerId columns."""
     questions = pd.read_csv(path, sep='\t', encoding='latin1')
-    questions[id] = questions[id].astype(str)
+    questions[question_id] = questions[question_id].astype(str)
     questions[answerid] = questions[answerid].astype(str)
     questions = questions.set_index(id, drop=False)
     questions.sort_index(inplace=True)
@@ -104,6 +124,11 @@ def read_questions(path, id, answerid):
 
 
 def get_auth(env_path):
+    """
+
+    :param env_path:
+    :return:
+    """
     logger = logging.getLogger(__name__)
     if get_key(env_path, 'password') != "YOUR_SERVICE_PRINCIPAL_PASSWORD":
         logger.debug("Trying to create Workspace with Service Principal")

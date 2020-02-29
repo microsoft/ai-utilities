@@ -1,5 +1,5 @@
 """
-azure-utils - configuraiton_validation.py
+azure-utils - configuration_validation.py
 
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.

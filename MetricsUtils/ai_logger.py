@@ -88,10 +88,6 @@ class StatisticsCollector:
             ms_delta = time_diff.total_seconds() * 1000
             StatisticsCollector.__metrics__[collection_entry.value] = ms_delta
 
-    '''
-
-    '''
-
     @staticmethod
     def add_entry(collection_entry, data_point):
         """

@@ -9,7 +9,7 @@ Import the needed functionality
     Python GUI library
 - configuration.ProjectConfiguration
     Configuration object that reads/writes to the configuration settings YAML file.
-- configurationui.SettingsUpdate
+- configuration_ui.SettingsUpdate
     tkinter based UI that dynamically loads any appropriate configuration file
     and displays it to the user to alter the settings.
 
@@ -84,7 +84,7 @@ def configure_settings(configuration_yaml: str = project_configuration_file):
 
 def get_settings(configuration_yaml: str = project_configuration_file) -> ProjectConfiguration:
     """
-        Aquire the project settings from the provided configuration_yaml file.
+        Acquire the project settings from the provided configuration_yaml file.
         If a file is not provided, the default ./project.yml will be created and
         and empty set of settings will be returned to the user.
 

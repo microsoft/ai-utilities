@@ -52,6 +52,7 @@ class ItemSelector(BaseEstimator, TransformerMixin):
             raise TypeError('keys is not hashable')
         self.keys = keys
 
+    # noinspection PyUnusedLocal,PyUnusedLocal
     def fit(self, input_x, *args, **kwargs):
         """
 
@@ -65,6 +66,7 @@ class ItemSelector(BaseEstimator, TransformerMixin):
             raise KeyError('key not in data')
         return self
 
+    # noinspection PyUnusedLocal,PyUnusedLocal
     def transform(self, data_dict, *args, **kwargs):
         """
         Transform data based on keys

@@ -105,12 +105,26 @@ def run(body):
 
 
 def get_model(model_name, configuration_file=project_configuration_file, show_output=True):
+    """
+
+    :param model_name:
+    :param configuration_file:
+    :param show_output:
+    :return:
+    """
     project_configuration = ProjectConfiguration(configuration_file)
     workspace = get_or_create_workspace_from_project(project_configuration, show_output=show_output)
     return Model(workspace, name=model_name)
 
 
 def has_model(model_name, configuration_file=project_configuration_file, show_output=True):
+    """
+
+    :param model_name:
+    :param configuration_file:
+    :param show_output:
+    :return:
+    """
     project_configuration = ProjectConfiguration(configuration_file)
     workspace = get_or_create_workspace_from_project(project_configuration, show_output=show_output)
     return model_name in workspace.models
