@@ -78,7 +78,7 @@ def create_stack_overflow_model_script():
     os.makedirs("script", exist_ok=True)
 
     create_model_py = """
-    import argparse
+import argparse
 import os
 
 from azureml.core import Run
