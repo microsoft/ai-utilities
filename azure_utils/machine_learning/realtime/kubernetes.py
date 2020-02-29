@@ -125,7 +125,13 @@ def get_or_create_aks(configuration_file: str = project_configuration_file, vm_s
     return aks_target
 
 
-def test_aks(directory, aks_service):
+def test_aks(directory: str, aks_service: AksWebservice):
+    """
+    Test AKS with sample call.
+
+    :param directory: directory of data_folder with test data
+    :param aks_service: AKS Web Service to Test
+    """
     num_dupes_to_score = 4
 
     dupes_test_path = directory + '/data_folder/dupes_test.tsv'

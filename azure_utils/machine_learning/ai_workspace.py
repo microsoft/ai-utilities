@@ -136,8 +136,11 @@ class RTSWorkspace(AILabWorkspace):
         return get_or_create_aks()
 
     @staticmethod
-    def get_or_or_create_realtime_endpoint():
-        """ Get or Create Real-time Endpoint"""
+    def get_or_or_create_realtime_endpoint(**kwargs):
+        """ Get or Create Real-time Endpoint
+
+        :param kwargs: keyword args
+        """
         RTSWorkspace.get_or_create_workspace()
         RTSWorkspace.get_or_create_model()
         RTSWorkspace.get_or_create_image()
@@ -191,8 +194,11 @@ class DeepRTSWorkspace(AILabWorkspace):
         develop_model_driver()
 
     @staticmethod
-    def get_or_or_create_realtime_endpoint():
-        """ Get or Create Real-time Endpoint"""
+    def get_or_or_create_realtime_endpoint(**kwargs):
+        """ Get or Create Real-time Endpoint
+
+        :param kwargs: keyword args
+        """
         DeepRTSWorkspace.get_or_create_workspace()
         DeepRTSWorkspace.get_or_create_model()
         DeepRTSWorkspace.get_or_create_image()

@@ -34,9 +34,9 @@ def check_login():
 
 def read_csv_gz(url, **kwargs):
     """Load raw data from a .tsv.gz file into Pandas data frame."""
-    df = pd.read_csv(gzip.open(requests.get(url, stream=True).raw, mode='rb'),
-                     sep='\t', encoding='utf8', **kwargs)
-    return df.set_index('Id')
+    dataframe = pd.read_csv(gzip.open(requests.get(url, stream=True).raw, mode='rb'),
+                            sep='\t', encoding='utf8', **kwargs)
+    return dataframe.set_index('Id')
 
 
 def clean_text(text):
@@ -61,8 +61,8 @@ def replace_link(match):
 
 def round_sample(input_dataframe, frac=0.1, min_samples=1):
     """Sample X ensuring at least min samples are selected."""
-    n = max(min_samples, math.floor(len(input_dataframe) * frac))
-    return input_dataframe.sample(n)
+    num_samples = max(min_samples, math.floor(len(input_dataframe) * frac))
+    return input_dataframe.sample(num_samples)
 
 
 def round_sample_strat(input_dataframe, strat, **kwargs):
@@ -70,26 +70,26 @@ def round_sample_strat(input_dataframe, strat, **kwargs):
     return input_dataframe.groupby(strat).apply(round_sample, **kwargs)
 
 
-def random_merge(dataframe_a, dataframe_b, number_to_merge=20, on='AnswerId', key='key', n='n'):
+def random_merge(dataframe_a, dataframe_b, number_to_merge=20, merge_col='AnswerId', key='key', n='n'):
     """Pair all rows of A with 1 matching row on "on" and N-1 random rows from B"""
     assert key not in dataframe_a and key not in dataframe_b
-    x = dataframe_a.copy()
-    x[key] = dataframe_a[on]
-    y = dataframe_b.copy()
-    y[key] = dataframe_b[on]
-    match = x.merge(y, on=key).drop(key, axis=1)
+    dataframe_a_copy = dataframe_a.copy()
+    dataframe_a_copy[key] = dataframe_a[merge_col]
+    dataframe_b_copy = dataframe_b.copy()
+    dataframe_b_copy[key] = dataframe_b[merge_col]
+    match = dataframe_a_copy.merge(dataframe_b_copy, on=key).drop(key, axis=1)
     match[n] = 0
     df_list = [match]
     for i in dataframe_a.index:
-        x = dataframe_a.loc[[i]]
-        y = dataframe_b[dataframe_b[on] != x[on].iloc[0]].sample(number_to_merge - 1)
-        x[key] = 1
-        y[key] = 1
-        z = x.merge(y, how='outer', on=key).drop(key, axis=1)
+        dataframe_a_copy = dataframe_a.loc[[i]]
+        dataframe_b_copy = dataframe_b[dataframe_b[merge_col] != dataframe_a_copy[merge_col].iloc[0]].sample(
+            number_to_merge - 1)
+        dataframe_a_copy[key] = 1
+        dataframe_b_copy[key] = 1
+        z = dataframe_a_copy.merge(dataframe_b_copy, how='outer', on=key).drop(key, axis=1)
         z[n] = range(1, number_to_merge)
         df_list.append(z)
-    df = pd.concat(df_list, ignore_index=True)
-    return df
+    return pd.concat(df_list, ignore_index=True)
 
 
 def text_to_json(text):
