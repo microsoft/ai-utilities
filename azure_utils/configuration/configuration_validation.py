@@ -12,7 +12,7 @@ from enum import Enum
 from typing import Optional
 
 from azure.common.client_factory import get_client_from_cli_profile
-from azure.mgmt.resource import ResourceManagementClient
+from azure.mgmt.resource import ResourceManagementClient, SubscriptionClient
 from msrestazure.azure_exceptions import CloudError
 
 AZURE_WITH_AZ_LOGIN_ = "Log into azure with 'az login'"
@@ -356,10 +356,11 @@ class Validation:
 
         :return: Azure Subscription ID
         """
-        if self.current_subscription:
-            return self.current_subscription
+        try:
+            result = self._get_data_as_json("az account show")
+        except OSError:
+            raise Exception("Try and run `az login`")
 
-        result = self._get_data_as_json("az account show")
         if result:
             self.current_subscription = result['id']
         return self.current_subscription
@@ -386,8 +387,6 @@ class Validation:
                                                                 sub_id, current_sub))
         return return_result
 
-    # Custom validators : resource group
-
     def _validate_resource_group(self, type_name, group_name) -> validationResult:
         """
         Validate Resource Group
@@ -399,10 +398,12 @@ class Validation:
         """
         return_result = ResultsGenerator.create_success(type_name, group_name, AZURE_WITH_AZ_LOGIN_)
 
-        current_sub = self._get_current_subscription()
-        if not current_sub:
+        try:
+            current_sub = self._get_current_subscription()
+            if not current_sub:
+                return_result = ResultsGenerator.create_failure(type_name, group_name, AZURE_WITH_AZ_LOGIN_)
+        except OSError:
             return_result = ResultsGenerator.create_failure(type_name, group_name, AZURE_WITH_AZ_LOGIN_)
-
         if not return_result:
             rmc_client = get_client_from_cli_profile(ResourceManagementClient)
             try:

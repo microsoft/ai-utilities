@@ -1,7 +1,3 @@
-[pre-commit-hook]
-command=pylint
-limit=8.0
-
 [MASTER]
 
 # A comma-separated list of package or module names from where C extensions may

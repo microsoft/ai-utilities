@@ -8,7 +8,7 @@ from azureml.core import Workspace
 
 from azure_utils.machine_learning.datasets.stack_overflow_data import create_stack_overflow_data
 from azure_utils.machine_learning.deep.create_deep_model import create_deep_model, develop_model_driver, build_image, \
-    deploy_on_aks
+    deploy_on_aks, get_or_create_deep_aks
 from azure_utils.machine_learning.realtime.image import get_or_create_image
 from azure_utils.machine_learning.realtime.kubernetes import get_or_create_aks_service, get_or_create_aks
 from azure_utils.machine_learning.train_local import train_local, create_stack_overflow_model_script
@@ -96,16 +96,18 @@ class RTSWorkspace(AILabWorkspace):
 
 
 class DeepRTSWorkspace(AILabWorkspace):
-    def __init__(self, ws):
-        super().__init__(ws)
 
     @staticmethod
     def get_or_create_model():
         create_deep_model()
 
     @staticmethod
-    def get_or_create_image():
-        build_image()
+    def get_or_create_image(**kwargs):
+        build_image(**kwargs)
+
+    @staticmethod
+    def get_or_create_aks():
+        get_or_create_deep_aks()
 
     @staticmethod
     def get_or_create_service():

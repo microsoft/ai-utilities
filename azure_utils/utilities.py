@@ -8,6 +8,7 @@ import gzip
 import json
 import logging
 import math
+import os
 import re
 
 import pandas as pd
@@ -17,6 +18,14 @@ from azureml.core.authentication import AzureCliAuthentication
 from azureml.core.authentication import InteractiveLoginAuthentication
 from azureml.core.authentication import ServicePrincipalAuthentication
 from dotenv import get_key
+
+
+def check_login():
+    try:
+        os.popen("az account show")
+        return True
+    except OSError:
+        return False
 
 
 def read_csv_gz(url, **kwargs):
