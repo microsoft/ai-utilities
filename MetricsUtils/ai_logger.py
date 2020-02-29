@@ -18,8 +18,8 @@ import json
 from datetime import datetime
 from enum import Enum
 
-from MetricsUtils.blobStorage import BlobStorageAccount
-from MetricsUtils.storageutils import storageConnection
+from MetricsUtils.blob_storage import BlobStorageAccount
+from MetricsUtils.storageutils import StorageConnection
 
 __version__ = "0.1"
 
@@ -52,30 +52,30 @@ class CollectionEntry(Enum):
 #     the pre-defined container/blob.
 
 
-class statisticsCollector:
+class StatisticsCollector:
     """ Statistics Collector """
     __metrics__ = {}
-    __runningTasks__ = {}
+    __running_tasks__ = {}
     __statscontainer__ = "pathmetrics"
     __statsblob__ = "statistics.json"
 
     # No need to create an instance, all methods are static.
 
-    def __init__(self, pathName):
-        self.pathName = pathName
+    def __init__(self, path_name):
+        self.path_name = path_name
 
     @staticmethod
-    def startTask(collectionEntry):
+    def start_task(collection_entry):
         """
         Starts a task using one of the enumerators and records a start time of the task. If using this,
         the entry is not put into the __metrics__ connection until endTask() is called.
 
-        :param collectionEntry: an instance of a CollectionEntry enum
+        :param collection_entry: an instance of a CollectionEntry enum
         """
-        statisticsCollector.__runningTasks__[collectionEntry.value] = datetime.utcnow()
+        StatisticsCollector.__running_tasks__[collection_entry.value] = datetime.utcnow()
 
     @staticmethod
-    def endTask(collection_entry):
+    def end_task(collection_entry):
         """
         Ends a task using one of the enumerators. If the start time was previously recorded using
         startTask() an entry for the specific enumeration is added to the __metrics__ collection that
@@ -83,17 +83,17 @@ class statisticsCollector:
 
         :param collection_entry: an instance of a CollectionEntry enum
         """
-        if collection_entry.value in statisticsCollector.__runningTasks__.keys():
-            timeDiff = datetime.utcnow() - statisticsCollector.__runningTasks__[collection_entry.value]
-            msDelta = timeDiff.total_seconds() * 1000
-            statisticsCollector.__metrics__[collection_entry.value] = msDelta
+        if collection_entry.value in StatisticsCollector.__running_tasks__.keys():
+            time_diff = datetime.utcnow() - StatisticsCollector.__running_tasks__[collection_entry.value]
+            ms_delta = time_diff.total_seconds() * 1000
+            StatisticsCollector.__metrics__[collection_entry.value] = ms_delta
 
     '''
 
     '''
 
     @staticmethod
-    def addEntry(collectionEntry, dataPoint):
+    def add_entry(collection_entry, data_point):
         """
         Single call to add an entry to the __metrics__ collection. This would be used when you want to run
         the timers in the external code directly.
@@ -101,10 +101,10 @@ class statisticsCollector:
         This is used to set manual task times or any other valid data point.
 
 
-        :param collectionEntry: an instance of a CollectionEntry enum
-        :param dataPoint: Any valid python data type (string, int, etc)
+        :param collection_entry: an instance of a CollectionEntry enum
+        :param data_point: Any valid python data type (string, int, etc)
         """
-        statisticsCollector.__metrics__[collectionEntry.value] = dataPoint
+        StatisticsCollector.__metrics__[collection_entry.value] = data_point
 
     '''
         Retrieve an entry in the internal collection. 
@@ -117,11 +117,11 @@ class statisticsCollector:
     '''
 
     @staticmethod
-    def getEntry(collectionEntry):
-        returnDataPoint = None
-        if collectionEntry.value in statisticsCollector.__metrics__.keys():
-            returnDataPoint = statisticsCollector.__metrics__[collectionEntry.value]
-        return returnDataPoint
+    def get_entry(collection_entry):
+        return_data_point = None
+        if collection_entry.value in StatisticsCollector.__metrics__.keys():
+            return_data_point = StatisticsCollector.__metrics__[collection_entry.value]
+        return return_data_point
 
     '''
         Returns the __metrics__ collection as a JSON string.
@@ -134,8 +134,8 @@ class statisticsCollector:
     '''
 
     @staticmethod
-    def getCollection():
-        return json.dumps(statisticsCollector.__metrics__)
+    def get_collection():
+        return json.dumps(StatisticsCollector.__metrics__)
 
     '''
         Uploads the JSON string representation of the __metrics__ collection to the specified
@@ -149,14 +149,14 @@ class statisticsCollector:
     '''
 
     @staticmethod
-    def uploadContent(connectionString):
-        connectionObject = storageConnection(connectionString)
-        storageAccount = BlobStorageAccount(connectionObject)
-        containers = storageAccount.getContainers()
-        if statisticsCollector.__statscontainer__ not in containers:
-            storageAccount.create_container(statisticsCollector.__statscontainer__)
-        storageAccount.uploadBlob(statisticsCollector.__statscontainer__, statisticsCollector.__statsblob__,
-                                  statisticsCollector.getCollection())
+    def upload_content(connection_string):
+        connection_object = StorageConnection(connection_string)
+        storage_account = BlobStorageAccount(connection_object)
+        containers = storage_account.getContainers()
+        if StatisticsCollector.__statscontainer__ not in containers:
+            storage_account.create_container(StatisticsCollector.__statscontainer__)
+        storage_account.upload_blob(StatisticsCollector.__statscontainer__, StatisticsCollector.__statsblob__,
+                                    StatisticsCollector.get_collection())
 
     '''
         Download the content from blob storage as a string representation of the JSON. This can be used for collecting
@@ -171,15 +171,15 @@ class statisticsCollector:
     '''
 
     @staticmethod
-    def retrieveContent(connectionString):
-        returnContent = None
-        connectionObject = storageConnection(connectionString)
-        storageAccount = BlobStorageAccount(connectionObject)
-        containers = storageAccount.getContainers()
-        if statisticsCollector.__statscontainer__ in containers:
-            returnContent = storageAccount.downloadBlob(statisticsCollector.__statscontainer__,
-                                                        statisticsCollector.__statsblob__)
-        return returnContent
+    def retrieve_content(connection_string):
+        return_content = None
+        connection_object = StorageConnection(connection_string)
+        storage_account = BlobStorageAccount(connection_object)
+        containers = storage_account.getContainers()
+        if StatisticsCollector.__statscontainer__ in containers:
+            return_content = storage_account.download_blob(StatisticsCollector.__statscontainer__,
+                                                           StatisticsCollector.__statsblob__)
+        return return_content
 
     '''
         Retrieves the content in storage and hydrates the __metrics__ dictionary, dropping any existing information. 
@@ -194,9 +194,9 @@ class statisticsCollector:
     '''
 
     @staticmethod
-    def hydrateFromStorage(connectionString):
-        returnContent = statisticsCollector.retrieveContent(connectionString)
-        if returnContent is not None:
-            statisticsCollector.__metrics__ = json.loads(returnContent)
+    def hydrate_from_storage(connection_string):
+        return_content = StatisticsCollector.retrieve_content(connection_string)
+        if return_content is not None:
+            StatisticsCollector.__metrics__ = json.loads(return_content)
         else:
             print("There was no data in storage")

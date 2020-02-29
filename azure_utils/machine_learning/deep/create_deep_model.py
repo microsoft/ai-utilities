@@ -39,8 +39,8 @@ def create_deep_model(configuration_file: str = project_configuration_file):
 
     # Get workspace
     # Load existing workspace from the config file info.
-    ws = get_or_create_workspace_from_project(project_configuration)
-    print(ws.name, ws.resource_group, ws.location, ws.subscription_id, sep="\n")
+    workspace = get_or_create_workspace_from_project(project_configuration)
+    print(workspace.name, workspace.resource_group, workspace.location, workspace.subscription_id, sep="\n")
 
     model.save_weights("model_resnet_weights.h5")
 
@@ -52,7 +52,7 @@ def create_deep_model(configuration_file: str = project_configuration_file):
         model_name="resnet_model",  # this is the name the   model is registered as
         tags={"model": "dl", "framework": "resnet"},
         description="resnet 152 model",
-        workspace=ws,
+        workspace=workspace,
     )
 
     print(model.name, model.description, model.version)
@@ -110,8 +110,8 @@ def develop_model_driver():
                    '152 Model\n    """\n    logger = logging.getLogger("model_driver")\n    start = '
                    't.default_timer()\n    model_name = "resnet_model"\n    model_path = '
                    'Model.get_model_path(model_name)\n    model = ResNet152()\n    model.load_weights('
-                   'model_path)\n    end = t.default_timer()\n\n    loadTimeMsg = "Model loading time: '
-                   '{0} ms".format(round((end - start) * 1000, 2))\n    logger.info(loadTimeMsg)\n\n    '
+                   'model_path)\n    end = t.default_timer()\n\n    load_time = "Model loading time: '
+                   '{0} ms".format(round((end - start) * 1000, 2))\n    logger.info(load_time)\n\n    '
                    'def call_model(img_array_list):\n        img_array = np.stack(img_array_list)\n     '
                    '   img_array = preprocess_input(img_array)\n        preds = model.predict('
                    'img_array)\n        # Converting predictions to float64 since we are able to '
@@ -144,23 +144,19 @@ def develop_model_driver():
 
 
 def build_image(configuration_file: str = project_configuration_file):
-    # coding: utf-8
+    """
+    Build Image
 
-    # # Build Image
-    #
-    # In this notebook, we show the following steps for deploying a web service using AML:
-    #
-    # - Create an image
-    # - Test image locally
-    #
+    In this notebook, we show the following steps for deploying a web service using AML:
 
-    # In[ ]:
+    - Create an image
+    - Test image locally
+    """
 
     project_configuration = ProjectConfiguration(configuration_file)
-    assert project_configuration.has_settings("image_name")
+    assert project_configuration.has_settings("deep_image_name")
     assert project_configuration.has_settings("resource_group")
-
-    image_name = project_configuration.get_value("image_name")
+    image_name = project_configuration.get_value("deep_image_name")
 
     workspace = get_or_create_workspace_from_project(project_configuration)
 
@@ -193,14 +189,13 @@ def build_image(configuration_file: str = project_configuration_file):
 
 def deploy_on_aks(configuration_file: str = project_configuration_file):
     project_configuration = ProjectConfiguration(configuration_file)
-    assert project_configuration.has_settings("image_name")
+    assert project_configuration.has_settings("deep_image_name")
     assert project_configuration.has_settings("deep_aks_service_name")
     assert project_configuration.has_settings("deep_aks_name")
     assert project_configuration.has_settings("deep_aks_location")
 
-    image_name = project_configuration.get_value("image_name")
+    image_name = project_configuration.get_value("deep_image_name")
     aks_service_name = project_configuration.get_value("deep_aks_service_name")
-    aks_name = project_configuration.get_value("deep_aks_name")
 
     ws = get_or_create_workspace_from_project(project_configuration)
     print(ws.name, ws.resource_group, ws.location, ws.subscription_id, sep="\n")

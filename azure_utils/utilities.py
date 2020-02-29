@@ -39,46 +39,45 @@ def clean_text(text):
     """Remove embedded code chunks, HTML tags and links/URLs."""
     if not isinstance(text, str):
         return text
-    text = re.sub('<pre><code>.*?</code></pre>', '', text)
-    text = re.sub('<a[^>]+>(.*)</a>', replace_link, text)
-    return re.sub('<[^>]+>', '', text)
+    text = re.sub(r'<pre><code>.*?</code></pre>', '', text)
+    text = re.sub(r'<a[^>]+>(.*)</a>', replace_link, text)
+    return re.sub(r'<[^>]+>', '', text)
 
 
 def replace_link(match):
-    if re.match('[a-z]+://', match.group(1)):
+    if re.match(r'[a-z]+://', match.group(1)):
         return ''
-    else:
-        return match.group(1)
+    return match.group(1)
 
 
-def round_sample(X, frac=0.1, min=1):
+def round_sample(input_dataframe, frac=0.1, min_samples=1):
     """Sample X ensuring at least min samples are selected."""
-    n = max(min, math.floor(len(X) * frac))
-    return X.sample(n)
+    n = max(min_samples, math.floor(len(input_dataframe) * frac))
+    return input_dataframe.sample(n)
 
 
-def round_sample_strat(X, strat, **kwargs):
+def round_sample_strat(input_dataframe, strat, **kwargs):
     """Sample X ensuring at least min samples are selected."""
-    return X.groupby(strat).apply(round_sample, **kwargs)
+    return input_dataframe.groupby(strat).apply(round_sample, **kwargs)
 
 
-def random_merge(A, B, N=20, on='AnswerId', key='key', n='n'):
+def random_merge(dataframe_a, dataframe_b, number_to_merge=20, on='AnswerId', key='key', n='n'):
     """Pair all rows of A with 1 matching row on "on" and N-1 random rows from B"""
-    assert key not in A and key not in B
-    X = A.copy()
-    X[key] = A[on]
-    Y = B.copy()
-    Y[key] = B[on]
+    assert key not in dataframe_a and key not in dataframe_b
+    X = dataframe_a.copy()
+    X[key] = dataframe_a[on]
+    Y = dataframe_b.copy()
+    Y[key] = dataframe_b[on]
     match = X.merge(Y, on=key).drop(key, axis=1)
     match[n] = 0
     df_list = [match]
-    for i in A.index:
-        X = A.loc[[i]]
-        Y = B[B[on] != X[on].iloc[0]].sample(N - 1)
+    for i in dataframe_a.index:
+        X = dataframe_a.loc[[i]]
+        Y = dataframe_b[dataframe_b[on] != X[on].iloc[0]].sample(number_to_merge - 1)
         X[key] = 1
         Y[key] = 1
         Z = X.merge(Y, how='outer', on=key).drop(key, axis=1)
-        Z[n] = range(1, N)
+        Z[n] = range(1, number_to_merge)
         df_list.append(Z)
     df = pd.concat(df_list, ignore_index=True)
     return df
@@ -113,8 +112,8 @@ def get_auth(env_path):
         aml_sp_username = get_key(env_path, 'username')
         auth = ServicePrincipalAuthentication(
             tenant_id=aml_sp_tennant_id,
-            username=aml_sp_username,
-            password=aml_sp_password
+            service_principal_id=aml_sp_username,
+            service_principal_password=aml_sp_password
         )
     else:
         logger.debug("Trying to create Workspace with CLI Authentication")

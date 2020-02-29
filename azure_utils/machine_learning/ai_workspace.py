@@ -18,9 +18,8 @@ from azure_utils.machine_learning.utils import get_or_create_workspace_from_file
 class AILabWorkspace(Workspace):
     """ AI Workspace """
 
-    def __init__(self, ws):
-        super().__init__(ws._subscription_id, ws._resource_group, ws._workspace_name)
-        print("Created Workspace")
+    def __init__(self, subscription_id, resource_group, workspace_name):
+        super().__init__(subscription_id, resource_group, workspace_name)
 
     @staticmethod
     def get_or_or_create_realtime_endpoint():
@@ -29,7 +28,7 @@ class AILabWorkspace(Workspace):
     @staticmethod
     def get_or_create_workspace(**kwargs):
         """Get or create a workspace if it doesn't exist."""
-        return AILabWorkspace(get_or_create_workspace_from_file(**kwargs))
+        return get_or_create_workspace_from_file(**kwargs)
 
     @staticmethod
     def get_or_create_image(**kwargs):

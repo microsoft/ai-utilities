@@ -48,37 +48,37 @@ class BlobStorageAccount:
     # Retrieves a list of storage container names in the specific storage account pointed to by
     # the storageConnection object
 
-    def getContainers(self):
-        returnList = []
+    def get_containers(self):
+        return_list = []
         if self.connection and self.service:
             containers = self.service.list_containers()
             for container in containers:
-                returnList.append(container.name)
+                return_list.append(container.name)
 
-        return returnList
+        return return_list
 
     # Retrieves a list of storage blob names in a container in the specific storage account pointed to by
     # the storageConnection object
 
-    def getBlobs(self, containerName):
-        returnList = []
+    def get_blobs(self, container_name):
+        return_list = []
         if self.connection and self.service:
-            blobs = self.service.list_blobs(containerName)
+            blobs = self.service.list_blobs(container_name)
             for blob in blobs:
-                returnList.append(blob.name)
-        return returnList
+                return_list.append(blob.name)
+        return return_list
 
     # Upload text to a blob (fileContent is a simple string)
 
-    def uploadBlob(self, containerName, blobName, fileContent):
+    def upload_blob(self, container_name, blob_name, file_content):
         if self.connection and self.service:
-            self.service.create_blob_from_text(containerName, blobName, fileContent)
+            self.service.create_blob_from_text(container_name, blob_name, file_content)
 
     # Download the blob as a string.
 
-    def downloadBlob(self, containerName, blobName):
-        returnContent = None
+    def download_blob(self, container_name, blob_name):
+        return_content = None
         if self.connection and self.service:
-            blob = self.service.get_blob_to_text(containerName, blobName)
-            returnContent = blob.content
-        return returnContent
+            blob = self.service.get_blob_to_text(container_name, blob_name)
+            return_content = blob.content
+        return return_content

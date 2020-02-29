@@ -31,6 +31,6 @@ setup(
         'msrestazure',
         'azure-common',
         'azure-cli-ml',
-        'deprecated'
+        'deprecated', 'requests'
     ]
 )

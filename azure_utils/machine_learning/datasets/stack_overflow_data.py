@@ -52,7 +52,7 @@ def split_duplicates(dupes, label_column, match, questions, show_output, test_si
     # The relevant columns for text pairs data.
     balanced_pairs_columns = ['Id_x', 'AnswerId_x', 'Text_x', 'Id_y', 'Text_y', 'AnswerId_y', 'Label', 'n']
     # Use AnswerId to pair each training dupe with its matching question and also with N-1 questions not its match.
-    balanced_pairs_train = random_merge(dupes_train, questions, N=match)
+    balanced_pairs_train = random_merge(dupes_train, questions, number_to_merge=match)
     # Label records by matching AnswerIds.
     balanced_pairs_train["Label"] = (balanced_pairs_train.AnswerId_x == balanced_pairs_train.AnswerId_y).astype(int)
     # Keep only the relevant data.
@@ -60,7 +60,7 @@ def split_duplicates(dupes, label_column, match, questions, show_output, test_si
     # Sort the data by dupe ID and Label.
     balanced_pairs_train.sort_values(by=['Id_x', 'Label'], ascending=[True, False], inplace=True)
     # Use AnswerId to pair each testing dupe with all questions.
-    balanced_pairs_test = random_merge(dupes_test, questions, N=questions.shape[0])
+    balanced_pairs_test = random_merge(dupes_test, questions, number_to_merge=questions.shape[0])
     # Label records by matching AnswerIds.
     balanced_pairs_test["Label"] = (balanced_pairs_test.AnswerId_x == balanced_pairs_test.AnswerId_y).astype(int)
     # Keep only the relevant data.
@@ -77,8 +77,8 @@ def split_duplicates(dupes, label_column, match, questions, show_output, test_si
 
 
 def clean_data(answers, dupes, min_dupes, min_text, questions, show_output):
-    for df in (questions, dupes, answers):
-        df["Text"] = df.Text0.apply(clean_text).str.lower()
+    for dataframe in (questions, dupes, answers):
+        dataframe["Text"] = dataframe.Text0.apply(clean_text).str.lower()
     questions = questions[questions.Text.str.len() > 0]
     answers = answers[answers.Text.str.len() > 0]
     dupes = dupes[dupes.Text.str.len() > 0]
