@@ -162,7 +162,6 @@ def get_or_create_resnet_image(configuration_file: str = project_configuration_f
     image_config = create_resnet_image_config()
 
     project_configuration = ProjectConfiguration(configuration_file)
-
     workspace = get_or_create_workspace_from_project(project_configuration)
 
     model_name = 'resnet_model'
@@ -177,6 +176,7 @@ def create_resnet_image_config():
     imgenv = CondaDependencies.create(conda_packages=conda_pack, pip_packages=requirements)
     with open("img_env.yml", "w") as file:
         file.write(imgenv.serialize_to_string())
+
     image_config = ContainerImage.image_configuration(execution_script="driver.py", runtime="python",
                                                       conda_file="img_env.yml",
                                                       description="Image for AKS Deployment Tutorial",
