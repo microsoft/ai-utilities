@@ -31,6 +31,12 @@ setup(
         'msrestazure',
         'azure-common',
         'azure-cli-ml',
-        'deprecated'
+        'deprecated',
+        'requests',
+        'wget',
+        'numpy',
+        'Pillow',
+        'keras',
+        'resnet'
     ]
 )

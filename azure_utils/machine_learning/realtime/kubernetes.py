@@ -14,6 +14,7 @@ from azureml.core.webservice import AksWebservice
 
 from azure_utils.configuration.notebook_config import project_configuration_file
 from azure_utils.configuration.project_configuration import ProjectConfiguration
+from azure_utils.machine_learning.realtime.image import get_or_create_image
 from azure_utils.machine_learning.utils import get_or_create_workspace_from_project
 from azure_utils.utilities import text_to_json
 
@@ -63,7 +64,8 @@ def get_or_create_service(configuration_file: str = project_configuration_file, 
 
     aks_config = AksWebservice.deploy_configuration(num_replicas=num_replicas, cpu_cores=cpu_cores)
 
-    assert workspace.images[image_name]
+    if image_name not in workspace.images:
+        get_or_create_image()
     image = workspace.images[image_name]
 
     deploy_from_image_start = time.time()
@@ -123,7 +125,13 @@ def get_or_create_aks(configuration_file: str = project_configuration_file, vm_s
     return aks_target
 
 
-def test_aks(directory, aks_service):
+def test_aks(directory: str, aks_service: AksWebservice):
+    """
+    Test AKS with sample call.
+
+    :param directory: directory of data_folder with test data
+    :param aks_service: AKS Web Service to Test
+    """
     num_dupes_to_score = 4
 
     dupes_test_path = directory + '/data_folder/dupes_test.tsv'

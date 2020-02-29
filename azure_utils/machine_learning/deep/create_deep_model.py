@@ -12,7 +12,9 @@ from azureml.core import ComputeTarget
 from azureml.core.compute import AksCompute
 from azureml.core.conda_dependencies import CondaDependencies
 from azureml.core.image import ContainerImage
+from azureml.core.model import Model
 from azureml.core.webservice import Webservice, AksWebservice
+from keras import backend
 from keras.applications.imagenet_utils import preprocess_input
 from resnet import ResNet152
 
@@ -23,6 +25,11 @@ from azure_utils.machine_learning.utils import get_or_create_workspace_from_proj
 
 
 def create_deep_model(configuration_file: str = project_configuration_file):
+    """
+
+    :param configuration_file:
+    :return:
+    """
     project_configuration = ProjectConfiguration(configuration_file)
 
     # If you see error msg "InternalError: Dst tensor is not initialized.", it indicates there are not enough memory.
@@ -39,31 +46,33 @@ def create_deep_model(configuration_file: str = project_configuration_file):
 
     # Get workspace
     # Load existing workspace from the config file info.
-    ws = get_or_create_workspace_from_project(project_configuration)
-    print(ws.name, ws.resource_group, ws.location, ws.subscription_id, sep="\n")
+    workspace = get_or_create_workspace_from_project(project_configuration)
+    print(workspace.name, workspace.resource_group, workspace.location, workspace.subscription_id, sep="\n")
 
     model.save_weights("model_resnet_weights.h5")
 
     # Register the model
-    from azureml.core.model import Model
 
     model = Model.register(
         model_path="model_resnet_weights.h5",  # this points to a local file
         model_name="resnet_model",  # this is the name the   model is registered as
         tags={"model": "dl", "framework": "resnet"},
         description="resnet 152 model",
-        workspace=ws,
+        workspace=workspace,
     )
 
     print(model.name, model.description, model.version)
 
     # Clear GPU memory
-    from keras import backend as K
-
-    K.clear_session()
+    backend.clear_session()
+    return model
 
 
 def download_test_image():
+    """
+
+    :return:
+    """
     wget.download("https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/220px-Lynx_lynx_poing.jpg")
     img_path = "220px-Lynx_lynx_poing.jpg"
     print(Image.open(img_path).size)
@@ -79,22 +88,20 @@ def download_test_image():
 
 
 def develop_model_driver():
-    # coding: utf-8
+    """
+    Develop Model Driver
 
-    # # Develop Model Driver
-    #
-    # In this notebook, we will develop the API that will call our model. This module initializes the model,
-    # transforms the input so that it is in the appropriate format and defines the scoring method that will produce
-    # the predictions. The API will expect the input to be passed as an image. Once a request is received,
-    # the API will convert load the image preprocess it and pass it to the model. There are two main functions in the
-    # API: init() and run(). The init() function loads the model and returns a scoring function. The run() function
-    # processes the images and uses the first function to score them.
-    #
-    #     Note: Always make sure you don't have any lingering notebooks running (Shutdown previous notebooks).
-    #     Otherwise it may cause GPU memory issue.
+    In this notebook, we will develop the API that will call our model. This module initializes the model,
+    transforms the input so that it is in the appropriate format and defines the scoring method that will produce
+    the predictions. The API will expect the input to be passed as an image. Once a request is received,
+    the API will convert load the image preprocess it and pass it to the model. There are two main functions in the
+    API: init() and run(). The init() function loads the model and returns a scoring function. The run() function
+    processes the images and uses the first function to score them.
 
-    # In[ ]:
+        Note: Always make sure you don't have any lingering notebooks running (Shutdown previous notebooks).
+        Otherwise it may cause GPU memory issue.
 
+    """
     # ## Write and save driver script
     with open('driver.py', "w") as file:
         file.write('\nfrom resnet152 import ResNet152\nfrom keras.preprocessing import image\nfrom '
@@ -110,8 +117,8 @@ def develop_model_driver():
                    '152 Model\n    """\n    logger = logging.getLogger("model_driver")\n    start = '
                    't.default_timer()\n    model_name = "resnet_model"\n    model_path = '
                    'Model.get_model_path(model_name)\n    model = ResNet152()\n    model.load_weights('
-                   'model_path)\n    end = t.default_timer()\n\n    loadTimeMsg = "Model loading time: '
-                   '{0} ms".format(round((end - start) * 1000, 2))\n    logger.info(loadTimeMsg)\n\n    '
+                   'model_path)\n    end = t.default_timer()\n\n    load_time = "Model loading time: '
+                   '{0} ms".format(round((end - start) * 1000, 2))\n    logger.info(load_time)\n\n    '
                    'def call_model(img_array_list):\n        img_array = np.stack(img_array_list)\n     '
                    '   img_array = preprocess_input(img_array)\n        preds = model.predict('
                    'img_array)\n        # Converting predictions to float64 since we are able to '
@@ -144,23 +151,19 @@ def develop_model_driver():
 
 
 def build_image(configuration_file: str = project_configuration_file):
-    # coding: utf-8
+    """
+    Build Image
 
-    # # Build Image
-    #
-    # In this notebook, we show the following steps for deploying a web service using AML:
-    #
-    # - Create an image
-    # - Test image locally
-    #
+    In this notebook, we show the following steps for deploying a web service using AML:
 
-    # In[ ]:
+    - Create an image
+    - Test image locally
+    """
 
     project_configuration = ProjectConfiguration(configuration_file)
-    assert project_configuration.has_settings("image_name")
+    assert project_configuration.has_settings("deep_image_name")
     assert project_configuration.has_settings("resource_group")
-
-    image_name = project_configuration.get_value("image_name")
+    image_name = project_configuration.get_value("deep_image_name")
 
     workspace = get_or_create_workspace_from_project(project_configuration)
 
@@ -175,8 +178,8 @@ def build_image(configuration_file: str = project_configuration_file):
     requirements = ["keras==2.2.0", "Pillow==5.2.0", "azureml-defaults", "azureml-contrib-services", "toolz==0.9.0"]
 
     imgenv = CondaDependencies.create(conda_packages=conda_pack, pip_packages=requirements)
-    with open("img_env.yml", "w") as f:
-        f.write(imgenv.serialize_to_string())
+    with open("img_env.yml", "w") as file:
+        file.write(imgenv.serialize_to_string())
 
     image_config = ContainerImage.image_configuration(execution_script="driver.py", runtime="python",
                                                       conda_file="img_env.yml",
@@ -189,18 +192,23 @@ def build_image(configuration_file: str = project_configuration_file):
                                   workspace=workspace)
 
     image.wait_for_creation(show_output=True)
+    return image
 
 
 def deploy_on_aks(configuration_file: str = project_configuration_file):
+    """
+
+    :param configuration_file:
+    :return:
+    """
     project_configuration = ProjectConfiguration(configuration_file)
-    assert project_configuration.has_settings("image_name")
+    assert project_configuration.has_settings("deep_image_name")
     assert project_configuration.has_settings("deep_aks_service_name")
     assert project_configuration.has_settings("deep_aks_name")
     assert project_configuration.has_settings("deep_aks_location")
 
-    image_name = project_configuration.get_value("image_name")
+    image_name = project_configuration.get_value("deep_image_name")
     aks_service_name = project_configuration.get_value("deep_aks_service_name")
-    aks_name = project_configuration.get_value("deep_aks_name")
 
     ws = get_or_create_workspace_from_project(project_configuration)
     print(ws.name, ws.resource_group, ws.location, ws.subscription_id, sep="\n")
@@ -209,7 +217,7 @@ def deploy_on_aks(configuration_file: str = project_configuration_file):
 
     node_count = 3  # We need to have a minimum of 3 nodes
 
-    aks_target = get_or_create_deep_aks(ws, aks_name)
+    aks_target = get_or_create_deep_aks()
 
     # Deploy web service to AKS
     # Set the web service configuration (using customized configuration)
@@ -229,133 +237,28 @@ def deploy_on_aks(configuration_file: str = project_configuration_file):
     )
     aks_service.wait_for_deployment(show_output=True)
     print(aks_service.state)
+    return aks_service
 
 
-def get_or_create_deep_aks(ws, aks_name):
-    workspace_compute = ws.compute_targets
+def get_or_create_deep_aks(configuration_file: str = project_configuration_file):
+    """
+
+    :param configuration_file:
+    :return:
+    """
+    project_configuration = ProjectConfiguration(configuration_file)
+    assert project_configuration.has_settings("deep_aks_name")
+
+    aks_name = project_configuration.get_value("deep_aks_name")
+
+    workspace = get_or_create_workspace_from_project(project_configuration)
+    workspace_compute = workspace.compute_targets
     if aks_name in workspace_compute:
         return workspace_compute[aks_name]
 
     prov_config = AksCompute.provisioning_configuration(vm_size="Standard_NC6")
-    aks_target = ComputeTarget.create(
-        workspace=ws, name=aks_name, provisioning_configuration=prov_config
-    )
+    aks_target = ComputeTarget.create(workspace=workspace, name=aks_name, provisioning_configuration=prov_config)
 
     aks_target.wait_for_completion(show_output=True)
 
     return aks_target
-
-
-# def test_driver(ws, get_model_api):
-#     logging.basicConfig(level=logging.DEBUG)
-#     get_ipython().magic('run driver.py')
-#     print(ws.name, ws.resource_group, ws.location, ws.subscription_id, sep="\n")
-#     # Get the model and score against an example image
-#     # In[ ]:
-#     model_path = Model.get_model_path("resnet_model", _workspace=ws)
-#     IMAGEURL = "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/220px-Lynx_lynx_poing.jpg"
-#     # Always make sure you don't have any lingering notebooks running. Otherwise it may cause GPU memory issue.
-#     process_and_score = get_model_api()
-#     resp = process_and_score({"lynx": open("220px-Lynx_lynx_poing.jpg", "rb")})
-#     # Clear GPU memory
-#     from keras import backend as K
-#     # In[ ]:
-#     K.clear_session()
-#
-#
-# def test_image(image, resource_group, ws):
-#     # - Pull the image from ACR registry to local host
-#     # - Start a container
-#     # - Test API call
-#     # In[ ]:
-#     # Getting your container details
-#     container_reg = ws.get_details()["containerRegistry"]
-#     reg_name = container_reg.split("/")[-1]
-#     container_url = "\"" + image.image_location + "\","
-#     subscription_id = ws.subscription_id
-#     client = ContainerRegistryManagementClient(ws._auth, subscription_id)
-#     result = client.registries.list_credentials(resource_group, reg_name, custom_headers=None, raw=False)
-#     username = result.username
-#     password = result.passwords[0].value
-#     print('ContainerURL:{}'.format(image.image_location))
-#     print('Servername: {}'.format(reg_name))
-#     print('Username: {}'.format(username))
-#     print('Password: {}'.format(password))
-#     dc = get_docker_client()
-#     pull_docker_image(dc, image.image_location, username, password)
-#     # In[ ]:
-#     # make sure port 80 is not occupied
-#     container_labels = {'containerName': 'kerasgpu'}
-#     container = dc.containers.run(image.image_location,
-#                                   detach=True,
-#                                   ports={'5001/tcp': 80},
-#                                   labels=container_labels,
-#                                   runtime='nvidia')
-#     for log_msg in container.logs(stream=True):
-#         str_msg = log_msg.decode('UTF8')
-#         print(str_msg)
-#         if "Model loading time:" in str_msg:
-#             print('Model loaded and container ready')
-#             break
-#     client = docker.APIClient()
-#     details = client.inspect_container(container.id)
-#     service_ip = details['NetworkSettings']['Ports']['5001/tcp'][0]['HostIp']
-#     service_port = details['NetworkSettings']['Ports']['5001/tcp'][0]['HostPort']
-#     # Wait a few seconds for the application to spin up and then check that everything works.
-#     print('Checking service on {} port {}'.format(service_ip, service_port))
-#     endpoint = "http://__service_ip:__service_port"
-#     endpoint = endpoint.replace('__service_ip', service_ip)
-#     endpoint = endpoint.replace('__service_port', service_port)
-#     max_attempts = 50
-#     output_str = wait_until_ready(endpoint, max_attempts)
-#     print(output_str)
-#     # In[ ]:
-#     get_ipython().system("curl 'http://{service_ip}:{service_port}/'")
-#     IMAGEURL = "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/220px-Lynx_lynx_poing.jpg"
-#     # In[ ]:
-#     plt.imshow(to_img(IMAGEURL))
-#     # In[ ]:
-#     with open('220px-Lynx_lynx_poing.jpg', 'rb') as f:
-#         img_data = f.read()
-#     # In[ ]:
-#     get_ipython().magic("time r = requests.post('http://0.0.0.0:80/score', files={'image': img_data})")
-#     print(r)
-#     r.json()
-#     # In[ ]:
-#     images = (
-#         "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/220px-Lynx_lynx_poing.jpg",
-#         "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/Roadster_2.5_windmills_trimmed.jpg",
-#         "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/Harmony_of_the_Seas_(ship,_2016)_001.jpg",
-#     )
-#     url = "http://0.0.0.0:80/score"
-#     results = [
-#         requests.post(url, files={'image': read_image_from(img).read()}) for img in images
-#     ]
-#     plot_predictions(images, results)
-#     image_data = list(map(lambda img: read_image_from(img).read(), images))  # Retrieve the images and data
-#     timer_results = list()
-#     for img in image_data:
-#         res = get_ipython().magic("timeit -r 1 -o -q requests.post(url, files={'image': img})")
-#         timer_results.append(res.best)
-#     # In[ ]:
-#     print("Average time taken: {0:4.2f} ms".format(10 ** 3 * np.mean(timer_results)))
-#     # In[ ]:
-#     container.stop()
-#     # remove stopped container
-#     get_ipython().system('docker system prune -f')
-#     # We can now move on to [Create kubenetes cluster and deploy web service](04_DeployOnAKS.ipynb) with the image we
-#     # just built.
-#
-#
-# def test_web_service(aks_service):
-#     IMAGEURL = "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/220px-Lynx_lynx_poing.jpg"
-#     plt.imshow(to_img(IMAGEURL))
-#     service_keys = aks_service.get_keys()
-#     headers = {}
-#     headers["Authorization"] = "Bearer " + service_keys[0]
-#     resp = requests.post(
-#         aks_service.scoring_uri,
-#         headers=headers,
-#         files={"image": read_image_from(IMAGEURL).read()},
-#     )
-#     print(resp.json())

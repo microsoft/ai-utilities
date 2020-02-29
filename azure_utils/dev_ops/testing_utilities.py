@@ -63,8 +63,8 @@ def run_notebook(input_notebook, add_nunit_attachment, parameters=None, kernel_n
 
             test_suite = TestSuite("my test suite", test_cases)
 
-            with open('test-timing-output.xml', 'w') as file:
-                TestSuite.to_file(file, [test_suite], prettyprint=False)
+            with open('test-timing-output.xml', 'w') as test_file:
+                TestSuite.to_file(test_file, [test_suite], prettyprint=False)
 
 
 def export_notebook(exporter, jupyter_output, output_notebook, add_nunit_attachment, file_ext, root='.'):

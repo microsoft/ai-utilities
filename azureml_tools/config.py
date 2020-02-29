@@ -31,7 +31,7 @@ def load_config(dot_env_path: find_dotenv(raise_error_if_not_found=True)):
         .env variables(dict)
     """
     logger = logging.getLogger(__name__)
-    logger.info("Found config in %s" % dot_env_path)
+    logger.info(f"Found config in {dot_env_path}")
     return dotenv_values(dot_env_path)
 
 

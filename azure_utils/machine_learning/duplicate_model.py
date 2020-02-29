@@ -49,7 +49,7 @@ class DuplicateModel:
                          inplace=True)
 
         # Extract the original question ids, answer ids, and probabilities.
-        scores = test[[self.id_col, self.answerId_col, self.probabilities_col]]
+        scores = test[[self.id_col, self.answer_id_col, self.probabilities_col]]
         pairs = [x[1:] for x in scores.itertuples()]
 
         # Return the result.
