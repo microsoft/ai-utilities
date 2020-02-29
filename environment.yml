@@ -44,4 +44,4 @@ dependencies:
     - prompt-toolkit==2.0.9
     - PyOpenSSL
     - nb-clean
-    - git-pylint-commit-hook
+    - Microsoft-AI-Azure-Utility-Samples
