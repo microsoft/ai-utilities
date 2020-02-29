@@ -209,7 +209,7 @@ def deploy_on_aks(configuration_file: str = project_configuration_file):
 
     node_count = 3  # We need to have a minimum of 3 nodes
 
-    aks_target = get_or_create_deep_aks(ws, aks_name)
+    aks_target = get_or_create_deep_aks()
 
     # Deploy web service to AKS
     # Set the web service configuration (using customized configuration)
@@ -243,9 +243,7 @@ def get_or_create_deep_aks(configuration_file: str = project_configuration_file)
         return workspace_compute[aks_name]
 
     prov_config = AksCompute.provisioning_configuration(vm_size="Standard_NC6")
-    aks_target = ComputeTarget.create(
-        workspace=ws, name=aks_name, provisioning_configuration=prov_config
-    )
+    aks_target = ComputeTarget.create(workspace=ws, name=aks_name, provisioning_configuration=prov_config)
 
     aks_target.wait_for_completion(show_output=True)
 
