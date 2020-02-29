@@ -18,7 +18,7 @@ from azure_utils.machine_learning.item_selector import ItemSelector
 from azure_utils.machine_learning.label_rank import label_rank
 
 
-def main():
+if __name__ == '__main__':
     """ Main Method to use with AzureML"""
     # Define the arguments.
     parser = argparse.ArgumentParser(description='Fit and evaluate a model based on train-test datasets.')
