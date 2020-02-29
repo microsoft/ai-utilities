@@ -57,7 +57,7 @@ class RTSWorkspace(AILabWorkspace):
     def get_or_create_model():
         RTSWorkspace.create_stack_overflow_data()
         RTSWorkspace.create_stack_overflow_model_script()
-        RTSWorkspace.train_local()
+        return RTSWorkspace.train_local()
 
     @staticmethod
     def get_or_create_image(**kwargs):
