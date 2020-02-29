@@ -64,7 +64,7 @@ def split_duplicates(dupes, label_column, match, questions, show_output, test_si
     # Use AnswerId to pair each training dupe with its matching question and also with N-1 questions not its match.
     balanced_pairs_train = random_merge(dupes_train, questions, number_to_merge=match)
     # Label records by matching AnswerIds.
-    balanced_pairs_train["Label"] = int(balanced_pairs_train.AnswerId_x == balanced_pairs_train.AnswerId_y)
+    balanced_pairs_train["Label"] = (balanced_pairs_train.AnswerId_x == balanced_pairs_train.AnswerId_y).astype(int)
     # Keep only the relevant data.
     balanced_pairs_train = balanced_pairs_train[balanced_pairs_columns]
     # Sort the data by dupe ID and Label.
@@ -72,7 +72,7 @@ def split_duplicates(dupes, label_column, match, questions, show_output, test_si
     # Use AnswerId to pair each testing dupe with all questions.
     balanced_pairs_test = random_merge(dupes_test, questions, number_to_merge=questions.shape[0])
     # Label records by matching AnswerIds.
-    balanced_pairs_test["Label"] = int(balanced_pairs_test.AnswerId_x == balanced_pairs_test.AnswerId_y)
+    balanced_pairs_test["Label"] = (balanced_pairs_test.AnswerId_x == balanced_pairs_test.AnswerId_y).astype(int)
     # Keep only the relevant data.
     balanced_pairs_test = balanced_pairs_test[balanced_pairs_columns]
     # Sort the data by dupe ID and Label.
