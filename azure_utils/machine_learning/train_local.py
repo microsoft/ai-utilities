@@ -67,7 +67,7 @@ def train_local(model_name="question_match_model", num_estimators="1", experimen
         "--match",
         "2",
     ]
-    run_config_user_managed = get_run_configuration()
+    run_config_user_managed = get_local_run_configuration()
 
     src = ScriptRunConfig(
         source_directory=source_directory,
@@ -86,7 +86,7 @@ def train_local(model_name="question_match_model", num_estimators="1", experimen
     return model
 
 
-def create_stack_overflow_model_script():
+def get_or_create_model_driver():
     """ Create Model Script for LightGBM with Stack Overflow Data """
     if not os.path.isfile("script/create_model.py"):
         os.makedirs("script", exist_ok=True)
@@ -97,7 +97,7 @@ def create_stack_overflow_model_script():
             file.write(create_model_py)
 
 
-def get_run_configuration():
+def get_local_run_configuration():
     """
     Get Local Run Config
 

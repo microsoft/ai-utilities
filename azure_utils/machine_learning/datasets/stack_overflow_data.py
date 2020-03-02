@@ -12,39 +12,6 @@ from azure_utils import directory
 from azure_utils.utilities import read_csv_gz, clean_text, round_sample_strat, random_merge
 
 
-def create_stack_overflow_data(test_size=0.21, min_text=150, min_dupes=12, match=20, show_output: bool = True):
-    """
-    Create Stack Overflow Dataset
-
-    :param show_output:
-    :param test_size: The size of the test set
-    :param min_text: The minimum length of clean text
-    :param min_dupes: The minimum number of duplicates per question
-    :param match: The maximum number of duplicate matches
-    :return:
-    """
-    outputs_path = directory + "/data_folder"
-    dupes_test_path = os.path.join(outputs_path, "dupes_test.tsv")
-    questions_path = os.path.join(outputs_path, "questions.tsv")
-
-    if os.path.isfile(dupes_test_path) and os.path.isfile(questions_path):
-        return pd.read_csv(questions_path, sep="\t"), pd.read_csv(dupes_test_path, sep="\t")
-
-    answers, dupes, questions = download_datasets(show_output=show_output)
-
-    # Clean up all text, and keep only data with some clean text.
-    dupes, label_column, questions = clean_data(answers, dupes, min_dupes, min_text, questions, show_output)
-
-    # Split dupes into train and test ensuring at least one of each label class is in test.
-    balanced_pairs_test, balanced_pairs_train, dupes_test = split_duplicates(dupes, label_column, match, questions,
-                                                                             show_output, test_size)
-
-    save_data(balanced_pairs_test, balanced_pairs_train, dupes_test, dupes_test_path, outputs_path, questions,
-              questions_path, show_output)
-
-    return questions, dupes_test
-
-
 def split_duplicates(dupes, label_column, match, questions, show_output, test_size):
     """
 

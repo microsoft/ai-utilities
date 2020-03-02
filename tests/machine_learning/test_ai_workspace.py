@@ -22,7 +22,8 @@ def test_get_or_create_deep_workspace():
 
 
 def test_create_stack_overflow_data():
-    questions, dupes_test = RTSWorkspace.create_stack_overflow_data()
+    ws = RTSWorkspace.get_or_create_workspace()
+    questions, dupes_test = ws.get_or_create_data()
     print(questions)
 
 
@@ -35,14 +36,15 @@ def test_get_or_create_model():
         with open("script/create_model.py", "w") as file:
             file.write(create_model_py)
 
-    model = RTSWorkspace.get_or_create_model()
+    ws = DeepRTSWorkspace.get_or_create_workspace()
+    model = ws.get_or_create_model()
     assert model
 
 
 def test_get_or_create_image():
     ws = RTSWorkspace.get_or_create_workspace()
     assert ws
-    models = [RTSWorkspace.get_or_create_model()]
+    models = [ws.get_or_create_model()]
     assert models
     config = ws.get_or_create_image_configuration()
     assert config
@@ -63,16 +65,18 @@ def test_get_or_create_service():
 
 
 def test_get_or_create_deep_model():
-    DeepRTSWorkspace.get_or_create_model()
+    ws = DeepRTSWorkspace.get_or_create_workspace()
+    ws.get_or_create_model()
 
 
 def test_get_or_create_model_driver():
-    DeepRTSWorkspace.get_or_create_model_driver()
+    ws = DeepRTSWorkspace.get_or_create_workspace()
+    ws.get_or_create_model_driver()
 
 
 def test_get_or_create_deep_image():
     ws = DeepRTSWorkspace.get_or_create_workspace()
-    models = [DeepRTSWorkspace.get_or_create_model()]
+    models = [ws.get_or_create_model()]
     config = ws.get_or_create_image_configuration()
     DeepRTSWorkspace.get_or_create_image(config, "deep_image_name", models=models)
 
