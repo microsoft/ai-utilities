@@ -20,7 +20,7 @@ __version__ = "0.1"
 
 class BlobStorageAccount:
     '''
-        Constructor that recieves a MetricsUtils.storagutils.storageConnection instance
+        Constructor that recieves a logger.storagutils.storageConnection instance
     '''
 
     def __init__(self, storage_connection):
