@@ -7,7 +7,6 @@ Licensed under the MIT License.
 import os
 import time
 
-import pandas as pd
 from azureml.contrib.functions import HTTP_TRIGGER, package
 from azureml.core import Workspace, Model, Webservice, ComputeTarget, ScriptRunConfig, Experiment
 from azureml.core.compute import AksCompute
@@ -21,11 +20,11 @@ from azure_utils.configuration.notebook_config import project_configuration_file
 from azure_utils.configuration.project_configuration import ProjectConfiguration
 from azure_utils.machine_learning.datasets.stack_overflow_data import download_datasets, clean_data, split_duplicates, \
     save_data
-from azure_utils.machine_learning.deep.create_deep_model import get_or_create_resnet_image, download_test_image
+from azure_utils.machine_learning.deep.create_deep_model import get_or_create_resnet_image
 from azure_utils.machine_learning.model import has_model, get_model
 from azure_utils.machine_learning.realtime.image import get_or_create_lightgbm_image
 from azure_utils.machine_learning.train_local import get_local_run_configuration
-from azure_utils.machine_learning.utils import get_or_create_workspace_from_project, get_workspace_from_config
+from azure_utils.machine_learning.utils import get_or_create_workspace_from_project
 from resnet152 import ResNet152
 
 
@@ -128,6 +127,9 @@ class AILabWorkspace(Workspace):
         """
         Get or Create AKS Cluster
 
+        :param show_output:
+        :param node_count:
+        :param vm_size:
         :param configuration_file:
         :param kwargs: keyword args
         :return: AKS Compute from Workspace
@@ -238,7 +240,8 @@ class AILabWorkspace(Workspace):
         if aks_service_name in self.webservices:
             return self.webservices[aks_service_name]
 
-        aks_config = AksWebservice.deploy_configuration(num_replicas=num_replicas, cpu_cores=cpu_cores)
+        aks_config = AksWebservice.deploy_configuration(num_replicas=num_replicas, cpu_cores=cpu_cores,
+                                                        enable_app_insights=True, collect_model_data=True)
 
         if image_name not in self.images:
             self.get_image()

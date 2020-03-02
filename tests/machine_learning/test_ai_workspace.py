@@ -21,12 +21,6 @@ def test_get_or_create_deep_workspace():
     assert ws
 
 
-def test_create_stack_overflow_data():
-    ws = RTSWorkspace.get_or_create_workspace()
-    questions, dupes_test = ws.get_or_create_data()
-    print(questions)
-
-
 def test_get_or_create_model():
     if not os.path.isfile("script/create_model.py"):
         os.makedirs("script", exist_ok=True)
@@ -71,11 +65,6 @@ def test_get_or_create_function_endpoint():
 def test_get_or_create_deep_model():
     ws = DeepRTSWorkspace.get_or_create_workspace()
     ws.get_or_create_model()
-
-
-def test_get_or_create_model_driver():
-    ws = DeepRTSWorkspace.get_or_create_workspace()
-    ws.get_or_create_model_driver()
 
 
 def test_get_or_create_deep_image():

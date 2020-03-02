@@ -44,5 +44,5 @@ dependencies:
     - prompt-toolkit==2.0.9
     - PyOpenSSL
     - nb-clean
-    - Microsoft-AI-Azure-Utility-
+    - Microsoft-AI-Azure-Utility
     - azureml-contrib-functions
