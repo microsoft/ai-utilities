@@ -8,10 +8,12 @@ import os
 import time
 
 import pandas as pd
+from azureml.contrib.functions import HTTP_TRIGGER, package
 from azureml.core import Workspace, Model, Webservice, ComputeTarget, ScriptRunConfig, Experiment
 from azureml.core.compute import AksCompute
 from azureml.core.conda_dependencies import CondaDependencies
 from azureml.core.image import ContainerImage
+from azureml.core.model import InferenceConfig
 from azureml.core.webservice import AksWebservice
 
 from azure_utils import directory
@@ -73,6 +75,17 @@ class AILabWorkspace(Workspace):
         config = workspace.get_or_create_image_configuration()
         cls.get_or_create_image(config, cls.image_settings_name, models=models)
         return workspace.get_or_create_service()
+
+    @classmethod
+    def get_or_or_create_function_endpoint(cls):
+        """ Get or Create Real-time Endpoint
+
+        :param kwargs: keyword args
+        """
+        workspace = cls.get_or_create_workspace()
+        models = [workspace.get_or_create_model()]
+        config = workspace.get_or_create_function_image_configuration()
+        workspace.get_or_create_function_image(config, models=models)
 
     @classmethod
     def get_or_create_workspace(cls, configuration_file: str = project_configuration_file):
@@ -170,6 +183,33 @@ class AILabWorkspace(Workspace):
                                                   conda_file=self.conda_file, description=self.description,
                                                   dependencies=self.dependencies, docker_file=self.dockerfile,
                                                   tags=self.tags, enable_gpu=self.enable_gpu, **kwargs)
+
+    def get_or_create_function_image_configuration(self):
+        """ Get or Create new Docker Image Configuration for Machine Learning Workspace
+
+        :param kwargs: keyword args
+        """
+        """
+        Image Configuration for running LightGBM in Azure Machine Learning Workspace
+
+        :return: new image configuration for Machine Learning Workspace
+        """
+        assert self.execution_script
+        assert self.conda_file
+        assert self.description
+        assert self.tags
+
+        from azureml.core.environment import Environment
+        from azureml.core.conda_dependencies import CondaDependencies
+
+        # Create an environment and add conda dependencies to it
+        myenv = Environment(name="myenv")
+        # Enable Docker based environment
+        myenv.docker.enabled = True
+        # Build conda dependencies
+        myenv.python.conda_dependencies = CondaDependencies.create(conda_packages=['scikit-learn'],
+                                                                   pip_packages=['azureml-defaults'])
+        return InferenceConfig(entry_script="score.py", environment=myenv)
 
     def get_or_create_service(self, configuration_file: str = project_configuration_file,
                               node_count: int = 4, num_replicas: int = 2,
@@ -276,12 +316,18 @@ class AILabWorkspace(Workspace):
     def register_model_from_run(self, run):
         return run.register_model(model_name=self.model_name, model_path=self.model_path)
 
+    def get_or_create_function_image(self, config, models):
+        blob = package(self, models, config, functions_enabled=True, trigger=HTTP_TRIGGER)
+        blob.wait_for_creation(show_output=True)
+        # Display the package location/ACR path
+        print(blob.location)
+
 
 class RTSWorkspace(AILabWorkspace):
     """ Light GBM Real Time Scoring"""
 
-    def __init__(self, subscription_id, resource_group, workspace_name, conda_file="lgbmenv.yml",
-                 execution_script="score.py", run_configuration=get_local_run_configuration()):
+    def __init__(self, subscription_id, resource_group, workspace_name,
+                 run_configuration=get_local_run_configuration()):
         super().__init__(subscription_id, resource_group, workspace_name)
         conda_pack = [
             "scikit-learn==0.19.1",
@@ -294,17 +340,18 @@ class RTSWorkspace(AILabWorkspace):
             "Microsoft-AI-Azure-Utility-Samples"
         ]
         lgbmenv = CondaDependencies.create(conda_packages=conda_pack, pip_packages=requirements)
-        self.conda_file = conda_file
-        self.execution_script = execution_script
         self.dependencies = None
-        with open(conda_file, "w") as file:
+
+        self.conda_file = "lgbmenv.yml"
+        with open(self.conda_file, "w") as file:
             file.write(lgbmenv.serialize_to_string())
 
         self.dockerfile = "dockerfile"
         with open(self.dockerfile, "w") as file:
             file.write("RUN apt update -y && apt upgrade -y && apt install -y build-essential")
 
-        with open(execution_script, 'w') as file:
+        self.execution_script = "score.py"
+        with open(self.execution_script, 'w') as file:
             file.write("""        
         import json
         import logging
@@ -320,6 +367,7 @@ class RTSWorkspace(AILabWorkspace):
             logger.info("run")
             return json.dumps({'call': True})
         """)
+
         self.description = "Image with lightgbm model"
         self.tags = {"area": "text", "type": "lightgbm"}
         self.get_image = get_or_create_lightgbm_image
@@ -352,8 +400,8 @@ class RTSWorkspace(AILabWorkspace):
         if not os.path.isfile("script/create_model.py"):
             os.makedirs("script", exist_ok=True)
 
-            create_model_py = "from azure_utils.machine_learning import create_model\n\nif __name__ == '__main__':\n    " \
-                              "create_model.main()"
+            create_model_py = "from azure_utils.machine_learning import create_model\n\nif __name__ == '__main__':\n" \
+                              "    create_model.main()"
             with open("script/create_model.py", "w") as file:
                 file.write(create_model_py)
 

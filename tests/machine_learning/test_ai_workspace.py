@@ -64,6 +64,10 @@ def test_get_or_create_service():
     assert service
 
 
+def test_get_or_create_function_endpoint():
+    RTSWorkspace.get_or_or_create_function_endpoint()
+
+
 def test_get_or_create_deep_model():
     ws = DeepRTSWorkspace.get_or_create_workspace()
     ws.get_or_create_model()
