@@ -7,7 +7,6 @@ Licensed under the MIT License.
 import time
 
 import pandas as pd
-from azureml.core import Model
 from azureml.core.conda_dependencies import CondaDependencies
 from azureml.core.image import ContainerImage
 from azureml.core.image.container import ContainerImageConfig
@@ -79,7 +78,8 @@ def create_lightgbm_image_config(conda_file="lgbmenv.yml", execution_script="sco
     """
     create_lightgbm_conda_file(conda_file)
 
-    with open("dockerfile", "w") as file:
+    dockerfile = "dockerfile"
+    with open(dockerfile, "w") as file:
         file.write("RUN apt update -y && apt upgrade -y && apt install -y build-essential")
 
     with open("score.py", 'w') as file:
@@ -98,44 +98,12 @@ def run(body):
     logger.info("run")
     return json.dumps({'call': True})
 """)
-    return ContainerImage.image_configuration(
-        execution_script=execution_script,
-        runtime="python",
-        conda_file=conda_file,
-        description="Image with lightgbm model",
-        tags={
-            "area": "text",
-            "type": "lightgbm"
-        },
-        dependencies=dependencies,
-        docker_file="dockerfile"
-    )
-
-
-def get_model(model_name, configuration_file=project_configuration_file, show_output=True):
-    """
-
-    :param model_name:
-    :param configuration_file:
-    :param show_output:
-    :return:
-    """
-    project_configuration = ProjectConfiguration(configuration_file)
-    workspace = get_or_create_workspace_from_project(project_configuration, show_output=show_output)
-    return Model(workspace, name=model_name)
-
-
-def has_model(model_name, configuration_file=project_configuration_file, show_output=True):
-    """
-
-    :param model_name:
-    :param configuration_file:
-    :param show_output:
-    :return:
-    """
-    project_configuration = ProjectConfiguration(configuration_file)
-    workspace = get_or_create_workspace_from_project(project_configuration, show_output=show_output)
-    return model_name in workspace.models
+    description = "Image with lightgbm model"
+    tags = {"area": "text", "type": "lightgbm"}
+    return ContainerImage.image_configuration(execution_script=execution_script, runtime="python",
+                                              conda_file=conda_file, description=description,
+                                              dependencies=dependencies, docker_file=dockerfile,
+                                              tags=tags)
 
 
 def create_lightgbm_conda_file(conda_file="lgbmenv.yml"):

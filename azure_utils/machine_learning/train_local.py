@@ -30,7 +30,7 @@ from azureml.core import ScriptRunConfig
 from azureml.core.runconfig import RunConfiguration
 
 from azure_utils import directory
-from azure_utils.machine_learning.realtime.image import get_model, has_model
+from azure_utils.machine_learning.model import get_model, has_model
 from azure_utils.machine_learning.utils import get_workspace_from_config
 
 

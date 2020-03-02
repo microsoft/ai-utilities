@@ -14,13 +14,12 @@ from azureml.core.conda_dependencies import CondaDependencies
 from azureml.core.image import ContainerImage
 from azureml.core.model import Model
 from azureml.core.webservice import Webservice, AksWebservice
-from keras import backend
-from keras.applications.imagenet_utils import preprocess_input
 from resnet import ResNet152
 
 from azure_utils.configuration.notebook_config import project_configuration_file
 from azure_utils.configuration.project_configuration import ProjectConfiguration
-from azure_utils.machine_learning.realtime.image import get_model, has_model, get_or_create_image
+from azure_utils.machine_learning.model import get_model, has_model
+from azure_utils.machine_learning.realtime.image import get_or_create_image
 from azure_utils.machine_learning.utils import get_or_create_workspace_from_project
 
 
@@ -64,6 +63,7 @@ def create_deep_model(configuration_file: str = project_configuration_file):
     print(model.name, model.description, model.version)
 
     # Clear GPU memory
+    from keras import backend
     backend.clear_session()
     return model
 
@@ -84,6 +84,7 @@ def download_test_image():
     img = ImageOps.fit(img, (224, 224), Image.ANTIALIAS)
     img = np.array(img)  # shape: (224, 224, 3)
     img = np.expand_dims(img, axis=0)
+    from keras.applications.imagenet_utils import preprocess_input
     return preprocess_input(img)
 
 
@@ -151,6 +152,7 @@ def develop_model_driver():
 
 
 def get_or_create_resnet_image(configuration_file: str = project_configuration_file, show_output=True,
+                               models: list = None,
                                image_settings_name="deep_image_name"):
     """
     Build Image
@@ -161,28 +163,25 @@ def get_or_create_resnet_image(configuration_file: str = project_configuration_f
     """
     image_config = create_resnet_image_config()
 
-    project_configuration = ProjectConfiguration(configuration_file)
-
-    workspace = get_or_create_workspace_from_project(project_configuration)
-
-    model_name = 'resnet_model'
-    models = [workspace.models[model_name]]
+    if not models:
+        models = []
 
     return get_or_create_image(image_config, image_settings_name, models, show_output, configuration_file)
 
 
-def create_resnet_image_config():
+def create_resnet_image_config(conda_file="img_env.yml", execution_script="driver.py"):
     conda_pack = ["tensorflow-gpu==1.14.0"]
     requirements = ["keras==2.2.0", "Pillow==5.2.0", "azureml-defaults", "azureml-contrib-services", "toolz==0.9.0"]
     imgenv = CondaDependencies.create(conda_packages=conda_pack, pip_packages=requirements)
     with open("img_env.yml", "w") as file:
         file.write(imgenv.serialize_to_string())
-    image_config = ContainerImage.image_configuration(execution_script="driver.py", runtime="python",
-                                                      conda_file="img_env.yml",
-                                                      description="Image for AKS Deployment Tutorial",
-                                                      tags={"name": "AKS", "project": "AML"},
-                                                      dependencies=["resnet152.py"], enable_gpu=True)
-    return image_config
+
+    description = "Image for AKS Deployment Tutorial"
+    dependencies = ["resnet152.py"]
+    tags = {"name": "AKS", "project": "AML"}
+    return ContainerImage.image_configuration(execution_script=execution_script, runtime="python",
+                                                      conda_file=conda_file, description=description, tags=tags,
+                                                      dependencies=dependencies, enable_gpu=True)
 
 
 def deploy_on_aks(configuration_file: str = project_configuration_file):
@@ -230,7 +229,7 @@ def deploy_on_aks(configuration_file: str = project_configuration_file):
     return aks_service
 
 
-def get_or_create_deep_aks(configuration_file: str = project_configuration_file):
+def get_or_create_deep_aks(configuration_file: str = project_configuration_file, vm_size="Standard_NC6"):
     """
 
     :param configuration_file:
@@ -246,7 +245,7 @@ def get_or_create_deep_aks(configuration_file: str = project_configuration_file)
     if aks_name in workspace_compute:
         return workspace_compute[aks_name]
 
-    prov_config = AksCompute.provisioning_configuration(vm_size="Standard_NC6")
+    prov_config = AksCompute.provisioning_configuration(vm_size=vm_size)
     aks_target = ComputeTarget.create(workspace=workspace, name=aks_name, provisioning_configuration=prov_config)
 
     aks_target.wait_for_completion(show_output=True)

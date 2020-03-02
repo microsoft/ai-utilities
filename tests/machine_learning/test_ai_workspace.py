@@ -11,6 +11,13 @@ from azure_utils.machine_learning.ai_workspace import DeepRTSWorkspace, RTSWorks
 
 def test_get_or_create():
     ws = RTSWorkspace.get_or_create_workspace()
+    assert type(ws) is RTSWorkspace
+    assert ws
+
+
+def test_get_or_create_deep_workspace():
+    ws = DeepRTSWorkspace.get_or_create_workspace()
+    assert type(ws) is DeepRTSWorkspace
     assert ws
 
 
@@ -33,17 +40,25 @@ def test_get_or_create_model():
 
 
 def test_get_or_create_image():
-    image = RTSWorkspace.get_or_create_image()
+    ws = RTSWorkspace.get_or_create_workspace()
+    assert ws
+    models = [RTSWorkspace.get_or_create_model()]
+    assert models
+    config = ws.get_or_create_image_configuration()
+    assert config
+    image = RTSWorkspace.get_or_create_image(config, "image_name", models)
     assert image
 
 
 def test_get_or_create_aks():
-    aks = RTSWorkspace.get_or_create_aks()
+    ws = RTSWorkspace.get_or_create_workspace()
+    aks = ws.get_or_create_aks()
     assert aks
 
 
 def test_get_or_create_service():
-    service = RTSWorkspace.get_or_create_service()
+    ws = RTSWorkspace.get_or_create_workspace()
+    service = ws.get_or_create_service()
     assert service
 
 
@@ -56,8 +71,12 @@ def test_get_or_create_model_driver():
 
 
 def test_get_or_create_deep_image():
-    DeepRTSWorkspace.get_or_create_image()
+    ws = DeepRTSWorkspace.get_or_create_workspace()
+    models = [DeepRTSWorkspace.get_or_create_model()]
+    config = ws.get_or_create_image_configuration()
+    DeepRTSWorkspace.get_or_create_image(config, "deep_image_name", models=models)
 
 
 def test_get_or_create_deep_service():
-    DeepRTSWorkspace.get_or_create_service()
+    ws = DeepRTSWorkspace.get_or_create_workspace()
+    ws.get_or_create_service()
