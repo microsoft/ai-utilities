@@ -4,16 +4,21 @@ AI-Utilities - ai_workspace.py
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
+import json
 import os
 import time
 
+from azure.mgmt.deploymentmanager.models import DeploymentMode
+from azure.mgmt.resource import ResourceManagementClient
 from azureml.contrib.functions import HTTP_TRIGGER, package
 from azureml.core import Workspace, Model, Webservice, ComputeTarget, ScriptRunConfig, Experiment
+from azureml.core.authentication import AzureCliAuthentication
 from azureml.core.compute import AksCompute
 from azureml.core.conda_dependencies import CondaDependencies
 from azureml.core.image import ContainerImage
 from azureml.core.model import InferenceConfig
 from azureml.core.webservice import AksWebservice
+from azureml.exceptions import ActivityFailedException
 
 from azure_utils import directory
 from azure_utils.configuration.notebook_config import project_configuration_file
@@ -25,7 +30,38 @@ from azure_utils.machine_learning.model import has_model, get_model
 from azure_utils.machine_learning.realtime.image import get_or_create_lightgbm_image
 from azure_utils.machine_learning.train_local import get_local_run_configuration
 from azure_utils.machine_learning.utils import get_or_create_workspace_from_project
-from resnet152 import ResNet152
+
+
+def configure_ping_test(ping_test_name, app_name, ping_url, ping_token):
+    project_configuration = ProjectConfiguration(project_configuration_file)
+    assert project_configuration.has_settings('subscription_id')
+    credentials = AzureCliAuthentication()
+    client = ResourceManagementClient(credentials, project_configuration.get_value('subscription_id'))
+    template_path = os.path.join(os.path.dirname(__file__), 'templates', 'webtest.json')
+    with open(template_path, 'r') as template_file_fd:
+        template = json.load(template_file_fd)
+
+    parameters = {
+        'appName': app_name.split("components/")[1],
+        'pingURL': ping_url,
+        'pingToken': ping_token,
+        'location': project_configuration.get_value('workspace_region'),
+        'pingTestName': ping_test_name + "-" + project_configuration.get_value('workspace_region')
+    }
+    parameters = {k: {'value': v} for k, v in parameters.items()}
+
+    deployment_properties = {
+        'mode': DeploymentMode.incremental,
+        'template': template,
+        'parameters': parameters
+    }
+
+    deployment_async_operation = client.deployments.create_or_update(
+        project_configuration.get_value('resource_group'),
+        'add-web-test',
+        deployment_properties
+    )
+    deployment_async_operation.wait()
 
 
 class AILabWorkspace(Workspace):
@@ -58,13 +94,16 @@ class AILabWorkspace(Workspace):
         self.show_output = True
 
         self.script = None
-        self.source_directory = None
+        self.source_directory = "./script"
+        self.num_estimators = "1"
         self.args = None
         self.run_configuration = run_configuration
         self.experiment_name = None
 
+        self.get_details()
+
     @classmethod
-    def get_or_or_create_realtime_endpoint(cls):
+    def get_or_or_create_realtime_endpoint(cls, **kwargs):
         """ Get or Create Real-time Endpoint
 
         :param kwargs: keyword args
@@ -119,8 +158,9 @@ class AILabWorkspace(Workspace):
             print(model.name, model.version, model.url, sep="\n")
         return model
 
-    def register_model(self, **kwargs) -> Model:
-        pass
+    def register_model(self) -> Model:
+        run = self.submit_experiment()
+        return self.register_model_from_run(run)
 
     def get_or_create_aks(self, configuration_file: str = project_configuration_file, vm_size: str = "Standard_D4_v2",
                           node_count: int = 4, show_output: bool = True):
@@ -213,6 +253,20 @@ class AILabWorkspace(Workspace):
                                                                    pip_packages=['azureml-defaults'])
         return InferenceConfig(entry_script="score.py", environment=myenv)
 
+    def has_web_service(self, service_name):
+        assert self.webservices
+        return service_name in self.webservices
+
+    def get_web_service_state(self, service_name):
+        web_service = self.get_web_service(service_name)
+        web_service.update_deployment_state()
+        assert web_service.state
+        return web_service.state
+
+    def get_web_service(self, service_name):
+        assert self.webservices[service_name]
+        return self.webservices[service_name]
+
     def get_or_create_service(self, configuration_file: str = project_configuration_file,
                               node_count: int = 4, num_replicas: int = 2,
                               cpu_cores: int = 1, show_output: bool = True) -> AksWebservice:
@@ -226,6 +280,7 @@ class AILabWorkspace(Workspace):
         :param show_output: toggle on/off standard output. default: `True`
         :return: New or Existing Kubernetes Web Service
         """
+        assert self.vm_size
         aks_target = self.get_or_create_aks(configuration_file=configuration_file, vm_size=self.vm_size,
                                             node_count=node_count, show_output=show_output)
 
@@ -237,8 +292,13 @@ class AILabWorkspace(Workspace):
         aks_service_name = project_configuration.get_value(self.setting_service_name)
         image_name = project_configuration.get_value(self.setting_image_name)
 
-        if aks_service_name in self.webservices:
-            return self.webservices[aks_service_name]
+        if self.has_web_service(aks_service_name) and self.get_web_service_state(aks_service_name) != "Failed":
+            os.makedirs(os.path.join(os.path.expanduser('~'), '.kube'), exist_ok=True)
+            config_path = os.path.join(os.path.expanduser('~'), '.kube/config')
+            with open(config_path, 'a') as f:
+                f.write(aks_target.get_credentials()['userKubeConfig'])
+
+            return self.get_web_service(aks_service_name)
 
         aks_config = AksWebservice.deploy_configuration(num_replicas=num_replicas, cpu_cores=cpu_cores,
                                                         enable_app_insights=True, collect_model_data=True)
@@ -248,15 +308,25 @@ class AILabWorkspace(Workspace):
         image = self.images[image_name]
 
         deploy_from_image_start = time.time()
+
         aks_service = Webservice.deploy_from_image(workspace=self, name=aks_service_name, image=image,
-                                                   deployment_config=aks_config, deployment_target=aks_target)
-        aks_service.wait_for_deployment(show_output=show_output)
+                                                   deployment_config=aks_config, deployment_target=aks_target,
+                                                   overwrite=True)
+        try:
+            aks_service.wait_for_deployment(show_output=show_output)
+
+            configure_ping_test("ping-test-" + aks_service_name, self.get_details()['applicationInsights'],
+                                aks_service.scoring_uri, aks_service.get_keys()[0])
+        except:
+            print(aks_service.get_logs())
+            raise Exception
         if show_output:
             deployment_time_secs = str(time.time() - deploy_from_image_start)
             print("Deployed Image with name "
                   + aks_service_name + ". Took " + deployment_time_secs + " seconds.")
             print(aks_service.state)
             print(aks_service.get_logs())
+
         return aks_service
 
     @staticmethod
@@ -313,7 +383,11 @@ class AILabWorkspace(Workspace):
         )
         run = Experiment(workspace=self, name=self.experiment_name).submit(src)
         if wait_for_completion:
-            run.wait_for_completion(show_output=self.show_output)
+            try:
+                run.wait_for_completion(show_output=self.show_output)
+            except ActivityFailedException as e:
+                print(run.get_details())
+                raise e
         return run
 
     def register_model_from_run(self, run):
@@ -329,85 +403,7 @@ class AILabWorkspace(Workspace):
 class RTSWorkspace(AILabWorkspace):
     """ Light GBM Real Time Scoring"""
 
-    def __init__(self, subscription_id, resource_group, workspace_name,
-                 run_configuration=get_local_run_configuration()):
-        super().__init__(subscription_id, resource_group, workspace_name)
-        conda_pack = [
-            "scikit-learn==0.19.1",
-            "pandas==0.23.3"
-        ]
-        requirements = [
-            "lightgbm==2.1.2",
-            "azureml-defaults==1.0.57",
-            "azureml-contrib-services",
-            "Microsoft-AI-Azure-Utility-Samples"
-        ]
-        lgbmenv = CondaDependencies.create(conda_packages=conda_pack, pip_packages=requirements)
-        self.dependencies = None
-
-        self.conda_file = "lgbmenv.yml"
-        with open(self.conda_file, "w") as file:
-            file.write(lgbmenv.serialize_to_string())
-
-        self.dockerfile = "dockerfile"
-        with open(self.dockerfile, "w") as file:
-            file.write("RUN apt update -y && apt upgrade -y && apt install -y build-essential")
-
-        self.execution_script = "score.py"
-        with open(self.execution_script, 'w') as file:
-            file.write("""        
-        import json
-        import logging
-
-
-        def init():
-            logger = logging.getLogger("scoring_script")
-            logger.info("init")
-
-
-        def run(body):
-            logger = logging.getLogger("scoring_script")
-            logger.info("run")
-            return json.dumps({'call': True})
-        """)
-
-        self.description = "Image with lightgbm model"
-        self.tags = {"area": "text", "type": "lightgbm"}
-        self.get_image = get_or_create_lightgbm_image
-
-        self.model_name = "question_match_model"
-        self.num_estimators = "1"
-        self.experiment_name = "mlaks-train-on-local"
-        self.model_path = "./outputs/model.pkl"
-        self.script = "create_model.py"
-        self.source_directory = "./script"
-        self.show_output = True
-        self.args = [
-            "--inputs",
-            os.path.abspath(directory + "/data_folder"),
-            "--outputs",
-            "outputs",
-            "--estimators",
-            self.num_estimators,
-            "--match",
-            "2",
-        ]
-        self.run_configuration = run_configuration
-
-        self.test_size = 0.21
-        self.min_text = 150
-        self.min_dupes = 12
-        self.match = 20
-
-    def register_model(self) -> Model:
-        if not os.path.isfile("script/create_model.py"):
-            os.makedirs("script", exist_ok=True)
-
-            create_model_py = "from azure_utils.machine_learning import create_model\n\nif __name__ == '__main__':\n" \
-                              "    create_model.main()"
-            with open("script/create_model.py", "w") as file:
-                file.write(create_model_py)
-
+    def prepare_data(self):
         outputs_path = directory + "/data_folder"
         dupes_test_path = os.path.join(outputs_path, "dupes_test.tsv")
         questions_path = os.path.join(outputs_path, "questions.tsv")
@@ -427,8 +423,98 @@ class RTSWorkspace(AILabWorkspace):
             save_data(balanced_pairs_test, balanced_pairs_train, dupes_test, dupes_test_path, outputs_path, questions,
                       questions_path, self.show_output)
 
-        run = self.submit_experiment()
-        return self.register_model_from_run(run)
+    def __init__(self, subscription_id, resource_group, workspace_name,
+                 run_configuration=get_local_run_configuration()):
+        super().__init__(subscription_id, resource_group, workspace_name)
+        conda_pack = [
+            "scikit-learn==0.19.1",
+            "pandas==0.23.3"
+        ]
+        requirements = [
+            "lightgbm==2.1.2",
+            "azureml-defaults==1.0.57",
+            "azureml-contrib-services",
+            "opencensus-ext-flask",
+            "Microsoft-AI-Azure-Utility-Samples"
+        ]
+        lgbmenv = CondaDependencies.create(conda_packages=conda_pack, pip_packages=requirements)
+        self.dependencies = None
+
+        self.conda_file = "lgbmenv.yml"
+        with open(self.conda_file, "w") as file:
+            file.write(lgbmenv.serialize_to_string())
+
+        self.dockerfile = "dockerfile"
+        with open(self.dockerfile, "w") as file:
+            file.write("RUN apt update -y && apt upgrade -y && apt install -y build-essential")
+
+        self.execution_script = "score.py"
+        with open(self.execution_script, 'w') as file:
+            file.write("""        
+import json
+import os
+import logging
+
+from flask import Flask
+
+Flask(__name__).config['OPENCENSUS'] = {
+    'TRACE': {
+        'SAMPLER': 'opencensus.trace.samplers.ProbabilitySampler(rate=1.0)',
+        'EXPORTER': '''opencensus.ext.azure.trace_exporter.AzureExporter(
+            connection_string="InstrumentationKey=" + ''' + os.getenv('AML_APP_INSIGHTS_KEY') + ''',
+        )'''
+    }
+}
+
+
+def init():
+    logger = logging.getLogger("scoring_script")
+    logger.info("init")
+
+
+def run(body):
+    logger = logging.getLogger("scoring_script")
+    logger.info("run")
+    return json.dumps({'call': True})
+
+""")
+
+        self.description = "Image with lightgbm model"
+        self.tags = {"area": "text", "type": "lightgbm"}
+        self.get_image = get_or_create_lightgbm_image
+
+        self.model_name = "question_match_model"
+        self.experiment_name = "mlaks-train-on-local"
+        self.model_path = "./outputs/model.pkl"
+        self.script = "create_model.py"
+        if not os.path.isfile("script/create_model.py"):
+            os.makedirs("script", exist_ok=True)
+
+            create_model_py = "from azure_utils.machine_learning import create_model\n\nif __name__ == '__main__':\n" \
+                              "    create_model.main()"
+            with open("script/create_model.py", "w") as file:
+                file.write(create_model_py)
+
+        self.source_directory = "./script"
+        self.show_output = True
+        self.args = [
+            "--inputs",
+            os.path.abspath(directory + "/data_folder"),
+            "--outputs",
+            "outputs",
+            "--estimators",
+            self.num_estimators,
+            "--match",
+            "2",
+        ]
+        self.run_configuration = run_configuration
+
+        self.test_size = 0.21
+        self.min_text = 150
+        self.min_dupes = 12
+        self.match = 20
+
+        self.prepare_data()
 
 
 class DeepRTSWorkspace(AILabWorkspace):
@@ -510,22 +596,53 @@ class DeepRTSWorkspace(AILabWorkspace):
 
         self.model_tags = {"model": "dl", "framework": "resnet"}
         self.model_description = "resnet 152 model"
-        self.model_name = "resnet_model"
-        self.model_path = "model_resnet_weights.h5"
+        self.model_name = "resnet_model_2"
+
+        self.model_path = "./outputs/model.pkl"
+        self.script = "create_deep_model.py"
+        self.args = [
+            "--outputs",
+            "outputs"
+        ]
+        self.experiment_name = "dlrts-train-on-local"
+
+        self.setting_service_name = "deep_aks_service_name"
+        self.setting_image_name = "deep_image_name"
 
         self.get_image = get_or_create_resnet_image
 
-    def register_model(self) -> Model:
-        resnet_152 = ResNet152(weights="imagenet")
-        resnet_152.save_weights(self.model_path)
-        # Clear GPU memory
-        from keras import backend
-        backend.clear_session()
+        if not os.path.isfile("script/create_deep_model.py"):
+            os.makedirs("script", exist_ok=True)
+            create_model_py = """
+import argparse
+import os
 
-        return Model.register(
-            model_path=self.model_path,  # this points to a local file
-            model_name=self.model_name,  # this is the name the   model is registered as
-            tags=self.model_tags,
-            description=self.model_description,
-            workspace=self,
-        )
+from azureml.core import Run
+from sklearn.externals import joblib
+
+from resnet152 import ResNet152
+
+if __name__ == '__main__':
+    # Define the arguments.
+    parser = argparse.ArgumentParser(description='Fit and evaluate a model based on train-test datasets.')
+    parser.add_argument('-v', '--verbose', help='the verbosity of the estimator', type=int, default=-1)
+    parser.add_argument('--outputs', help='the outputs directory', default='.')
+    parser.add_argument('-s', '--save', help='save the model', action='store_true', default=True)
+    parser.add_argument('--model', help='the model file', default='model.pkl')
+    args = parser.parse_args()
+
+    run = Run.get_context()
+    outputs_path = args.outputs
+    os.makedirs(outputs_path, exist_ok=True)
+    model_path = os.path.join(outputs_path, args.model)
+
+    resnet_152 = ResNet152(weights="imagenet")
+
+    # Save the model to a file, and report on its size.
+    if args.save:
+        resnet_152.save_weights(model_path)
+        # joblib.dump(resnet_152.get_weights(), model_path)
+
+"""
+            with open("script/create_deep_model.py", "w") as file:
+                file.write(create_model_py)

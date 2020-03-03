@@ -1,0 +1,21 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appName": {
+            "value": "azmlrtseinsightsbdbf93ae"
+        },
+        "pingURL": {
+            "value": "http://13.90.141.205:80/api/v1/service/aksservice2/score"
+        },
+        "pingToken": {
+            "value": "O4Yqa1gl5sZ1N7xc9vaZ1uOmdeFhZwtw"
+        },
+        "location": {
+            "value": "East US"
+        },
+        "pingTestName": {
+            "value": "ping-test-ml-3"
+        }
+    }
+}
