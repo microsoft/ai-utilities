@@ -1,3 +1,4 @@
+[![Azure Notebooks](https://notebooks.azure.com/launch.png)](https://notebooks.azure.com/import/gh/microsoft/AI-Utilities)
 # AI Utilities Sample Project
 This project is a sample showcasing how to create a common repository for utilities that can be used by other AI projects. 
 
