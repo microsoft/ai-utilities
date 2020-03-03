@@ -103,7 +103,7 @@ class AILabWorkspace(Workspace):
         self.get_details()
 
     @classmethod
-    def get_or_or_create_realtime_endpoint(cls, **kwargs):
+    def get_or_or_create(cls, **kwargs):
         """ Get or Create Real-time Endpoint
 
         :param kwargs: keyword args
@@ -400,7 +400,7 @@ class AILabWorkspace(Workspace):
         print(blob.location)
 
 
-class RTSWorkspace(AILabWorkspace):
+class MLRealtimeScore(AILabWorkspace):
     """ Light GBM Real Time Scoring"""
 
     def prepare_data(self):
@@ -517,7 +517,7 @@ def run(body):
         self.prepare_data()
 
 
-class DeepRTSWorkspace(AILabWorkspace):
+class DeepRealtimeScore(AILabWorkspace):
     """ Resnet Real-time Scoring"""
     image_settings_name = "mydeepimage"
     settings_aks_name = "deep_aks_name"

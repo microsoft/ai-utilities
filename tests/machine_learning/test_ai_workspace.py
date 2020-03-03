@@ -5,11 +5,11 @@ Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
 
-from azure_utils.machine_learning.ai_workspace import DeepRTSWorkspace, RTSWorkspace
+from azure_utils.machine_learning.ai_workspace import DeepRealtimeScore, MLRealtimeScore
 
 
 class TestDeployRTS:
-    workspace_type = RTSWorkspace
+    workspace_type = MLRealtimeScore
     ws = workspace_type.get_or_create_workspace()
     image_setting_name = "image_name"
 
@@ -39,10 +39,10 @@ class TestDeployRTS:
 
 
 class TestDeployDeepRTS(TestDeployRTS):
-    workspace_type = DeepRTSWorkspace
+    workspace_type = DeepRealtimeScore
     ws = workspace_type.get_or_create_workspace()
     image_setting_name = "deep_image_name"
 
 
 def test_get_or_create_function_endpoint():
-    RTSWorkspace.get_or_or_create_function_endpoint()
+    MLRealtimeScore.get_or_or_create_function_endpoint()
