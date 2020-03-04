@@ -44,5 +44,5 @@ dependencies:
     - prompt-toolkit==2.0.9
     - PyOpenSSL
     - nb-clean
-    - Microsoft-AI-Azure-Utility-Samples
+    - git+https://github.com/microsoft/AI-Utilities.git@deep_learning_2
     - azureml-contrib-functions
