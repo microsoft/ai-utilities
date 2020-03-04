@@ -37,7 +37,8 @@ from azure_utils.configuration.configuration_ui import SettingsUpdate
 from azure_utils.configuration.project_configuration import ProjectConfiguration
 
 project_configuration_file = "project.yml"
-
+train_py_default = "train.py"
+score_py_default = "score.py"
 
 def get_or_configure_settings(configuration_yaml: str = project_configuration_file):
     """

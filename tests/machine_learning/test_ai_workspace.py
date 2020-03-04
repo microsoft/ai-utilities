@@ -37,7 +37,7 @@ class TestDeployRTS:
 
     def test_get_or_create_service(self, ml_realtime_score_workspace):
         aks = ml_realtime_score_workspace.get_or_create_aks()
-        assert ml_realtime_score_workspace.get_or_create_aks_service(aks)
+        assert ml_realtime_score_workspace.get_or_create_aks_service_with_image(aks)
 
 
 class TestDeployDeepRTS:
@@ -65,22 +65,16 @@ class TestDeployDeepRTS:
     def test_get_or_create_aks(self, deep_realtime_score_workspace):
         assert deep_realtime_score_workspace.get_or_create_aks()
 
-    def test_get_or_create_service(self, deep_realtime_score_workspace):
+    def dont_test_get_or_create_service_with_image(self, deep_realtime_score_workspace):
         aks = deep_realtime_score_workspace.get_or_create_aks()
-        assert deep_realtime_score_workspace.get_or_create_aks_service(aks)
+        assert deep_realtime_score_workspace.get_or_create_aks_service_with_image(aks)
 
-    def test_get_or_create_service_2(self, deep_realtime_score_workspace):
-        from datetime import datetime
-        print(datetime.now())
+    def test_get_or_create_service(self, deep_realtime_score_workspace):
         model = deep_realtime_score_workspace.get_or_create_model()
-        print(datetime.now())
         inference_config = deep_realtime_score_workspace.get_inference_config()
-        print(datetime.now())
         aks_target = deep_realtime_score_workspace.get_or_create_aks()
-        print(datetime.now())
-        web_service = deep_realtime_score_workspace.get_or_create_aks_service_2(model, aks_target, inference_config)
-        print(datetime.now())
-        assert web_service
+
+        assert deep_realtime_score_workspace.get_or_create_aks_service(model, aks_target, inference_config)
 
 
 class TestDeployDeepRTSLocally:
