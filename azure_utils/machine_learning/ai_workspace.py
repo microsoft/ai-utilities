@@ -4,6 +4,7 @@ AI-Utilities - ai_workspace.py
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
+import hashlib
 import json
 import os
 import time
@@ -11,7 +12,7 @@ import time
 from azure.mgmt.deploymentmanager.models import DeploymentMode
 from azure.mgmt.resource import ResourceManagementClient
 from azureml.contrib.functions import HTTP_TRIGGER, package
-from azureml.core import Workspace, Model, Webservice, ComputeTarget, ScriptRunConfig, Experiment
+from azureml.core import Workspace, Model, Webservice, ComputeTarget, ScriptRunConfig, Experiment, Image
 from azureml.core.authentication import AzureCliAuthentication
 from azureml.core.compute import AksCompute
 from azureml.core.conda_dependencies import CondaDependencies
@@ -26,7 +27,6 @@ from azure_utils.configuration.project_configuration import ProjectConfiguration
 from azure_utils.machine_learning.datasets.stack_overflow_data import download_datasets, clean_data, split_duplicates, \
     save_data
 from azure_utils.machine_learning.deep.create_deep_model import get_or_create_resnet_image
-from azure_utils.machine_learning.model import has_model, get_model
 from azure_utils.machine_learning.realtime.image import get_or_create_lightgbm_image
 from azure_utils.machine_learning.train_local import get_local_run_configuration
 from azure_utils.machine_learning.utils import get_or_create_workspace_from_project
@@ -71,8 +71,8 @@ class AILabWorkspace(Workspace):
     settings_aks_service_name = "aks_service_name"
 
     def __init__(self, subscription_id, resource_group, workspace_name,
-                 run_configuration=get_local_run_configuration()):
-        super().__init__(subscription_id, resource_group, workspace_name)
+                 run_configuration=get_local_run_configuration(), **kwargs):
+        super().__init__(subscription_id, resource_group, workspace_name, **kwargs)
         self.tags = None
         self.dockerfile = None
         self.dependencies = None
@@ -111,7 +111,7 @@ class AILabWorkspace(Workspace):
         workspace = cls.get_or_create_workspace()
         models = [workspace.get_or_create_model()]
         config = workspace.get_or_create_image_configuration()
-        cls.get_or_create_image(config, cls.image_settings_name, models=models)
+        workspace.get_or_create_image(config, models=models)
         return workspace.get_or_create_service()
 
     @classmethod
@@ -126,7 +126,7 @@ class AILabWorkspace(Workspace):
         workspace.get_or_create_function_image(config, models=models)
 
     @classmethod
-    def get_or_create_workspace(cls, configuration_file: str = project_configuration_file):
+    def get_or_create_workspace(cls, configuration_file: str = project_configuration_file, **kwargs):
         """ Get or create a workspace if it doesn't exist.
 
         :param configuration_file:
@@ -135,6 +135,12 @@ class AILabWorkspace(Workspace):
         assert project_configuration.has_settings('subscription_id')
         assert project_configuration.has_settings('resource_group')
         assert project_configuration.has_settings('workspace_name')
+        assert project_configuration.has_settings('workspace_region')
+        cls.create(subscription_id=project_configuration.get_value('subscription_id'),
+                   resource_group=project_configuration.get_value('resource_group'),
+                   name=project_configuration.get_value('workspace_name'),
+                   location=project_configuration.get_value('workspace_region'),
+                   create_resource_group=True, exist_ok=True, **kwargs)
 
         return cls(project_configuration.get_value('subscription_id'),
                    project_configuration.get_value('resource_group'),
@@ -149,8 +155,12 @@ class AILabWorkspace(Workspace):
         """
         assert self.model_name
 
-        if has_model(self.model_name):
-            return get_model(self.model_name)
+        if self.model_name in self.models:
+            # if get_model(self.model_name).tags['train_py_hash'] == self.get_file_md5(
+            #         self.source_directory + "/" + self.script):
+            model = Model(self, name=self.model_name)
+            model.download("outputs", exist_ok=True)
+            return model
 
         model = self.register_model()
         assert model
@@ -221,10 +231,19 @@ class AILabWorkspace(Workspace):
         assert self.description
         assert self.tags
 
+        self.tags['score_py_hash'] = self.get_file_md5(self.execution_script)
         return ContainerImage.image_configuration(execution_script=self.execution_script, runtime="python",
                                                   conda_file=self.conda_file, description=self.description,
                                                   dependencies=self.dependencies, docker_file=self.dockerfile,
                                                   tags=self.tags, enable_gpu=self.enable_gpu, **kwargs)
+
+    def get_file_md5(self, file_name):
+        hasher = hashlib.md5()
+        with open(file_name, 'rb') as afile:
+            buf = afile.read()
+            hasher.update(buf)
+        file_hash = hasher.hexdigest()
+        return file_hash
 
     def get_or_create_function_image_configuration(self):
         """ Get or Create new Docker Image Configuration for Machine Learning Workspace
@@ -329,8 +348,7 @@ class AILabWorkspace(Workspace):
 
         return aks_service
 
-    @staticmethod
-    def get_or_create_image(image_config, image_settings_name, models=None, show_output=True,
+    def get_or_create_image(self, image_config, models=None, show_output=True,
                             configuration_file: str = project_configuration_file):
         """Get or Create new Docker Image from Machine Learning Workspace
 
@@ -346,14 +364,23 @@ class AILabWorkspace(Workspace):
         if not models:
             models = []
 
-        assert project_configuration.has_settings(image_settings_name)
-        image_name = project_configuration.get_value(image_settings_name)
+        print(self.setting_image_name)
+        assert project_configuration.has_settings(self.setting_image_name)
+        image_name = project_configuration.get_value(self.setting_image_name)
 
         workspace = get_or_create_workspace_from_project(project_configuration, show_output=show_output)
 
         workspace_images = workspace.images
         if image_name in workspace_images and workspace_images[image_name].creation_state != "Failed":
-            return workspace_images[image_name]
+            import hashlib
+
+            hasher = hashlib.md5()
+            with open(self.execution_script, 'rb') as afile:
+                buf = afile.read()
+                hasher.update(buf)
+            if "hash" in Image(workspace, image_name).tags \
+                    and hasher.hexdigest() == Image(workspace, image_name).tags['hash']:
+                return workspace_images[image_name]
 
         image_create_start = time.time()
         image = ContainerImage.create(name=image_name, models=models, image_config=image_config,
@@ -381,7 +408,9 @@ class AILabWorkspace(Workspace):
             arguments=self.args,
             run_config=self.run_configuration,
         )
-        run = Experiment(workspace=self, name=self.experiment_name).submit(src)
+        self.tags['train_py_hash'] = self.get_file_md5(self.source_directory + "/" + self.script)
+        exp = Experiment(workspace=self, name=self.experiment_name)
+        run = exp.submit(src)
         if wait_for_completion:
             try:
                 run.wait_for_completion(show_output=self.show_output)
@@ -398,6 +427,13 @@ class AILabWorkspace(Workspace):
         blob.wait_for_creation(show_output=True)
         # Display the package location/ACR path
         print(blob.location)
+
+    def test_service_local(self):
+        Model(self, self.model_name).download(exist_ok=True)
+        exec(open(self.execution_script).read())
+        exec("init()")
+        exec("response = run(MockRequest())")
+        exec("assert response")
 
 
 class MLRealtimeScore(AILabWorkspace):
@@ -424,8 +460,8 @@ class MLRealtimeScore(AILabWorkspace):
                       questions_path, self.show_output)
 
     def __init__(self, subscription_id, resource_group, workspace_name,
-                 run_configuration=get_local_run_configuration()):
-        super().__init__(subscription_id, resource_group, workspace_name)
+                 run_configuration=get_local_run_configuration(), **kwargs):
+        super().__init__(subscription_id, resource_group, workspace_name, **kwargs)
         conda_pack = [
             "scikit-learn==0.19.1",
             "pandas==0.23.3"
@@ -517,6 +553,10 @@ def run(body):
         self.prepare_data()
 
 
+class MockRequest:
+    method = 'GET'
+
+
 class DeepRealtimeScore(AILabWorkspace):
     """ Resnet Real-time Scoring"""
     image_settings_name = "mydeepimage"
@@ -524,8 +564,8 @@ class DeepRealtimeScore(AILabWorkspace):
     settings_aks_service_name = "deep_aks_service_name"
 
     def __init__(self, subscription_id, resource_group, workspace_name, execution_script="driver.py",
-                 conda_file="img_env.yml"):
-        super().__init__(subscription_id, resource_group, workspace_name)
+                 conda_file="img_env.yml", **kwargs):
+        super().__init__(subscription_id, resource_group, workspace_name, **kwargs)
         conda_pack = [
             "tensorflow-gpu==1.14.0"
         ]
@@ -540,51 +580,75 @@ class DeepRealtimeScore(AILabWorkspace):
         self.conda_file = conda_file
         with open(conda_file, "w") as file:
             file.write(imgenv.serialize_to_string())
+
         with open(execution_script, "w") as file:
-            file.write('\nfrom resnet152 import ResNet152\nfrom keras.preprocessing import image\nfrom '
-                       'keras.applications.imagenet_utils import preprocess_input, decode_predictions\nfrom '
-                       'azureml.contrib.services.aml_request import rawhttp\nfrom azureml.core.model import '
-                       'Model\nfrom azureml.contrib.services.aml_response import AMLResponse\nfrom toolz '
-                       'import compose\nimport numpy as np\nimport timeit as t\nfrom PIL import Image, '
-                       'ImageOps\nimport logging\n\n_NUMBER_RESULTS = 3\n\n\ndef _image_ref_to_pil_image('
-                       'image_ref):\n    """ Load image with PIL (RGB)\n    """\n    return Image.open('
-                       'image_ref).convert("RGB")\n\n\ndef _pil_to_numpy(pil_image):\n    img = '
-                       'ImageOps.fit(pil_image, (224, 224), Image.ANTIALIAS)\n    img = image.img_to_array('
-                       'img)\n    return img\n\n\ndef _create_scoring_func():\n    """ Initialize ResNet '
-                       '152 Model\n    """\n    logger = logging.getLogger("model_driver")\n    start = '
-                       't.default_timer()\n    model_name = "resnet_model"\n    model_path = '
-                       'Model.get_model_path(model_name)\n    model = ResNet152()\n    model.load_weights('
-                       'model_path)\n    end = t.default_timer()\n\n    load_time = "Model loading time: '
-                       '{0} ms".format(round((end - start) * 1000, 2))\n    logger.info(load_time)\n\n    '
-                       'def call_model(img_array_list):\n        img_array = np.stack(img_array_list)\n     '
-                       '   img_array = preprocess_input(img_array)\n        preds = model.predict('
-                       'img_array)\n        # Converting predictions to float64 since we are able to '
-                       'serialize float64 but not float32\n        preds = decode_predictions(preds.astype('
-                       'np.float64), top=_NUMBER_RESULTS)\n        return preds\n\n    return '
-                       'call_model\n\n\ndef get_model_api():\n    logger = logging.getLogger('
-                       '"model_driver")\n    scoring_func = _create_scoring_func()\n\n    '
-                       'def process_and_score(images_dict):\n        """ Classify the input using the '
-                       'loaded model\n        """\n        start = t.default_timer()\n        logger.info('
-                       '"Scoring {} images".format(len(images_dict)))\n        transform_input = compose('
-                       '_pil_to_numpy, _image_ref_to_pil_image)\n        transformed_dict = {\n            '
-                       'key: transform_input(img_ref) for key, img_ref in images_dict.items()\n        }\n  '
-                       '      preds = scoring_func(list(transformed_dict.values()))\n        preds = dict('
-                       'zip(transformed_dict.keys(), preds))\n        end = t.default_timer()\n\n        '
-                       'logger.info("Predictions: {0}".format(preds))\n        logger.info("Predictions '
-                       'took {0} ms".format(round((end - start) * 1000, 2)))\n        return (preds, '
-                       '"Computed in {0} ms".format(round((end - start) * 1000, 2)))\n\n    return '
-                       'process_and_score\n\n\ndef init():\n    """ Initialise the model and scoring '
-                       'function\n    """\n    global process_and_score\n    process_and_score = '
-                       'get_model_api()\n\n\n@rawhttp\ndef run(request):\n    """ Make a prediction based '
-                       'on the data passed in using the preloaded model\n    """\n    if request.method == '
-                       '\'POST\':\n        return process_and_score(request.files)\n    if request.method '
-                       '== \'GET\':\n        resp_body = {\n            "azEnvironment": "Azure",'
-                       '\n            "location": "westus2",\n            "osType": "Ubuntu 16.04",'
-                       '\n            "resourceGroupName": "",\n            "resourceId": "",\n            '
-                       '"sku": "",\n            "subscriptionId": "",\n            "uniqueId": '
-                       '"PythonMLRST",\n            "vmSize": "",\n            "zone": "",\n            '
-                       '"isServer": False,\n            "version": ""\n        }\n        return '
-                       'resp_body\n    return AMLResponse("bad request", 500)')
+            file.write("""
+import os.path
+
+from resnet152 import ResNet152
+from keras.preprocessing import image
+from keras.applications.imagenet_utils import preprocess_input, decode_predictions
+from azureml.core import Workspace
+from azureml.core.model import Model
+from azureml.contrib.services.aml_request import rawhttp
+from azureml.contrib.services.aml_response import AMLResponse
+from toolz import compose
+import numpy as np
+from PIL import Image, ImageOps
+
+_NUMBER_RESULTS = 3
+
+
+def init():
+    global model
+    dir = "."
+    if os.getenv('AZUREML_MODEL_DIR'):
+       dir = os.getenv('AZUREML_MODEL_DIR')
+    
+    assert os.path.isfile(dir + "/model.pkl")
+    
+    from resnet152 import ResNet152
+    model = ResNet152()
+    model.load_weights(dir + "/model.pkl")
+
+@rawhttp
+def run(request):
+    if request.method == 'POST':
+        #preprocess
+        transform_input = compose(_pil_to_numpy, _image_ref_to_pil_image)
+        transformed_dict = {key: transform_input(img_ref) for key, img_ref in request.files.items()}
+        img_array = preprocess_input(np.stack(list(transformed_dict.values())))
+        
+        preds = model.predict(img_array)        
+        
+        # Postprocess
+        # nverting predictions to float64 since we are able to serialize float64 but not float32
+        preds = decode_predictions(preds.astype(np.float64), top=_NUMBER_RESULTS)
+        return dict(zip(transformed_dict.keys(), preds))
+
+    if request.method == 'GET':
+        return {"azEnvironment": "Azure"}
+    return AMLResponse("bad request", 500)
+
+                    
+def _image_ref_to_pil_image(image_ref):
+    return Image.open(image_ref).convert("RGB")
+
+
+def _pil_to_numpy(pil_image):
+    img = ImageOps.fit(pil_image, (224, 224), Image.ANTIALIAS)
+    img = image.img_to_array(img)
+    return img
+
+
+""")
+
+        # Model(self, "resnet_model_2").download(exist_ok=True)
+        # exec(open(execution_script).read())
+        # exec("init()")
+        # exec("response = run(MockRequest())")
+        # exec("assert response")
+
         self.execution_script = execution_script
 
         self.description = "Image for AKS Deployment Tutorial"
@@ -613,7 +677,8 @@ class DeepRealtimeScore(AILabWorkspace):
 
         if not os.path.isfile("script/create_deep_model.py"):
             os.makedirs("script", exist_ok=True)
-            create_model_py = """
+            with open("script/create_deep_model.py", "w") as file:
+                file.write("""
 import argparse
 import os
 
@@ -623,26 +688,7 @@ from sklearn.externals import joblib
 from resnet152 import ResNet152
 
 if __name__ == '__main__':
-    # Define the arguments.
-    parser = argparse.ArgumentParser(description='Fit and evaluate a model based on train-test datasets.')
-    parser.add_argument('-v', '--verbose', help='the verbosity of the estimator', type=int, default=-1)
-    parser.add_argument('--outputs', help='the outputs directory', default='.')
-    parser.add_argument('-s', '--save', help='save the model', action='store_true', default=True)
-    parser.add_argument('--model', help='the model file', default='model.pkl')
-    args = parser.parse_args()
-
-    run = Run.get_context()
-    outputs_path = args.outputs
-    os.makedirs(outputs_path, exist_ok=True)
-    model_path = os.path.join(outputs_path, args.model)
-
     resnet_152 = ResNet152(weights="imagenet")
+    resnet_152.save_weights("outputs/model.pkl")
 
-    # Save the model to a file, and report on its size.
-    if args.save:
-        resnet_152.save_weights(model_path)
-        # joblib.dump(resnet_152.get_weights(), model_path)
-
-"""
-            with open("script/create_deep_model.py", "w") as file:
-                file.write(create_model_py)
+""")
