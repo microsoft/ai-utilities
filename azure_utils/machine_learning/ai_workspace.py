@@ -612,7 +612,8 @@ class DeepRealtimeScore(AILabWorkspace):
             "Pillow==5.2.0",
             "azureml-defaults",
             "azureml-contrib-services",
-            "toolz==0.9.0"
+            "toolz==0.9.0",
+            "git+https://github.com/microsoft/AI-Utilities.git@deep_learning_2"
         ]
         self.conda_env = CondaDependencies.create(conda_packages=self.conda_pack, pip_packages=self.requirements)
 
