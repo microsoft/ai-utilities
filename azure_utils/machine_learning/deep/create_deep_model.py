@@ -191,10 +191,10 @@ def deploy_on_aks(configuration_file: str = project_configuration_file):
     :return:
     """
     project_configuration = ProjectConfiguration(configuration_file)
-    assert project_configuration.has_settings("deep_image_name")
-    assert project_configuration.has_settings("deep_aks_service_name")
-    assert project_configuration.has_settings("deep_aks_name")
-    assert project_configuration.has_settings("deep_aks_location")
+    assert project_configuration.has_value("deep_image_name")
+    assert project_configuration.has_value("deep_aks_service_name")
+    assert project_configuration.has_value("deep_aks_name")
+    assert project_configuration.has_value("deep_aks_location")
 
     image_name = project_configuration.get_value("deep_image_name")
     aks_service_name = project_configuration.get_value("deep_aks_service_name")
@@ -236,7 +236,7 @@ def get_or_create_deep_aks(configuration_file: str = project_configuration_file,
     :return:
     """
     project_configuration = ProjectConfiguration(configuration_file)
-    assert project_configuration.has_settings("deep_aks_name")
+    assert project_configuration.has_value("deep_aks_name")
 
     aks_name = project_configuration.get_value("deep_aks_name")
 

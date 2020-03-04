@@ -51,8 +51,8 @@ def get_or_create_service(configuration_file: str = project_configuration_file, 
     :return: New or Existing Kubernetes Web Service
     """
     project_configuration = ProjectConfiguration(configuration_file)
-    assert project_configuration.has_settings("aks_service_name")
-    assert project_configuration.has_settings("image_name")
+    assert project_configuration.has_value("aks_service_name")
+    assert project_configuration.has_value("image_name")
 
     aks_service_name = project_configuration.get_value("aks_service_name")
     image_name = project_configuration.get_value("image_name")
@@ -93,10 +93,10 @@ def get_or_create_aks(configuration_file: str = project_configuration_file, vm_s
     :return: New or Existing Kubernetes Compute
     """
     project_configuration = ProjectConfiguration(configuration_file)
-    assert project_configuration.has_settings("aks_name")
-    assert project_configuration.has_settings("aks_service_name")
+    assert project_configuration.has_value("aks_name")
+    assert project_configuration.has_value("aks_service_name")
     assert "_" not in project_configuration.get_value("aks_service_name"), "aks_service_name can not contain _"
-    assert project_configuration.has_settings("workspace_region")
+    assert project_configuration.has_value("workspace_region")
 
     workspace = get_or_create_workspace_from_project(project_configuration, show_output=show_output)
 

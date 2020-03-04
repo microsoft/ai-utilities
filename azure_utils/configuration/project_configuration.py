@@ -93,7 +93,7 @@ class ProjectConfiguration:
         self._validate_configuration(ProjectConfiguration.project_key)
         self.configuration[ProjectConfiguration.project_key] = project_name
 
-    def has_settings(self, setting_name: str) -> bool:
+    def has_value(self, setting_name: str) -> bool:
         """
         Get all of the settings (UI Configuration)
 

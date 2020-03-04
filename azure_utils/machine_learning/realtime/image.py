@@ -43,7 +43,7 @@ def get_or_create_image(image_config, image_settings_name, models, show_output,
                         configuration_file: str = project_configuration_file):
     project_configuration = ProjectConfiguration(configuration_file)
 
-    assert project_configuration.has_settings(image_settings_name)
+    assert project_configuration.has_value(image_settings_name)
     image_name = project_configuration.get_value(image_settings_name)
 
     workspace = get_or_create_workspace_from_project(project_configuration, show_output=show_output)
