@@ -32,38 +32,6 @@ from azure_utils.machine_learning.train_local import get_local_run_configuration
 from azure_utils.machine_learning.utils import get_or_create_workspace_from_project
 
 
-def configure_ping_test(ping_test_name, app_name, ping_url, ping_token):
-    project_configuration = ProjectConfiguration(project_configuration_file)
-    assert project_configuration.has_settings('subscription_id')
-    credentials = AzureCliAuthentication()
-    client = ResourceManagementClient(credentials, project_configuration.get_value('subscription_id'))
-    template_path = os.path.join(os.path.dirname(__file__), 'templates', 'webtest.json')
-    with open(template_path, 'r') as template_file_fd:
-        template = json.load(template_file_fd)
-
-    parameters = {
-        'appName': app_name.split("components/")[1],
-        'pingURL': ping_url,
-        'pingToken': ping_token,
-        'location': project_configuration.get_value('workspace_region'),
-        'pingTestName': ping_test_name + "-" + project_configuration.get_value('workspace_region')
-    }
-    parameters = {k: {'value': v} for k, v in parameters.items()}
-
-    deployment_properties = {
-        'mode': DeploymentMode.incremental,
-        'template': template,
-        'parameters': parameters
-    }
-
-    deployment_async_operation = client.deployments.create_or_update(
-        project_configuration.get_value('resource_group'),
-        'add-web-test',
-        deployment_properties
-    )
-    deployment_async_operation.wait()
-
-
 class AILabWorkspace(Workspace):
     """ AI Workspace """
     image_settings_name = "image_name"
@@ -553,10 +521,6 @@ def run(body):
         self.prepare_data()
 
 
-class MockRequest:
-    method = 'GET'
-
-
 class DeepRealtimeScore(AILabWorkspace):
     """ Resnet Real-time Scoring"""
     image_settings_name = "mydeepimage"
@@ -692,3 +656,39 @@ if __name__ == '__main__':
     resnet_152.save_weights("outputs/model.pkl")
 
 """)
+
+
+class MockRequest:
+    method = 'GET'
+
+
+def configure_ping_test(ping_test_name, app_name, ping_url, ping_token):
+    project_configuration = ProjectConfiguration(project_configuration_file)
+    assert project_configuration.has_settings('subscription_id')
+    credentials = AzureCliAuthentication()
+    client = ResourceManagementClient(credentials, project_configuration.get_value('subscription_id'))
+    template_path = os.path.join(os.path.dirname(__file__), 'templates', 'webtest.json')
+    with open(template_path, 'r') as template_file_fd:
+        template = json.load(template_file_fd)
+
+    parameters = {
+        'appName': app_name.split("components/")[1],
+        'pingURL': ping_url,
+        'pingToken': ping_token,
+        'location': project_configuration.get_value('workspace_region'),
+        'pingTestName': ping_test_name + "-" + project_configuration.get_value('workspace_region')
+    }
+    parameters = {k: {'value': v} for k, v in parameters.items()}
+
+    deployment_properties = {
+        'mode': DeploymentMode.incremental,
+        'template': template,
+        'parameters': parameters
+    }
+
+    deployment_async_operation = client.deployments.create_or_update(
+        project_configuration.get_value('resource_group'),
+        'add-web-test',
+        deployment_properties
+    )
+    deployment_async_operation.wait()
