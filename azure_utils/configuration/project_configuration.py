@@ -40,16 +40,29 @@ class ProjectConfiguration:
         :param configuration_file: File path to configuration file
         """
         found = False
-
+        self.configuration = {}
         try:
             found, file_dir = find_file(configuration_file)
             self.configuration_file = file_dir + "/" + configuration_file
-            self.configuration = {}
         except RecursionError:
             pass
         finally:
             if not found:
-                self.configuration = ProjectConfiguration("project_sample.yml").configuration
+                self.configuration = ProjectConfiguration(configuration_file).configuration
+                self.set_project_name("project_name")
+                self.add_setting("subscription_id", "Your Azure Subscription", "<>")
+                self.add_setting("resource_group", "Azure Resource Group Name", "<>")
+                self.add_setting("workspace_name", "Azure ML Workspace Name", "<>")
+                self.add_setting("workspace_region", "Azure ML Workspace Region", "<>")
+                self.add_setting("image_name", "Docker Container Image Name", "<>")
+                self.add_setting("aks_service_name", "AKS Service Name", "<>")
+                self.add_setting("aks_location", " AKS Azure Region", "<>")
+                self.add_setting("aks_name", "AKS Cluster Name", "<>")
+                self.add_setting("deep_image_name", "Docker Container Image Name", "<>")
+                self.add_setting("deep_aks_service_name", "AKS Service Name", "<>")
+                self.add_setting("deep_aks_name", "AKS Cluster Name", "<>")
+                self.add_setting("deep_aks_location", "AKS Azure Region", "<>")
+
                 self.save_configuration()
 
         self._load_configuration()

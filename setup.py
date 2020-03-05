@@ -37,6 +37,7 @@ setup(
         'numpy',
         'Pillow',
         'keras',
-        'resnet'
+        'resnet',
+        'azureml-contrib-functions'
     ]
 )
