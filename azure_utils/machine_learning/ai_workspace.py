@@ -211,17 +211,21 @@ class AILabWorkspace(Workspace):
         assert self.project_configuration.has_value(self.settings_aks_service_name)
         aks_service_name = self.project_configuration.get_value(self.settings_aks_service_name)
 
+        model_dict = model.serialize()
+
         if self.has_web_service(aks_service_name) and self.get_web_service_state(aks_service_name) != "Failed":
+            aks_service = self.get_web_service(aks_service_name)
+            aks_dict = aks_service.serialize()
+            self.workspace_widget = make_workspace_widget(model_dict, aks_dict)
             self.create_kube_config(aks_target)
-            return self.get_web_service(aks_service_name)
+            return aks_service
 
         aks_service = Model.deploy(self, aks_service_name, models=[model], inference_config=inference_config,
                                    deployment_target=aks_target, overwrite=True)
-
-        model_dict = model.serialize()
         aks_dict = aks_service.serialize()
-
         self.workspace_widget = make_workspace_widget(model_dict, aks_dict)
+        self.create_kube_config(aks_target)
+
         try:
             if self.wait_for_completion:
                 aks_service.wait_for_deployment(show_output=self.show_output)
@@ -327,12 +331,12 @@ class AILabWorkspace(Workspace):
                 raise e
         return run
 
-    def test_service_local(self):
-        Model(self, self.model_name).download(exist_ok=True)
-        exec(open(self.score_py).read())
-        exec("init()")
-        exec("response = run(MockRequest())")
-        exec("assert response")
+    # def test_service_local(self):
+    #     Model(self, self.model_name).download(exist_ok=True)
+    #     exec(open(self.score_py).read())
+    #     exec("init()")
+    #     exec("response = run(MockRequest())")
+    #     exec("assert response")
 
     def get_inference_config(self):
         environment = Environment("conda-env")
@@ -502,7 +506,8 @@ class AILabWorkspace(Workspace):
 
         application_insights_images = [
             widgets.HTML(
-                value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/app_insights_1.png'
+                value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/app_insights_1'
+                      '.png'
                       '">'),
             widgets.HTML(
                 value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs'
@@ -532,6 +537,7 @@ class AILabWorkspace(Workspace):
         tab_nest.set_title(1, 'Kubernetes')
         tab_nest.set_title(2, 'Application Insights')
         return tab_nest
+
 
 class MLRealtimeScore(AILabWorkspace):
     """ Light GBM Real Time Scoring"""

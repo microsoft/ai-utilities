@@ -68,11 +68,11 @@ def get_configuration_widget(config):
             setting_with_id = proj_config.get_value(setting_key).replace("$(User)", user_id)
             proj_config.set_value(setting_key, setting_with_id)
 
-            text = widgets.Text(value=setting_with_id.replace("<>", ""),
-                                placeholder=setting[setting_key][0]['description'], description=setting_key,
-                                disabled=False)
+            text_boxes[setting_key] = widgets.Text(value=setting_with_id.replace("<>", ""),
+                                                   placeholder=setting[setting_key][0]['description'],
+                                                   description=setting_key,
+                                                   disabled=False)
 
-            text_boxes[setting_key] = widgets.HBox([text])
     proj_config.save_configuration()
 
     default_sub = list(name2id.keys())[0]
@@ -127,7 +127,6 @@ def get_configuration_widget(config):
 
 
 def make_workspace_widget(model_dict, aks_dict):
-    from ipywidgets import widgets
     def make_vbox(model_dict):
         labels = []
         for k in model_dict:
