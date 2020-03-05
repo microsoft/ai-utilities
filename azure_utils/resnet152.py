@@ -204,168 +204,173 @@ def conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2))
     return x
 
 
-def ResNet152(include_top=True, weights=None,
-              input_tensor=None, input_shape=None,
-              large_input=False, pooling=None,
-              classes=1000):
-    """Instantiate the ResNet152 architecture.
+class ResNet152:
+    def __init__(self):
+        print("Created")
 
-    Keyword arguments:
-    include_top -- whether to include the fully-connected layer at the
-        top of the network. (default True)
-    weights -- one of `None` (random initialization) or "imagenet"
-        (pre-training on ImageNet). (default None)
-    input_tensor -- optional Keras tensor (i.e. output of `layers.Input()`)
-        to use as image input for the model.(default None)
-    input_shape -- optional shape tuple, only to be specified if
-        `include_top` is False (otherwise the input shape has to be
-        `(224, 224, 3)` (with `channels_last` data format) or
-        `(3, 224, 224)` (with `channels_first` data format). It should
-        have exactly 3 inputs channels, and width and height should be
-        no smaller than 197. E.g. `(200, 200, 3)` would be one valid value.
-        (default None)
-    large_input -- if True, then the input shape expected will be
-        `(448, 448, 3)` (with `channels_last` data format) or
-        `(3, 448, 448)` (with `channels_first` data format). (default False)
-    pooling -- Optional pooling mode for feature extraction when
-        `include_top` is `False`.
-        - `None` means that the output of the model will be the 4D
-            tensor output of the last convolutional layer.
-        - `avg` means that global average pooling will be applied to
-            the output of the last convolutional layer, and thus
-            the output of the model will be a 2D tensor.
-        - `max` means that global max pooling will be applied.
-        (default None)
-    classes -- optional number of classes to classify image into, only
-        to be specified if `include_top` is True, and if no `weights`
-        argument is specified. (default 1000)
+    @staticmethod
+    def train_resnet_152(include_top=True, weights=None,
+                         input_tensor=None, input_shape=None,
+                         large_input=False, pooling=None,
+                         classes=1000):
+        """Instantiate the ResNet152 architecture.
 
-    Returns:
-    A Keras model instance.
+        Keyword arguments:
+        include_top -- whether to include the fully-connected layer at the
+            top of the network. (default True)
+        weights -- one of `None` (random initialization) or "imagenet"
+            (pre-training on ImageNet). (default None)
+        input_tensor -- optional Keras tensor (i.e. output of `layers.Input()`)
+            to use as image input for the model.(default None)
+        input_shape -- optional shape tuple, only to be specified if
+            `include_top` is False (otherwise the input shape has to be
+            `(224, 224, 3)` (with `channels_last` data format) or
+            `(3, 224, 224)` (with `channels_first` data format). It should
+            have exactly 3 inputs channels, and width and height should be
+            no smaller than 197. E.g. `(200, 200, 3)` would be one valid value.
+            (default None)
+        large_input -- if True, then the input shape expected will be
+            `(448, 448, 3)` (with `channels_last` data format) or
+            `(3, 448, 448)` (with `channels_first` data format). (default False)
+        pooling -- Optional pooling mode for feature extraction when
+            `include_top` is `False`.
+            - `None` means that the output of the model will be the 4D
+                tensor output of the last convolutional layer.
+            - `avg` means that global average pooling will be applied to
+                the output of the last convolutional layer, and thus
+                the output of the model will be a 2D tensor.
+            - `max` means that global max pooling will be applied.
+            (default None)
+        classes -- optional number of classes to classify image into, only
+            to be specified if `include_top` is True, and if no `weights`
+            argument is specified. (default 1000)
 
-    Raises:
-    ValueError: in case of invalid argument for `weights`,
-        or invalid input shape.
-    """
-    if weights not in {'imagenet', None}:
-        raise ValueError('The `weights` argument should be either '
-                         '`None` (random initialization) or `imagenet` '
-                         '(pre-training on ImageNet).')
+        Returns:
+        A Keras model instance.
 
-    if weights == 'imagenet' and include_top and classes != 1000:
-        raise ValueError('If using `weights` as imagenet with `include_top`'
-                         ' as true, `classes` should be 1000')
+        Raises:
+        ValueError: in case of invalid argument for `weights`,
+            or invalid input shape.
+        """
+        if weights not in {'imagenet', None}:
+            raise ValueError('The `weights` argument should be either '
+                             '`None` (random initialization) or `imagenet` '
+                             '(pre-training on ImageNet).')
 
-    eps = 1.1e-5
+        if weights == 'imagenet' and include_top and classes != 1000:
+            raise ValueError('If using `weights` as imagenet with `include_top`'
+                             ' as true, `classes` should be 1000')
 
-    if large_input:
-        img_size = 448
-    else:
-        img_size = 224
+        eps = 1.1e-5
 
-    # Determine proper input shape
-    input_shape = _obtain_input_shape(input_shape,
-                                      default_size=img_size,
-                                      min_size=197,
-                                      data_format=K.image_data_format(),
-                                      require_flatten=include_top)
-
-    if input_tensor is None:
-        img_input = Input(shape=input_shape)
-    else:
-        if not K.is_keras_tensor(input_tensor):
-            img_input = Input(tensor=input_tensor, shape=input_shape)
+        if large_input:
+            img_size = 448
         else:
-            img_input = input_tensor
+            img_size = 224
 
-    # handle dimension ordering for different backends
-    if K.image_dim_ordering() == 'tf':
-        bn_axis = 3
-    else:
-        bn_axis = 1
+        # Determine proper input shape
+        input_shape = _obtain_input_shape(input_shape,
+                                          default_size=img_size,
+                                          min_size=197,
+                                          data_format=K.image_data_format(),
+                                          require_flatten=include_top)
 
-    x = ZeroPadding2D((3, 3), name='conv1_zeropadding')(img_input)
-    x = Conv2D(64, (7, 7), strides=(2, 2), name='conv1', use_bias=False)(x)
-    x = BatchNormalization(epsilon=eps, axis=bn_axis, name='bn_conv1')(x)
-    x = Scale(axis=bn_axis, name='scale_conv1')(x)
-    x = Activation('relu', name='conv1_relu')(x)
-    x = MaxPooling2D((3, 3), strides=(2, 2), name='pool1')(x)
+        if input_tensor is None:
+            img_input = Input(shape=input_shape)
+        else:
+            if not K.is_keras_tensor(input_tensor):
+                img_input = Input(tensor=input_tensor, shape=input_shape)
+            else:
+                img_input = input_tensor
 
-    x = conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
-    x = identity_block(x, 3, [64, 64, 256], stage=2, block='b')
-    x = identity_block(x, 3, [64, 64, 256], stage=2, block='c')
+        # handle dimension ordering for different backends
+        if K.image_dim_ordering() == 'tf':
+            bn_axis = 3
+        else:
+            bn_axis = 1
 
-    x = conv_block(x, 3, [128, 128, 512], stage=3, block='a')
-    for i in range(1, 8):
-        x = identity_block(x, 3, [128, 128, 512], stage=3, block='b' + str(i))
+        x = ZeroPadding2D((3, 3), name='conv1_zeropadding')(img_input)
+        x = Conv2D(64, (7, 7), strides=(2, 2), name='conv1', use_bias=False)(x)
+        x = BatchNormalization(epsilon=eps, axis=bn_axis, name='bn_conv1')(x)
+        x = Scale(axis=bn_axis, name='scale_conv1')(x)
+        x = Activation('relu', name='conv1_relu')(x)
+        x = MaxPooling2D((3, 3), strides=(2, 2), name='pool1')(x)
 
-    x = conv_block(x, 3, [256, 256, 1024], stage=4, block='a')
-    for i in range(1, 36):
-        x = identity_block(x, 3, [256, 256, 1024], stage=4, block='b' + str(i))
+        x = conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
+        x = identity_block(x, 3, [64, 64, 256], stage=2, block='b')
+        x = identity_block(x, 3, [64, 64, 256], stage=2, block='c')
 
-    x = conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
-    x = identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
-    x = identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
+        x = conv_block(x, 3, [128, 128, 512], stage=3, block='a')
+        for i in range(1, 8):
+            x = identity_block(x, 3, [128, 128, 512], stage=3, block='b' + str(i))
 
-    if large_input:
-        x = AveragePooling2D((14, 14), name='avg_pool')(x)
-    else:
-        x = AveragePooling2D((7, 7), name='avg_pool')(x)
+        x = conv_block(x, 3, [256, 256, 1024], stage=4, block='a')
+        for i in range(1, 36):
+            x = identity_block(x, 3, [256, 256, 1024], stage=4, block='b' + str(i))
 
-    # include classification layer by default, not included for feature extraction
-    if include_top:
-        x = Flatten()(x)
-        x = Dense(classes, activation='softmax', name='fc1000')(x)
-    else:
-        if pooling == 'avg':
-            x = GlobalAveragePooling2D()(x)
-        elif pooling == 'max':
-            x = GlobalMaxPooling2D()(x)
+        x = conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
+        x = identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
+        x = identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
 
-    # Ensure that the model takes into account
-    # any potential predecessors of `input_tensor`.
-    if input_tensor is not None:
-        inputs = get_source_inputs(input_tensor)
-    else:
-        inputs = img_input
-    # Create model.
-    model = Model(inputs, x, name='resnet152')
+        if large_input:
+            x = AveragePooling2D((14, 14), name='avg_pool')(x)
+        else:
+            x = AveragePooling2D((7, 7), name='avg_pool')(x)
 
-    # load weights
-    if weights == 'imagenet':
+        # include classification layer by default, not included for feature extraction
         if include_top:
-            weights_path = get_file('resnet152_weights_tf.h5',
-                                    WEIGHTS_PATH,
-                                    cache_subdir='models',
-                                    md5_hash='cdb18a2158b88e392c0905d47dcef965')
+            x = Flatten()(x)
+            x = Dense(classes, activation='softmax', name='fc1000')(x)
         else:
-            weights_path = get_file('resnet152_weights_tf_notop.h5',
-                                    WEIGHTS_PATH_NO_TOP,
-                                    cache_subdir='models',
-                                    md5_hash='4a90dcdafacbd17d772af1fb44fc2660')
-        model.load_weights(weights_path, by_name=True)
-        if K.backend() == 'theano':
-            layer_utils.convert_all_kernels_in_model(model)
-            if include_top:
-                maxpool = model.get_layer(name='avg_pool')
-                shape = maxpool.output_shape[1:]
-                dense = model.get_layer(name='fc1000')
-                layer_utils.convert_dense_weights_data_format(dense, shape, 'channels_first')
+            if pooling == 'avg':
+                x = GlobalAveragePooling2D()(x)
+            elif pooling == 'max':
+                x = GlobalMaxPooling2D()(x)
 
-        if K.image_data_format() == 'channels_first' and K.backend() == 'tensorflow':
-            warnings.warn('You are using the TensorFlow backend, yet you '
-                          'are using the Theano '
-                          'image data format convention '
-                          '(`image_data_format="channels_first"`). '
-                          'For best performance, set '
-                          '`image_data_format="channels_last"` in '
-                          'your Keras config '
-                          'at ~/.keras/keras.json.')
-    return model
+        # Ensure that the model takes into account
+        # any potential predecessors of `input_tensor`.
+        if input_tensor is not None:
+            inputs = get_source_inputs(input_tensor)
+        else:
+            inputs = img_input
+        # Create model.
+        model = Model(inputs, x, name='resnet152')
+
+        # load weights
+        if weights == 'imagenet':
+            if include_top:
+                weights_path = get_file('resnet152_weights_tf.h5',
+                                        WEIGHTS_PATH,
+                                        cache_subdir='models',
+                                        md5_hash='cdb18a2158b88e392c0905d47dcef965')
+            else:
+                weights_path = get_file('resnet152_weights_tf_notop.h5',
+                                        WEIGHTS_PATH_NO_TOP,
+                                        cache_subdir='models',
+                                        md5_hash='4a90dcdafacbd17d772af1fb44fc2660')
+            model.load_weights(weights_path, by_name=True)
+            if K.backend() == 'theano':
+                layer_utils.convert_all_kernels_in_model(model)
+                if include_top:
+                    maxpool = model.get_layer(name='avg_pool')
+                    shape = maxpool.output_shape[1:]
+                    dense = model.get_layer(name='fc1000')
+                    layer_utils.convert_dense_weights_data_format(dense, shape, 'channels_first')
+
+            if K.image_data_format() == 'channels_first' and K.backend() == 'tensorflow':
+                warnings.warn('You are using the TensorFlow backend, yet you '
+                              'are using the Theano '
+                              'image data format convention '
+                              '(`image_data_format="channels_first"`). '
+                              'For best performance, set '
+                              '`image_data_format="channels_last"` in '
+                              'your Keras config '
+                              'at ~/.keras/keras.json.')
+        return model
 
 
 if __name__ == '__main__':
-    model = ResNet152(include_top=True, weights='imagenet')
+    model = ResNet152.train_resnet_152(include_top=True, weights='imagenet')
 
     img_path = 'elephant.jpg'
     img = image.load_img(img_path, target_size=(224, 224))
