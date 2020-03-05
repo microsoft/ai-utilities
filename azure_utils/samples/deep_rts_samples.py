@@ -1,19 +1,16 @@
-# -*- coding: utf-8 -*-
-"""ResNet152 model for Keras.
-
-# Reference:
-
-- [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385)
-
-Adaptation of code from flyyufelix, mvoelk, BigMoyan, fchollet at https://github.com/adamcasson/resnet152
-
 """
+AI-Utilities - deep_rts_samples.py
 
-import sys
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the MIT License.
+"""
+import inspect
+import os
 import warnings
 
 import keras.backend as K
 import numpy as np
+from azureml.contrib.services import rawhttp
 from keras import initializers
 from keras.applications.imagenet_utils import _obtain_input_shape
 from keras.applications.imagenet_utils import decode_predictions
@@ -37,9 +34,10 @@ from keras.preprocessing import image
 from keras.utils import layer_utils
 from keras.utils.data_utils import get_file
 
-from azure_utils.machine_learning.models.training_arg_parsers import get_model_path, process_request, prepare_response
-
-sys.setrecursionlimit(3000)
+from azure_utils.machine_learning.factories.realtime_factory import RealTimeFactory
+from azure_utils.machine_learning.models.training_arg_parsers import get_model_path, process_request, prepare_response, \
+    default_response
+from azure_utils.resnet152 import RTSEstimator
 
 WEIGHTS_PATH = 'https://github.com/adamcasson/resnet152/releases/download/v0.1/resnet152_weights_tf.h5'
 WEIGHTS_PATH_NO_TOP = 'https://github.com/adamcasson/resnet152/releases/download/v0.1/resnet152_weights_tf_notop.h5'
@@ -111,14 +109,17 @@ class Scale(Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
-class ResNet152:
+class ResNet152(RTSEstimator):
     def __init__(self):
         self.model = None
         print("Created")
 
     def train(self):
-        self.model = self.train_resnet_152()
+        self.model = self.create_model()
         return self.model
+
+    def save_model(self, path):
+        self.model.save_weights(path)
 
     @classmethod
     def load_model(cls, model_file="/model.pkl"):
@@ -133,7 +134,7 @@ class ResNet152:
         return prepare_response(preds, transformed_dict)
 
     @staticmethod
-    def identity_block(input_tensor, kernel_size, filters, stage, block):
+    def _identity_block(input_tensor, kernel_size, filters, stage, block):
         """The identity_block is the block that has no conv layer at shortcut
 
         Keyword arguments
@@ -176,7 +177,7 @@ class ResNet152:
         return x
 
     @staticmethod
-    def conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2)):
+    def _conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2)):
         """conv_block is the block that has a conv layer at shortcut
 
         Keyword arguments:
@@ -228,8 +229,8 @@ class ResNet152:
         return x
 
     @staticmethod
-    def train_resnet_152(include_top=True, weights=None, input_tensor=None, input_shape=None, large_input=False,
-                         pooling=None, classes=1000):
+    def create_model(include_top=True, weights=None, input_tensor=None, input_shape=None, large_input=False,
+                     pooling=None, classes=1000):
         """Instantiate the ResNet152 architecture.
 
         Keyword arguments:
@@ -313,21 +314,21 @@ class ResNet152:
         x = Activation('relu', name='conv1_relu')(x)
         x = MaxPooling2D((3, 3), strides=(2, 2), name='pool1')(x)
 
-        x = ResNet152.conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
-        x = ResNet152.identity_block(x, 3, [64, 64, 256], stage=2, block='b')
-        x = ResNet152.identity_block(x, 3, [64, 64, 256], stage=2, block='c')
+        x = ResNet152._conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
+        x = ResNet152._identity_block(x, 3, [64, 64, 256], stage=2, block='b')
+        x = ResNet152._identity_block(x, 3, [64, 64, 256], stage=2, block='c')
 
-        x = ResNet152.conv_block(x, 3, [128, 128, 512], stage=3, block='a')
+        x = ResNet152._conv_block(x, 3, [128, 128, 512], stage=3, block='a')
         for i in range(1, 8):
-            x = ResNet152.identity_block(x, 3, [128, 128, 512], stage=3, block='b' + str(i))
+            x = ResNet152._identity_block(x, 3, [128, 128, 512], stage=3, block='b' + str(i))
 
-        x = ResNet152.conv_block(x, 3, [256, 256, 1024], stage=4, block='a')
+        x = ResNet152._conv_block(x, 3, [256, 256, 1024], stage=4, block='a')
         for i in range(1, 36):
-            x = ResNet152.identity_block(x, 3, [256, 256, 1024], stage=4, block='b' + str(i))
+            x = ResNet152._identity_block(x, 3, [256, 256, 1024], stage=4, block='b' + str(i))
 
-        x = ResNet152.conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
-        x = ResNet152.identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
-        x = ResNet152.identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
+        x = ResNet152._conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
+        x = ResNet152._identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
+        x = ResNet152._identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
 
         if large_input:
             x = AveragePooling2D((14, 14), name='avg_pool')(x)
@@ -386,15 +387,44 @@ class ResNet152:
         return model
 
 
-if __name__ == '__main__':
-    model = ResNet152.train_resnet_152(include_top=True, weights='imagenet')
+model = ResNet152.create_model(include_top=True, weights='imagenet')
+img_path = 'elephant.jpg'
+img = image.load_img(img_path, target_size=(224, 224))
+x = image.img_to_array(img)
 
-    img_path = 'elephant.jpg'
-    img = image.load_img(img_path, target_size=(224, 224))
-    x = image.img_to_array(img)
+if __name__ == '__main__':
     x = np.expand_dims(x, axis=0)
     x = preprocess_input(x)
     print('Input image shape:', x.shape)
 
     preds = model.predict(x)
     print('Predicted:', decode_predictions(preds))
+
+
+class RealTimeDeepFactory(RealTimeFactory):
+    def train(self, args):
+        resnet_152 = ResNet152.create_model(weights="imagenet")
+        resnet_152.save_model(os.path.join(args.outputs, args.model))
+
+    def score_init(self):
+        self.resnet_152 = ResNet152.load_model()
+
+    @rawhttp
+    def score_run(self, request):
+        """ Make a prediction based on the data passed in using the preloaded model"""
+        if request.method == 'POST':
+            return self.resnet_152.predict(request)
+        return default_response(request)
+
+    def __init__(self):
+        self.resnet_152 = None
+        print("")
+
+    @staticmethod
+    def make_file():
+        file = inspect.getsource(RealTimeFactory)
+        file = file.replace('def train(self, args):\n        raise NotImplementedError\n', inspect.getsource(RealTimeDeepFactory.train))
+        file = file.replace('def score_init(self):\n        raise NotImplementedError\n', inspect.getsource(RealTimeDeepFactory.score_init))
+        file = file.replace('@rawhttp\n    def score_run(self, request):\n        raise NotImplementedError\n', inspect.getsource(RealTimeDeepFactory.score_run))
+        file = file.replace('def __init__(self):\n        raise NotImplementedError\n', inspect.getsource(RealTimeDeepFactory.__init__))
+        file

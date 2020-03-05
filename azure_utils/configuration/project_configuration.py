@@ -6,6 +6,7 @@ Licensed under the MIT License.
 """
 
 import os
+import sys
 from queue import Queue
 from typing import Optional, Dict
 
@@ -42,6 +43,7 @@ class ProjectConfiguration:
         found = False
         self.configuration = {}
         try:
+            sys.setrecursionlimit(10)
             found, file_dir = find_file(configuration_file)
             self.configuration_file = file_dir + "/" + configuration_file
         except RecursionError:
