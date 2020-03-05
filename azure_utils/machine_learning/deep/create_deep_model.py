@@ -12,60 +12,12 @@ from azureml.core import ComputeTarget
 from azureml.core.compute import AksCompute
 from azureml.core.conda_dependencies import CondaDependencies
 from azureml.core.image import ContainerImage
-from azureml.core.model import Model
 from azureml.core.webservice import Webservice, AksWebservice
-from resnet import ResNet152
 
 from azure_utils.configuration.notebook_config import project_configuration_file
 from azure_utils.configuration.project_configuration import ProjectConfiguration
-from azure_utils.machine_learning.model import get_model, has_model
 from azure_utils.machine_learning.realtime.image import get_or_create_image
 from azure_utils.machine_learning.utils import get_or_create_workspace_from_project
-
-
-def create_deep_model(configuration_file: str = project_configuration_file):
-    """
-
-    :param configuration_file:
-    :return:
-    """
-    project_configuration = ProjectConfiguration(configuration_file)
-
-    # If you see error msg "InternalError: Dst tensor is not initialized.", it indicates there are not enough memory.
-    model = has_model("resnet_model")
-    if model:
-        return get_model("resnet_model")
-    model = ResNet152(weights="imagenet")
-    print("model loaded")
-
-    download_test_image()
-
-    # ## Register the model
-    # Register an existing trained model, add descirption and tags.
-
-    # Get workspace
-    # Load existing workspace from the config file info.
-    workspace = get_or_create_workspace_from_project(project_configuration)
-    print(workspace.name, workspace.resource_group, workspace.location, workspace.subscription_id, sep="\n")
-
-    model.save_weights("model_resnet_weights.h5")
-
-    # Register the model
-
-    model = Model.register(
-        model_path="model_resnet_weights.h5",  # this points to a local file
-        model_name="resnet_model",  # this is the name the   model is registered as
-        tags={"model": "dl", "framework": "resnet"},
-        description="resnet 152 model",
-        workspace=workspace,
-    )
-
-    print(model.name, model.description, model.version)
-
-    # Clear GPU memory
-    from keras import backend
-    backend.clear_session()
-    return model
 
 
 def download_test_image():
@@ -180,8 +132,8 @@ def create_resnet_image_config(conda_file="img_env.yml", execution_script="drive
     dependencies = ["resnet152.py"]
     tags = {"name": "AKS", "project": "AML"}
     return ContainerImage.image_configuration(execution_script=execution_script, runtime="python",
-                                                      conda_file=conda_file, description=description, tags=tags,
-                                                      dependencies=dependencies, enable_gpu=True)
+                                              conda_file=conda_file, description=description, tags=tags,
+                                              dependencies=dependencies, enable_gpu=True)
 
 
 def deploy_on_aks(configuration_file: str = project_configuration_file):

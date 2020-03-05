@@ -5,15 +5,18 @@ Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
 import getpass
+import warnings
 
 import yaml
 from azure.common.client_factory import get_client_from_cli_profile
 from azure.mgmt.resource import SubscriptionClient
+from azureml.core import Workspace
 from ipywidgets import widgets
 from knack.util import CLIError
 
 from azure_utils.azureml_tools.subscription import _run_az_cli_login
 from azure_utils.configuration.project_configuration import ProjectConfiguration
+from azure_utils.machine_learning.ai_workspace import AILabWorkspace
 
 
 def list_subscriptions():
@@ -27,24 +30,14 @@ def list_subscriptions():
             {sub.subscription_id: sub.display_name for sub in sub_client.subscriptions.list()}]
 
 
-def get_configuration_widget(config):
+def get_configuration_widget(config, with_existing=True):
     proj_config = ProjectConfiguration(config)
     proj_config.save_configuration()
     out = widgets.Output()
 
     uploader = widgets.FileUpload(accept='.yml', multiple=False)
-    # 'success', 'info', 'warning', 'danger' or ''
-    save_upload = widgets.Button(description='Save Upload', disabled=False, button_style='',
-                                 tooltip='Click to save settings to file.', icon='check')
 
-    overwrite = widgets.Button(description='Overwrite Settings', disabled=False, button_style='',
-                               tooltip='Click to save settings to file.', icon='check')
     name2id, id2name = list_subscriptions()
-
-    def on_button_clicked(_):
-        # "linking function with output"
-        update_and_save_configuration()
-        overwrite.button_style = 'success'
 
     def update_and_save_configuration():
         for boxes in text_boxes:
@@ -56,8 +49,6 @@ def get_configuration_widget(config):
         with open(proj_config.configuration_file, 'w') as f:
             f.write(yaml.safe_dump(proj_config.configuration))
             f.close()
-
-    overwrite.on_click(on_button_clicked)
 
     getpass.getuser()
 
@@ -79,13 +70,8 @@ def get_configuration_widget(config):
     if proj_config.get_value('subscription_id') in id2name:
         default_sub = id2name[proj_config.get_value('subscription_id')]
 
-    def on_change(change):
-        if change['type'] == 'change' and change['name'] == 'value':
-            update_and_save_configuration()
-
     text_boxes['subscription_id'] = widgets.Dropdown(options=list(name2id.keys()), value=default_sub,
                                                      description='subscription_id', disabled=False)
-    text_boxes['subscription_id'].observe(on_change)
 
     def convert_to_region(key):
         if key in text_boxes:
@@ -93,99 +79,62 @@ def get_configuration_widget(config):
                 options=['eastus', 'eastus2', 'canadacentral', 'centralus', 'northcentralus', 'southcentralus',
                          'westcentralus', 'westus', 'westus2'],
                 value=proj_config.get_value(key).replace("<>", "eastus"), description=key, disabled=False)
-            text_boxes[key].observe(on_change)
 
     convert_to_region('workspace_region')
     convert_to_region('aks_location')
     convert_to_region('deep_aks_location')
 
-    my_list = [out, widgets.HBox([uploader, save_upload])]
+    dropdown_keys = ["aks_service_name", "aks_name", "image_name",
+                     "deep_aks_service_name", "deep_aks_name", "deep_image_name"]
+
+    ws = Workspace(proj_config.get_value('subscription_id'),
+                   proj_config.get_value('resource_group'),
+                   proj_config.get_value('workspace_name'))
+
+    ws = AILabWorkspace.get_or_create_workspace(config)
+
+    def get_list(key):
+        if "image_name" in key:
+            return list(ws.images.keys())
+        if "aks_name" in key:
+            return list(ws.compute_targets.keys())
+        if "aks_service_name" in key:
+            return list(ws.webservices.keys())
+
+    my_list = [out, uploader]
     for setting_key in text_boxes:
-        my_list.append(text_boxes[setting_key])
+        text_box = text_boxes[setting_key]
+        if with_existing and setting_key in dropdown_keys and type(text_box) is widgets.Text:
+            if get_list(setting_key)[0]:
+                dropdown = widgets.Dropdown(options=get_list(setting_key), value=get_list(setting_key)[0],
+                                            description='existing', disabled=False)
+                text_box = widgets.HBox([text_box, dropdown])
+        my_list.append(text_box)
 
-    my_list.append(overwrite)
-
-    def on_upload_save_click(_):
-        if uploader.value:
+    def upload_on_change(change):
+        if change['type'] == 'change' and change['name'] == 'value':
             for file in uploader.value:
                 with open(config, 'wb') as f:
                     f.write(uploader.value[file]['content'])
                     f.close()
                 proj_config = ProjectConfiguration(config)
-                for key in text_boxes:
-                    assert proj_config.has_value(key)
-                    if key != "subscription_id":
-                        text_boxes[key].value = proj_config.get_value(key)
+
+                for box in text_boxes:
+                    if proj_config.has_value(box):
+                        if box == "subscription_id":
+                            text_boxes[box].value = id2name[proj_config.get_value(box)]
+                        else:
+                            text_boxes[box].value = proj_config.get_value(box)
                     else:
-                        text_boxes[key].value = id2name[proj_config.get_value(key)]
+                        warnings.warn("Reload Widget to display new properties")
 
-                save_upload.button_style = "success"
+    uploader.observe(upload_on_change)
 
-    save_upload.on_click(on_upload_save_click)
+    def on_change(change):
+        if change['type'] == 'change' and change['name'] == 'value':
+            update_and_save_configuration()
+
+    for box in text_boxes:
+        text_boxes[box].observe(on_change)
 
     return widgets.VBox(my_list)
-
-
-def make_workspace_widget(model_dict, aks_dict):
-    def make_vbox(model_dict):
-        labels = []
-        for k in model_dict:
-            if type(model_dict[k]) is not dict:
-                string = str(model_dict[k])
-                labels.append(widgets.HBox([widgets.HTML(value="<b>" + k + ":</b>"), widgets.Label(string)]))
-            else:
-                mini_labels = []
-                mini_dic = model_dict[k]
-                if mini_dic and mini_dic is not dict:
-                    for mini_k in mini_dic:
-                        string = str(mini_dic[mini_k])
-                        mini_labels.append(
-                            widgets.HBox([widgets.HTML(value="<b>" + mini_k + ":</b>"), widgets.Label(string)]))
-                    mini_model_accordion = widgets.Accordion(children=[widgets.VBox(mini_labels)])
-                    mini_model_accordion.set_title(0, k)
-                    labels.append(mini_model_accordion)
-
-        model_widget = widgets.VBox(labels)
-        return widgets.VBox(children=[model_widget])
-
-    ws_image = widgets.HTML(
-        value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/studio.png">')
-    model_vbox = make_vbox(model_dict)
-    aks_box = make_vbox(aks_dict)
-
-    deployment_accordion = widgets.Accordion(children=[ws_image, model_vbox])
-    deployment_accordion.set_title(0, 'Workspace')
-    deployment_accordion.set_title(1, 'Model')
-
-    application_insights_images = [
-        widgets.HTML(
-            value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/app_insights_1.png'
-                  '">'),
-        widgets.HTML(
-            value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs'
-                  '/app_insights_availability.png">'),
-        widgets.HTML(
-            value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs'
-                  '/app_insights_perf_dash.png">'),
-        widgets.HTML(
-            value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/app_insights_perf'
-                  '.png">')
-    ]
-    application_insights_accordion = widgets.Accordion(children=application_insights_images)
-    application_insights_accordion.set_title(0, 'Main')
-    application_insights_accordion.set_title(1, 'Availability')
-    application_insights_accordion.set_title(2, 'Performance')
-    application_insights_accordion.set_title(3, 'Load Testing')
-
-    kubernetes_image = widgets.HTML(
-        value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/kubernetes.png">')
-    kubernetes_accordion = widgets.Accordion(children=[aks_box, kubernetes_image])
-    kubernetes_accordion.set_title(0, 'Main')
-    kubernetes_accordion.set_title(1, 'Performance')
-
-    tab_nest = widgets.Tab()
-    tab_nest.children = [deployment_accordion, kubernetes_accordion, application_insights_accordion]
-    tab_nest.set_title(0, 'ML Studio')
-    tab_nest.set_title(1, 'Kubernetes')
-    tab_nest.set_title(2, 'Application Insights')
-    return tab_nest
