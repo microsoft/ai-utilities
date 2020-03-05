@@ -29,6 +29,7 @@ from azure_utils.machine_learning.datasets.stack_overflow_data import download_d
 from azure_utils.machine_learning.deep.create_deep_model import get_or_create_resnet_image
 from azure_utils.machine_learning.realtime.image import get_or_create_lightgbm_image
 from azure_utils.machine_learning.train_local import get_local_run_configuration
+from azure_utils.notebook_widgets.notebook_configuration_widget import make_workspace_widget
 
 
 class AILabWorkspace(Workspace):
@@ -88,6 +89,8 @@ class AILabWorkspace(Workspace):
         self.node_count = 4
         self.num_replicas: int = 2
         self.cpu_cores: int = 1
+
+        self.workspace_widget = None
 
     @classmethod
     def get_or_or_create(cls, configuration_file: str = project_configuration_file,
@@ -214,15 +217,20 @@ class AILabWorkspace(Workspace):
 
         aks_service = Model.deploy(self, aks_service_name, models=[model], inference_config=inference_config,
                                    deployment_target=aks_target, overwrite=True)
+
+        model_dict = model.serialize()
+        aks_dict = aks_service.serialize()
+
+        self.workspace_widget = make_workspace_widget(model_dict, aks_dict)
         try:
             if self.wait_for_completion:
                 aks_service.wait_for_deployment(show_output=self.show_output)
                 configure_ping_test("ping-test-" + aks_service_name, self.get_details()['applicationInsights'],
                                     aks_service.scoring_uri, aks_service.get_keys()[0])
-                return aks_service
         finally:
             if self.show_output:
                 print(aks_service.get_logs())
+        return aks_service
 
     @classmethod
     def get_or_or_create_function_endpoint(cls):
@@ -459,6 +467,71 @@ class AILabWorkspace(Workspace):
             print(image.image_build_log_uri)
         return image
 
+    @staticmethod
+    def make_workspace_widget(model_dict, aks_dict):
+        from ipywidgets import widgets
+        def make_vbox(model_dict):
+            labels = []
+            for k in model_dict:
+                if type(model_dict[k]) is not dict:
+                    string = str(model_dict[k])
+                    labels.append(widgets.HBox([widgets.HTML(value="<b>" + k + ":</b>"), widgets.Label(string)]))
+                else:
+                    mini_labels = []
+                    mini_dic = model_dict[k]
+                    if mini_dic and mini_dic is not dict:
+                        for mini_k in mini_dic:
+                            string = str(mini_dic[mini_k])
+                            mini_labels.append(
+                                widgets.HBox([widgets.HTML(value="<b>" + mini_k + ":</b>"), widgets.Label(string)]))
+                        mini_model_accordion = widgets.Accordion(children=[widgets.VBox(mini_labels)])
+                        mini_model_accordion.set_title(0, k)
+                        labels.append(mini_model_accordion)
+
+            model_widget = widgets.VBox(labels)
+            return widgets.VBox(children=[model_widget])
+
+        ws_image = widgets.HTML(
+            value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/studio.png">')
+        model_vbox = make_vbox(model_dict)
+        aks_box = make_vbox(aks_dict)
+
+        deployment_accordion = widgets.Accordion(children=[ws_image, model_vbox])
+        deployment_accordion.set_title(0, 'Workspace')
+        deployment_accordion.set_title(1, 'Model')
+
+        application_insights_images = [
+            widgets.HTML(
+                value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/app_insights_1.png'
+                      '">'),
+            widgets.HTML(
+                value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs'
+                      '/app_insights_availability.png">'),
+            widgets.HTML(
+                value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs'
+                      '/app_insights_perf_dash.png">'),
+            widgets.HTML(
+                value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/app_insights_perf'
+                      '.png">')
+        ]
+        application_insights_accordion = widgets.Accordion(children=application_insights_images)
+        application_insights_accordion.set_title(0, 'Main')
+        application_insights_accordion.set_title(1, 'Availability')
+        application_insights_accordion.set_title(2, 'Performance')
+        application_insights_accordion.set_title(3, 'Load Testing')
+
+        kubernetes_image = widgets.HTML(
+            value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/kubernetes.png">')
+        kubernetes_accordion = widgets.Accordion(children=[aks_box, kubernetes_image])
+        kubernetes_accordion.set_title(0, 'Main')
+        kubernetes_accordion.set_title(1, 'Performance')
+
+        tab_nest = widgets.Tab()
+        tab_nest.children = [deployment_accordion, kubernetes_accordion, application_insights_accordion]
+        tab_nest.set_title(0, 'ML Studio')
+        tab_nest.set_title(1, 'Kubernetes')
+        tab_nest.set_title(2, 'Application Insights')
+        return tab_nest
 
 class MLRealtimeScore(AILabWorkspace):
     """ Light GBM Real Time Scoring"""
