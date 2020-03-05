@@ -29,7 +29,7 @@ from azure_utils.machine_learning.datasets.stack_overflow_data import download_d
 from azure_utils.machine_learning.deep.create_deep_model import get_or_create_resnet_image
 from azure_utils.machine_learning.realtime.image import get_or_create_lightgbm_image
 from azure_utils.machine_learning.train_local import get_local_run_configuration
-from azure_utils.notebook_widgets.notebook_configuration_widget import make_workspace_widget
+from azure_utils.notebook_widgets.workspace_widget import make_workspace_widget
 
 
 class AILabWorkspace(Workspace):
@@ -229,7 +229,7 @@ class AILabWorkspace(Workspace):
         try:
             if self.wait_for_completion:
                 aks_service.wait_for_deployment(show_output=self.show_output)
-                configure_ping_test("ping-test-" + aks_service_name, self.get_details()['applicationInsights'],
+                self.configure_ping_test("ping-test-" + aks_service_name, self.get_details()['applicationInsights'],
                                     aks_service.scoring_uri, aks_service.get_keys()[0])
         finally:
             if self.show_output:
@@ -400,7 +400,7 @@ class AILabWorkspace(Workspace):
         try:
             aks_service.wait_for_deployment(show_output=self.show_output)
 
-            configure_ping_test("ping-test-" + aks_service_name, self.get_details()['applicationInsights'],
+            self.configure_ping_test("ping-test-" + aks_service_name, self.get_details()['applicationInsights'],
                                 aks_service.scoring_uri, aks_service.get_keys()[0])
         except:
             print(aks_service.get_logs())
@@ -538,6 +538,38 @@ class AILabWorkspace(Workspace):
         tab_nest.set_title(2, 'Application Insights')
         return tab_nest
 
+    @staticmethod
+    def configure_ping_test(ping_test_name, app_name, ping_url, ping_token):
+        project_configuration = ProjectConfiguration(project_configuration_file)
+        assert project_configuration.has_value('subscription_id')
+        credentials = AzureCliAuthentication()
+        client = ResourceManagementClient(credentials, project_configuration.get_value('subscription_id'))
+        template_path = os.path.join(os.path.dirname(__file__), 'templates', 'webtest.json')
+        with open(template_path, 'r') as template_file_fd:
+            template = json.load(template_file_fd)
+
+        parameters = {
+            'appName': app_name.split("components/")[1],
+            'pingURL': ping_url,
+            'pingToken': ping_token,
+            'location': project_configuration.get_value('workspace_region'),
+            'pingTestName': ping_test_name + "-" + project_configuration.get_value('workspace_region')
+        }
+        parameters = {k: {'value': v} for k, v in parameters.items()}
+
+        deployment_properties = {
+            'mode': DeploymentMode.incremental,
+            'template': template,
+            'parameters': parameters
+        }
+
+        deployment_async_operation = client.deployments.create_or_update(
+            project_configuration.get_value('resource_group'),
+            'add-web-test',
+            deployment_properties
+        )
+        deployment_async_operation.wait()
+
 
 class MLRealtimeScore(AILabWorkspace):
     """ Light GBM Real Time Scoring"""
@@ -546,7 +578,6 @@ class MLRealtimeScore(AILabWorkspace):
                  configuration_file: str = project_configuration_file,
                  run_configuration=get_local_run_configuration(), **kwargs):
         super().__init__(subscription_id, resource_group, workspace_name, configuration_file, **kwargs)
-        # self.write_conda_env()
         self.get_docker_file()
 
         self.execution_script = "score.py"
@@ -714,33 +745,3 @@ class MockRequest:
     method = 'GET'
 
 
-def configure_ping_test(ping_test_name, app_name, ping_url, ping_token):
-    project_configuration = ProjectConfiguration(project_configuration_file)
-    assert project_configuration.has_value('subscription_id')
-    credentials = AzureCliAuthentication()
-    client = ResourceManagementClient(credentials, project_configuration.get_value('subscription_id'))
-    template_path = os.path.join(os.path.dirname(__file__), 'templates', 'webtest.json')
-    with open(template_path, 'r') as template_file_fd:
-        template = json.load(template_file_fd)
-
-    parameters = {
-        'appName': app_name.split("components/")[1],
-        'pingURL': ping_url,
-        'pingToken': ping_token,
-        'location': project_configuration.get_value('workspace_region'),
-        'pingTestName': ping_test_name + "-" + project_configuration.get_value('workspace_region')
-    }
-    parameters = {k: {'value': v} for k, v in parameters.items()}
-
-    deployment_properties = {
-        'mode': DeploymentMode.incremental,
-        'template': template,
-        'parameters': parameters
-    }
-
-    deployment_async_operation = client.deployments.create_or_update(
-        project_configuration.get_value('resource_group'),
-        'add-web-test',
-        deployment_properties
-    )
-    deployment_async_operation.wait()
