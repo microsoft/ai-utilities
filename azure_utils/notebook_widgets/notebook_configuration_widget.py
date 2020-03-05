@@ -30,7 +30,7 @@ def list_subscriptions():
             {sub.subscription_id: sub.display_name for sub in sub_client.subscriptions.list()}]
 
 
-def get_configuration_widget(config):
+def get_configuration_widget(config, with_existing=True):
     proj_config = ProjectConfiguration(config)
     proj_config.save_configuration()
     out = widgets.Output()
@@ -104,10 +104,11 @@ def get_configuration_widget(config):
     my_list = [out, uploader]
     for setting_key in text_boxes:
         text_box = text_boxes[setting_key]
-        if setting_key in dropdown_keys and type(text_box) is widgets.Text:
-            dropdown = widgets.Dropdown(options=get_list(setting_key), value=get_list(setting_key)[0],
-                                        description='existing', disabled=False)
-            text_box = widgets.HBox([text_box, dropdown])
+        if with_existing and setting_key in dropdown_keys and type(text_box) is widgets.Text:
+            if get_list(setting_key)[0]:
+                dropdown = widgets.Dropdown(options=get_list(setting_key), value=get_list(setting_key)[0],
+                                            description='existing', disabled=False)
+                text_box = widgets.HBox([text_box, dropdown])
         my_list.append(text_box)
 
     def upload_on_change(change):
