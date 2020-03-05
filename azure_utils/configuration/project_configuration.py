@@ -39,13 +39,18 @@ class ProjectConfiguration:
 
         :param configuration_file: File path to configuration file
         """
-        found, file_dir = find_file(configuration_file)
-        self.configuration_file = file_dir + "/" + configuration_file
-        self.configuration = {}
+        found = False
 
-        if not found:
-            self.configuration = ProjectConfiguration("project_sample.yml").configuration
-            self.save_configuration()
+        try:
+            found, file_dir = find_file(configuration_file)
+            self.configuration_file = file_dir + "/" + configuration_file
+            self.configuration = {}
+        except RecursionError:
+            pass
+        finally:
+            if not found:
+                self.configuration = ProjectConfiguration("project_sample.yml").configuration
+                self.save_configuration()
 
         self._load_configuration()
 
