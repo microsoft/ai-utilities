@@ -32,7 +32,7 @@ from azure_utils.machine_learning.train_local import get_local_run_configuration
 from azure_utils.notebook_widgets.workspace_widget import make_workspace_widget
 
 
-class AILabWorkspace(Workspace):
+class WorkspaceContext(Workspace):
     """ AI Workspace """
 
     def __init__(self, subscription_id, resource_group, workspace_name,
@@ -571,7 +571,7 @@ class AILabWorkspace(Workspace):
         deployment_async_operation.wait()
 
 
-class MLRealtimeScore(AILabWorkspace):
+class MLRealtimeScore(WorkspaceContext):
     """ Light GBM Real Time Scoring"""
 
     def __init__(self, subscription_id, resource_group, workspace_name,
@@ -688,7 +688,7 @@ def run(body):
                       questions_path, self.show_output)
 
 
-class DeepRealtimeScore(AILabWorkspace):
+class DeepRealtimeScore(WorkspaceContext):
     """ Resnet Real-time Scoring"""
 
     def __init__(self, subscription_id, resource_group, workspace_name,

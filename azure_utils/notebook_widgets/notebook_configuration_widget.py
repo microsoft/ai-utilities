@@ -16,7 +16,7 @@ from knack.util import CLIError
 
 from azure_utils.azureml_tools.subscription import _run_az_cli_login
 from azure_utils.configuration.project_configuration import ProjectConfiguration
-from azure_utils.machine_learning.ai_workspace import AILabWorkspace
+from azure_utils.machine_learning.ai_workspace import WorkspaceContext
 
 
 def list_subscriptions():
@@ -91,7 +91,7 @@ def get_configuration_widget(config, with_existing=True):
                    proj_config.get_value('resource_group'),
                    proj_config.get_value('workspace_name'))
 
-    ws = AILabWorkspace.get_or_create_workspace(config)
+    ws = WorkspaceContext.get_or_create_workspace(config)
 
     def get_list(key):
         if "image_name" in key:
