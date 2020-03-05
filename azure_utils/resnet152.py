@@ -37,6 +37,8 @@ from keras.preprocessing import image
 from keras.utils import layer_utils
 from keras.utils.data_utils import get_file
 
+from azure_utils.machine_learning.models.training_arg_parsers import get_model_path, process_request, prepare_response
+
 sys.setrecursionlimit(3000)
 
 WEIGHTS_PATH = 'https://github.com/adamcasson/resnet152/releases/download/v0.1/resnet152_weights_tf.h5'
@@ -109,110 +111,125 @@ class Scale(Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
-def identity_block(input_tensor, kernel_size, filters, stage, block):
-    """The identity_block is the block that has no conv layer at shortcut
-
-    Keyword arguments
-    input_tensor -- input tensor
-    kernel_size -- defualt 3, the kernel size of middle conv layer at main path
-    filters -- list of integers, the nb_filters of 3 conv layer at main path
-    stage -- integer, current stage label, used for generating layer names
-    block -- 'a','b'..., current block label, used for generating layer names
-
-    """
-    eps = 1.1e-5
-
-    if K.image_dim_ordering() == 'tf':
-        bn_axis = 3
-    else:
-        bn_axis = 1
-
-    nb_filter1, nb_filter2, nb_filter3 = filters
-    conv_name_base = 'res' + str(stage) + block + '_branch'
-    bn_name_base = 'bn' + str(stage) + block + '_branch'
-    scale_name_base = 'scale' + str(stage) + block + '_branch'
-
-    x = Conv2D(nb_filter1, (1, 1), name=conv_name_base + '2a', use_bias=False)(input_tensor)
-    x = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2a')(x)
-    x = Scale(axis=bn_axis, name=scale_name_base + '2a')(x)
-    x = Activation('relu', name=conv_name_base + '2a_relu')(x)
-
-    x = ZeroPadding2D((1, 1), name=conv_name_base + '2b_zeropadding')(x)
-    x = Conv2D(nb_filter2, (kernel_size, kernel_size), name=conv_name_base + '2b', use_bias=False)(x)
-    x = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2b')(x)
-    x = Scale(axis=bn_axis, name=scale_name_base + '2b')(x)
-    x = Activation('relu', name=conv_name_base + '2b_relu')(x)
-
-    x = Conv2D(nb_filter3, (1, 1), name=conv_name_base + '2c', use_bias=False)(x)
-    x = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2c')(x)
-    x = Scale(axis=bn_axis, name=scale_name_base + '2c')(x)
-
-    x = add([x, input_tensor], name='res' + str(stage) + block)
-    x = Activation('relu', name='res' + str(stage) + block + '_relu')(x)
-    return x
-
-
-def conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2)):
-    """conv_block is the block that has a conv layer at shortcut
-
-    Keyword arguments:
-    input_tensor -- input tensor
-    kernel_size -- defualt 3, the kernel size of middle conv layer at main path
-    filters -- list of integers, the nb_filters of 3 conv layer at main path
-    stage -- integer, current stage label, used for generating layer names
-    block -- 'a','b'..., current block label, used for generating layer names
-
-    Note that from stage 3, the first conv layer at main path is with subsample=(2,2)
-    And the shortcut should have subsample=(2,2) as well
-
-    """
-    eps = 1.1e-5
-
-    if K.image_dim_ordering() == 'tf':
-        bn_axis = 3
-    else:
-        bn_axis = 1
-
-    nb_filter1, nb_filter2, nb_filter3 = filters
-    conv_name_base = 'res' + str(stage) + block + '_branch'
-    bn_name_base = 'bn' + str(stage) + block + '_branch'
-    scale_name_base = 'scale' + str(stage) + block + '_branch'
-
-    x = Conv2D(nb_filter1, (1, 1), strides=strides, name=conv_name_base + '2a', use_bias=False)(input_tensor)
-    x = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2a')(x)
-    x = Scale(axis=bn_axis, name=scale_name_base + '2a')(x)
-    x = Activation('relu', name=conv_name_base + '2a_relu')(x)
-
-    x = ZeroPadding2D((1, 1), name=conv_name_base + '2b_zeropadding')(x)
-    x = Conv2D(nb_filter2, (kernel_size, kernel_size),
-               name=conv_name_base + '2b', use_bias=False)(x)
-    x = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2b')(x)
-    x = Scale(axis=bn_axis, name=scale_name_base + '2b')(x)
-    x = Activation('relu', name=conv_name_base + '2b_relu')(x)
-
-    x = Conv2D(nb_filter3, (1, 1), name=conv_name_base + '2c', use_bias=False)(x)
-    x = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2c')(x)
-    x = Scale(axis=bn_axis, name=scale_name_base + '2c')(x)
-
-    shortcut = Conv2D(nb_filter3, (1, 1), strides=strides,
-                      name=conv_name_base + '1', use_bias=False)(input_tensor)
-    shortcut = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '1')(shortcut)
-    shortcut = Scale(axis=bn_axis, name=scale_name_base + '1')(shortcut)
-
-    x = add([x, shortcut], name='res' + str(stage) + block)
-    x = Activation('relu', name='res' + str(stage) + block + '_relu')(x)
-    return x
-
-
 class ResNet152:
     def __init__(self):
+        self.model = None
         print("Created")
 
+    def train(self):
+        self.model = self.train_resnet_152()
+        return self.model
+
+    @classmethod
+    def load_model(cls, model_file="/model.pkl"):
+        resnet_152 = ResNet152()
+        model = resnet_152.train()
+        model.load_weights(get_model_path(model_file))
+        return resnet_152
+
+    def predict(self, request):
+        img_array, transformed_dict = process_request(request)
+        preds = self.model.predict(img_array)
+        return prepare_response(preds, transformed_dict)
+
     @staticmethod
-    def train_resnet_152(include_top=True, weights=None,
-                         input_tensor=None, input_shape=None,
-                         large_input=False, pooling=None,
-                         classes=1000):
+    def identity_block(input_tensor, kernel_size, filters, stage, block):
+        """The identity_block is the block that has no conv layer at shortcut
+
+        Keyword arguments
+        input_tensor -- input tensor
+        kernel_size -- defualt 3, the kernel size of middle conv layer at main path
+        filters -- list of integers, the nb_filters of 3 conv layer at main path
+        stage -- integer, current stage label, used for generating layer names
+        block -- 'a','b'..., current block label, used for generating layer names
+
+        """
+        eps = 1.1e-5
+
+        if K.image_dim_ordering() == 'tf':
+            bn_axis = 3
+        else:
+            bn_axis = 1
+
+        nb_filter1, nb_filter2, nb_filter3 = filters
+        conv_name_base = 'res' + str(stage) + block + '_branch'
+        bn_name_base = 'bn' + str(stage) + block + '_branch'
+        scale_name_base = 'scale' + str(stage) + block + '_branch'
+
+        x = Conv2D(nb_filter1, (1, 1), name=conv_name_base + '2a', use_bias=False)(input_tensor)
+        x = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2a')(x)
+        x = Scale(axis=bn_axis, name=scale_name_base + '2a')(x)
+        x = Activation('relu', name=conv_name_base + '2a_relu')(x)
+
+        x = ZeroPadding2D((1, 1), name=conv_name_base + '2b_zeropadding')(x)
+        x = Conv2D(nb_filter2, (kernel_size, kernel_size), name=conv_name_base + '2b', use_bias=False)(x)
+        x = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2b')(x)
+        x = Scale(axis=bn_axis, name=scale_name_base + '2b')(x)
+        x = Activation('relu', name=conv_name_base + '2b_relu')(x)
+
+        x = Conv2D(nb_filter3, (1, 1), name=conv_name_base + '2c', use_bias=False)(x)
+        x = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2c')(x)
+        x = Scale(axis=bn_axis, name=scale_name_base + '2c')(x)
+
+        x = add([x, input_tensor], name='res' + str(stage) + block)
+        x = Activation('relu', name='res' + str(stage) + block + '_relu')(x)
+        return x
+
+    @staticmethod
+    def conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2)):
+        """conv_block is the block that has a conv layer at shortcut
+
+        Keyword arguments:
+        input_tensor -- input tensor
+        kernel_size -- defualt 3, the kernel size of middle conv layer at main path
+        filters -- list of integers, the nb_filters of 3 conv layer at main path
+        stage -- integer, current stage label, used for generating layer names
+        block -- 'a','b'..., current block label, used for generating layer names
+
+        Note that from stage 3, the first conv layer at main path is with subsample=(2,2)
+        And the shortcut should have subsample=(2,2) as well
+
+        """
+        eps = 1.1e-5
+
+        if K.image_dim_ordering() == 'tf':
+            bn_axis = 3
+        else:
+            bn_axis = 1
+
+        nb_filter1, nb_filter2, nb_filter3 = filters
+        conv_name_base = 'res' + str(stage) + block + '_branch'
+        bn_name_base = 'bn' + str(stage) + block + '_branch'
+        scale_name_base = 'scale' + str(stage) + block + '_branch'
+
+        x = Conv2D(nb_filter1, (1, 1), strides=strides, name=conv_name_base + '2a', use_bias=False)(input_tensor)
+        x = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2a')(x)
+        x = Scale(axis=bn_axis, name=scale_name_base + '2a')(x)
+        x = Activation('relu', name=conv_name_base + '2a_relu')(x)
+
+        x = ZeroPadding2D((1, 1), name=conv_name_base + '2b_zeropadding')(x)
+        x = Conv2D(nb_filter2, (kernel_size, kernel_size),
+                   name=conv_name_base + '2b', use_bias=False)(x)
+        x = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2b')(x)
+        x = Scale(axis=bn_axis, name=scale_name_base + '2b')(x)
+        x = Activation('relu', name=conv_name_base + '2b_relu')(x)
+
+        x = Conv2D(nb_filter3, (1, 1), name=conv_name_base + '2c', use_bias=False)(x)
+        x = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2c')(x)
+        x = Scale(axis=bn_axis, name=scale_name_base + '2c')(x)
+
+        shortcut = Conv2D(nb_filter3, (1, 1), strides=strides,
+                          name=conv_name_base + '1', use_bias=False)(input_tensor)
+        shortcut = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '1')(shortcut)
+        shortcut = Scale(axis=bn_axis, name=scale_name_base + '1')(shortcut)
+
+        x = add([x, shortcut], name='res' + str(stage) + block)
+        x = Activation('relu', name='res' + str(stage) + block + '_relu')(x)
+        return x
+
+    @staticmethod
+    def train_resnet_152(include_top=True, weights=None, input_tensor=None, input_shape=None, large_input=False,
+                         pooling=None, classes=1000):
         """Instantiate the ResNet152 architecture.
 
         Keyword arguments:
@@ -296,21 +313,21 @@ class ResNet152:
         x = Activation('relu', name='conv1_relu')(x)
         x = MaxPooling2D((3, 3), strides=(2, 2), name='pool1')(x)
 
-        x = conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
-        x = identity_block(x, 3, [64, 64, 256], stage=2, block='b')
-        x = identity_block(x, 3, [64, 64, 256], stage=2, block='c')
+        x = ResNet152.conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
+        x = ResNet152.identity_block(x, 3, [64, 64, 256], stage=2, block='b')
+        x = ResNet152.identity_block(x, 3, [64, 64, 256], stage=2, block='c')
 
-        x = conv_block(x, 3, [128, 128, 512], stage=3, block='a')
+        x = ResNet152.conv_block(x, 3, [128, 128, 512], stage=3, block='a')
         for i in range(1, 8):
-            x = identity_block(x, 3, [128, 128, 512], stage=3, block='b' + str(i))
+            x = ResNet152.identity_block(x, 3, [128, 128, 512], stage=3, block='b' + str(i))
 
-        x = conv_block(x, 3, [256, 256, 1024], stage=4, block='a')
+        x = ResNet152.conv_block(x, 3, [256, 256, 1024], stage=4, block='a')
         for i in range(1, 36):
-            x = identity_block(x, 3, [256, 256, 1024], stage=4, block='b' + str(i))
+            x = ResNet152.identity_block(x, 3, [256, 256, 1024], stage=4, block='b' + str(i))
 
-        x = conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
-        x = identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
-        x = identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
+        x = ResNet152.conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
+        x = ResNet152.identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
+        x = ResNet152.identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
 
         if large_input:
             x = AveragePooling2D((14, 14), name='avg_pool')(x)
