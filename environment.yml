@@ -1,6 +1,7 @@
 name: ai-utilities
 channels:
   - conda-forge
+  - r
 dependencies:
   - python=3.6.2
   - pip
@@ -20,7 +21,7 @@ dependencies:
   - ipywidgets
   - ipykernel
   - bash_kernel
-  - "-c r r-irkernel"
+  - r-irkernel
   - pip:
     - resnet
     - papermill
