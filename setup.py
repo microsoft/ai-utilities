@@ -39,5 +39,10 @@ setup(
         'keras',
         'resnet',
         'azureml-contrib-functions'
-    ]
+    ],
+    entry_points = {
+        'console_scripts': [
+            'aml-sample=azure_utils.cli.cli:main',
+        ],
+    },
 )

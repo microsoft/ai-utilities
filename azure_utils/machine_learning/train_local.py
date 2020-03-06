@@ -25,65 +25,7 @@ Licensed under the MIT License.
 import os
 import sys
 
-from azureml.core import Experiment, Model
-from azureml.core import ScriptRunConfig
 from azureml.core.runconfig import RunConfiguration
-
-from azure_utils import directory
-from azure_utils.machine_learning.model import get_model, has_model
-from azure_utils.machine_learning.utils import get_workspace_from_config
-
-
-def train_local(model_name="question_match_model", num_estimators="1", experiment_name="mlaks-train-on-local",
-                model_path="./outputs/model.pkl", script="create_model.py", source_directory="./script",
-                show_output=True) -> Model:
-    """
-    Train Model Locally
-
-    :param model_name:
-    :param num_estimators:
-    :param experiment_name:
-    :param model_path:
-    :param script:
-    :param source_directory:
-    :param show_output:
-    :return:
-    """
-    model = has_model(model_name)
-    if model:
-        return get_model(model_name)
-
-    ws = get_workspace_from_config()
-    if show_output:
-        print(ws.name, ws.resource_group, ws.location, sep="\n")
-
-    args = [
-        "--inputs",
-        os.path.abspath(directory + "/data_folder"),
-        "--outputs",
-        "outputs",
-        "--estimators",
-        num_estimators,
-        "--match",
-        "2",
-    ]
-    run_config_user_managed = get_local_run_configuration()
-
-    src = ScriptRunConfig(
-        source_directory=source_directory,
-        script=script,
-        arguments=args,
-        run_config=run_config_user_managed,
-    )
-
-    run = Experiment(workspace=ws, name=experiment_name).submit(src)
-    run.wait_for_completion(show_output=show_output)
-
-    model = run.register_model(model_name=model_name, model_path=model_path)
-
-    if show_output:
-        print(model.name, model.version, model.url, sep="\n")
-    return model
 
 
 def get_or_create_model_driver():

@@ -15,9 +15,9 @@ dependencies:
   - urllib3
   - cudatoolkit==9.0
   - tensorflow-gpu==1.14.0
-  - ipywidgets
-  - jupyter_contrib_nbextensions
   - matplotlib
+  - jupyter_contrib_nbextensions
+  - ipywidgets
   - ipykernel
   - bash_kernel
   - "-c r r-irkernel"
@@ -50,4 +50,4 @@ dependencies:
     - PyOpenSSL
     - nb-clean
     - azureml-contrib-functions
-    - git+https://github.com/microsoft/AI-Utilities.git@deep_learning_2
+    - git+https://github.com/microsoft/AI-Utilities.git

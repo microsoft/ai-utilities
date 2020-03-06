@@ -10,7 +10,6 @@ Adaptation of code from flyyufelix, mvoelk, BigMoyan, fchollet at https://github
 """
 import sys
 
-sys.setrecursionlimit(3000)
 
 class RTSEstimator:
     def predict(self, request):
@@ -27,4 +26,3 @@ class RTSEstimator:
 
     def create_model(self, **kwargs):
         raise NotImplementedError
-
