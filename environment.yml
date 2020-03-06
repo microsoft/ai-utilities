@@ -22,7 +22,7 @@ dependencies:
   - bash_kernel
   - "-c r r-irkernel"
   - pip:
-+++++++    - resnet
+    - resnet
     - papermill
     - azureml-core==1.0.85
     - azure-cli==2.0.81
