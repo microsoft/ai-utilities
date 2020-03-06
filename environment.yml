@@ -51,5 +51,4 @@ dependencies:
     - PyOpenSSL
     - nb-clean
     - azureml-contrib-functions
-    - toolz
     - git+https://github.com/microsoft/AI-Utilities.git
