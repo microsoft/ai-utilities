@@ -41,6 +41,7 @@ def get_or_create_resnet_image(configuration_file: str = project_configuration_f
     """
     Build Image
 
+    :param models:
     :param configuration_file: path to project configuration file. default: project.yml
     :param show_output: toggle on/off standard output. default: `True`
     :param image_settings_name: Setting from Project Configuration
@@ -54,6 +55,12 @@ def get_or_create_resnet_image(configuration_file: str = project_configuration_f
 
 
 def create_resnet_image_config(conda_file="img_env.yml", execution_script="driver.py"):
+    """
+
+    :param conda_file:
+    :param execution_script:
+    :return:
+    """
     conda_pack = ["tensorflow-gpu==1.14.0"]
     requirements = ["keras==2.2.0", "Pillow==5.2.0", "azureml-defaults", "azureml-contrib-services", "toolz==0.9.0"]
     imgenv = CondaDependencies.create(conda_packages=conda_pack, pip_packages=requirements)

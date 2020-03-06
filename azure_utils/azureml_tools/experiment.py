@@ -11,12 +11,12 @@ from azureml.core import Datastore, Environment
 from azureml.core.compute import AmlCompute, ComputeTarget
 from azureml.core.compute_target import ComputeTargetException
 from azureml.train.dnn import Gloo, Nccl, PyTorch
-from deepseismic_interpretation.azureml_tools import workspace_for_user
-from deepseismic_interpretation.azureml_tools.config import experiment_config
-from deepseismic_interpretation.azureml_tools.resource_group import create_resource_group
-from deepseismic_interpretation.azureml_tools.storage import create_premium_storage
-from deepseismic_interpretation.azureml_tools.subscription import select_subscription
 from toolz import curry
+
+from azure_utils.azureml_tools.config import experiment_config
+from azure_utils.azureml_tools.storage import create_premium_storage
+from azure_utils.azureml_tools.subscription import select_subscription
+from azure_utils.machine_learning.contexts.workspace_contexts import WorkspaceContext
 
 _GPU_IMAGE = "mcr.microsoft.com/azureml/base-gpu:openmpi3.1.2-cuda10.0-cudnn7-ubuntu16.04"
 
@@ -47,7 +47,7 @@ def _create_cluster(workspace, cluster_name, vm_size, min_nodes, max_nodes):
         compute_target.wait_for_completion(show_output=True)
 
     # use get_status() to get a detailed status for the current AmlCompute.
-    logger.debug(compute_target.get_status().serialize())
+    logger.debug(compute_target.serialize())
 
     return compute_target
 
@@ -116,7 +116,7 @@ class ConfigError(Exception):
 def _check_config(config):
     logger = logging.getLogger(__name__)
     check_gen = (f(config) for f in _CHECK_FUNCTIONS)
-    check_results = list(filter(lambda state_msg: state_msg[0] == False, check_gen))
+    check_results = list(filter(lambda state_msg: not state_msg[0], check_gen))
     if len(check_results) > 0:
         error_msgs = "\n".join([msg for state, msg in check_results])
         msg = f"Config failed \n {error_msgs}"
@@ -125,6 +125,10 @@ def _check_config(config):
 
 
 class BaseExperiment(object):
+    """
+
+    """
+
     def __init__(self, experiment_name, config=experiment_config):
         self._logger = logging.getLogger(__name__)
         self._logger.info("SDK version:" + str(azureml.core.VERSION))
@@ -137,11 +141,11 @@ class BaseExperiment(object):
             profile_credentials, subscription_id, config.REGION, config.RESOURCE_GROUP, config.ACCOUNT_NAME,
         )
 
-        self._ws = workspace_for_user(
-            workspace_name=config.WORKSPACE,
+        self._ws = WorkspaceContext.create(
+            name=config.WORKSPACE,
             resource_group=config.RESOURCE_GROUP,
             subscription_id=config.SUBSCRIPTION_ID,
-            workspace_region=config.REGION,
+            location=config.REGION,
         )
         self._experiment = azureml.core.Experiment(self._ws, name=experiment_name)
         self._cluster = _create_cluster(
@@ -162,10 +166,18 @@ class BaseExperiment(object):
 
     @property
     def cluster(self):
+        """
+
+        :return:
+        """
         return self._cluster
 
     @property
     def datastore(self):
+        """
+
+        :return:
+        """
         return self._datastore
 
 
@@ -206,7 +218,7 @@ def create_environment_from_conda_file(conda_path, name="amlenv"):
     Returns:
         azureml.core.Environment
     """
-    return Environment.from_existing_conda_specification(name, conda_path)
+    return Environment.from_existing_conda_environment(name, conda_path)
 
 
 class PyTorchExperiment(BaseExperiment):
@@ -232,7 +244,6 @@ class PyTorchExperiment(BaseExperiment):
             entry_script,
             script_params,
             node_count=1,
-            workers_per_node=1,
             distributed=None,
             environment=None,
     ):
@@ -250,6 +261,12 @@ class PyTorchExperiment(BaseExperiment):
 
         Returns:
             azureml.core.Run: AzureML Run object
+            :param project_folder:
+            :param entry_script:
+            :param script_params:
+            :param node_count:
+            :param distributed:
+            :param environment:
         """
         self._logger.debug(script_params)
 

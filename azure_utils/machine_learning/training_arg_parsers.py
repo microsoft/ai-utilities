@@ -16,6 +16,10 @@ from toolz import compose
 
 
 def get_training_parser():
+    """
+
+    :return:
+    """
     parser = argparse.ArgumentParser(description='Fit and evaluate a model based on train-test datasets.')
     parser.add_argument('--outputs', help='the outputs directory', default='outputs')
     parser.add_argument('--model', help='the model file', default='model.pkl')
@@ -26,11 +30,16 @@ NUMBER_RESULTS = 3
 
 
 def get_model_path(model_pkl):
-    dir = "."
+    """
+
+    :param model_pkl:
+    :return:
+    """
+    model_dir = "."
     if os.getenv('AZUREML_MODEL_DIR'):
-        dir = os.getenv('AZUREML_MODEL_DIR')
-    assert os.path.isfile(dir + model_pkl)
-    return dir + "/model.pkl"
+        model_dir = os.getenv('AZUREML_MODEL_DIR')
+    assert os.path.isfile(model_dir + model_pkl)
+    return model_dir + "/model.pkl"
 
 
 def image_ref_to_pil_image(image_ref):
@@ -40,23 +49,44 @@ def image_ref_to_pil_image(image_ref):
 
 
 def pil_to_numpy(pil_image):
+    """
+
+    :param pil_image:
+    :return:
+    """
     img = ImageOps.fit(pil_image, (224, 224), Image.ANTIALIAS)
     img = image.img_to_array(img)
     return img
 
 
 def default_response(request):
+    """
+
+    :param request:
+    :return:
+    """
     if request.method == 'GET':
         return {"azEnvironment": "Azure"}
     return AMLResponse("bad request", 500)
 
 
 def prepare_response(preds, transformed_dict):
+    """
+
+    :param preds:
+    :param transformed_dict:
+    :return:
+    """
     preds = decode_predictions(preds.astype(np.float64), top=NUMBER_RESULTS)
     return dict(zip(transformed_dict.keys(), preds))
 
 
 def process_request(request):
+    """
+
+    :param request:
+    :return:
+    """
     transform_input = compose(pil_to_numpy, image_ref_to_pil_image)
     transformed_dict = {key: transform_input(img_ref) for key, img_ref in request.files.items()}
     img_array = preprocess_input(np.stack(list(transformed_dict.values())))

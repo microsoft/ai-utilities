@@ -18,6 +18,7 @@ from azureml.core.conda_dependencies import CondaDependencies
 from azureml.core.image import ContainerImage
 from azureml.core.model import InferenceConfig
 from azureml.core.webservice import AksWebservice
+from azureml.exceptions import WebserviceException
 from deprecated import deprecated
 
 from azure_utils import directory
@@ -80,6 +81,9 @@ class RealtimeScoreContext(WorkspaceContext):
         self.workspace_widget = None
 
     def test_service_local(self):
+        """
+
+        """
         Model(self, self.model_name).download(exist_ok=True)
         exec(open(self.score_py).read())
         exec("init()")
@@ -87,6 +91,10 @@ class RealtimeScoreContext(WorkspaceContext):
         exec("assert response")
 
     def get_inference_config(self):
+        """
+
+        :return:
+        """
         environment = Environment("conda-env")
         environment.python.conda_dependencies = self.conda_env
 
@@ -95,6 +103,9 @@ class RealtimeScoreContext(WorkspaceContext):
         return inference_config
 
     def write_conda_env(self):
+        """
+
+        """
         with open(self.conda_file, "w") as file:
             file.write(self.conda_env.serialize_to_string())
 
@@ -112,7 +123,6 @@ class RealtimeScoreFunctionsContext(RealtimeScoreContext):
     def get_or_create_function_image_configuration(self):
         """ Get or Create new Docker Image Configuration for Machine Learning Workspace
 
-        :param kwargs: keyword args
         """
         """
         Image Configuration for running LightGBM in Azure Machine Learning Workspace
@@ -137,6 +147,11 @@ class RealtimeScoreFunctionsContext(RealtimeScoreContext):
         return InferenceConfig(entry_script=self.score_py, environment=myenv)
 
     def get_or_create_function_image(self, config, models):
+        """
+
+        :param config:
+        :param models:
+        """
         blob = package(self, models, config, functions_enabled=True, trigger=HTTP_TRIGGER)
         blob.wait_for_creation(show_output=True)
         # Display the package location/ACR path
@@ -200,7 +215,10 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         return aks_target
 
     def get_aks_deployment_config(self):
+        """
 
+        :return:
+        """
         aks_deployment_configuration = {
             "num_replicas": self.num_replicas,
             "cpu_cores": self.cpu_cores,
@@ -210,6 +228,13 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         return AksWebservice.deploy_configuration(**aks_deployment_configuration)
 
     def get_or_create_aks_service(self, model, aks_target, inference_config):
+        """
+
+        :param model:
+        :param aks_target:
+        :param inference_config:
+        :return:
+        """
         assert self.project_configuration.has_value(self.settings_aks_service_name)
         aks_service_name = self.project_configuration.get_value(self.settings_aks_service_name)
 
@@ -239,20 +264,40 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         return aks_service
 
     def has_web_service(self, service_name):
+        """
+
+        :param service_name:
+        :return:
+        """
         assert self.webservices
         return service_name in self.webservices
 
     def get_web_service_state(self, service_name):
+        """
+
+        :param service_name:
+        :return:
+        """
         web_service = self.get_web_service(service_name)
         web_service.update_deployment_state()
         assert web_service.state
         return web_service.state
 
     def get_web_service(self, service_name):
+        """
+
+        :param service_name:
+        :return:
+        """
         assert self.webservices[service_name]
         return self.webservices[service_name]
 
-    def create_kube_config(self, aks_target: AksCompute):
+    @staticmethod
+    def create_kube_config(aks_target: AksCompute):
+        """
+
+        :param aks_target:
+        """
         os.makedirs(os.path.join(os.path.expanduser('~'), '.kube'), exist_ok=True)
         config_path = os.path.join(os.path.expanduser('~'), '.kube/config')
         with open(config_path, 'a') as f:
@@ -312,9 +357,9 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
 
             self.configure_ping_test("ping-test-" + aks_service_name, self.get_details()['applicationInsights'],
                                      aks_service.scoring_uri, aks_service.get_keys()[0])
-        except:
+        except WebserviceException:
             print(aks_service.get_logs())
-            raise Exception
+            raise
         if self.show_output:
             deployment_time_secs = str(time.time() - deploy_from_image_start)
             print("Deployed Image with name "
@@ -384,74 +429,14 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         return image
 
     @staticmethod
-    def make_workspace_widget(model_dict, aks_dict):
-        from ipywidgets import widgets
-        def make_vbox(model_dict):
-            labels = []
-            for k in model_dict:
-                if type(model_dict[k]) is not dict:
-                    string = str(model_dict[k])
-                    labels.append(widgets.HBox([widgets.HTML(value="<b>" + k + ":</b>"), widgets.Label(string)]))
-                else:
-                    mini_labels = []
-                    mini_dic = model_dict[k]
-                    if mini_dic and mini_dic is not dict:
-                        for mini_k in mini_dic:
-                            string = str(mini_dic[mini_k])
-                            mini_labels.append(
-                                widgets.HBox([widgets.HTML(value="<b>" + mini_k + ":</b>"), widgets.Label(string)]))
-                        mini_model_accordion = widgets.Accordion(children=[widgets.VBox(mini_labels)])
-                        mini_model_accordion.set_title(0, k)
-                        labels.append(mini_model_accordion)
-
-            model_widget = widgets.VBox(labels)
-            return widgets.VBox(children=[model_widget])
-
-        ws_image = widgets.HTML(
-            value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/studio.png">')
-        model_vbox = make_vbox(model_dict)
-        aks_box = make_vbox(aks_dict)
-
-        deployment_accordion = widgets.Accordion(children=[ws_image, model_vbox])
-        deployment_accordion.set_title(0, 'Workspace')
-        deployment_accordion.set_title(1, 'Model')
-
-        application_insights_images = [
-            widgets.HTML(
-                value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/app_insights_1'
-                      '.png'
-                      '">'),
-            widgets.HTML(
-                value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs'
-                      '/app_insights_availability.png">'),
-            widgets.HTML(
-                value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs'
-                      '/app_insights_perf_dash.png">'),
-            widgets.HTML(
-                value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/app_insights_perf'
-                      '.png">')
-        ]
-        application_insights_accordion = widgets.Accordion(children=application_insights_images)
-        application_insights_accordion.set_title(0, 'Main')
-        application_insights_accordion.set_title(1, 'Availability')
-        application_insights_accordion.set_title(2, 'Performance')
-        application_insights_accordion.set_title(3, 'Load Testing')
-
-        kubernetes_image = widgets.HTML(
-            value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/kubernetes.png">')
-        kubernetes_accordion = widgets.Accordion(children=[aks_box, kubernetes_image])
-        kubernetes_accordion.set_title(0, 'Main')
-        kubernetes_accordion.set_title(1, 'Performance')
-
-        tab_nest = widgets.Tab()
-        tab_nest.children = [deployment_accordion, kubernetes_accordion, application_insights_accordion]
-        tab_nest.set_title(0, 'ML Studio')
-        tab_nest.set_title(1, 'Kubernetes')
-        tab_nest.set_title(2, 'Application Insights')
-        return tab_nest
-
-    @staticmethod
     def configure_ping_test(ping_test_name, app_name, ping_url, ping_token):
+        """
+
+        :param ping_test_name:
+        :param app_name:
+        :param ping_url:
+        :param ping_token:
+        """
         project_configuration = ProjectConfiguration(project_configuration_file)
         assert project_configuration.has_value('subscription_id')
         credentials = AzureCliAuthentication()
@@ -578,11 +563,17 @@ def run(body):
         self.conda_env = CondaDependencies.create(conda_packages=self.conda_pack, pip_packages=self.requirements)
 
     def get_docker_file(self):
+        """
+
+        """
         self.dockerfile = "dockerfile"
         with open(self.dockerfile, "w") as file:
             file.write("RUN apt update -y && apt upgrade -y && apt install -y build-essential")
 
     def prepare_data(self):
+        """
+
+        """
         outputs_path = directory + "/data_folder"
         dupes_test_path = os.path.join(outputs_path, "dupes_test.tsv")
         questions_path = os.path.join(outputs_path, "questions.tsv")

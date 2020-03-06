@@ -1,9 +1,9 @@
 import time
 
-from MetricsUtils.hpStatisticsCollection import statisticsCollector, CollectionEntry
-from MetricsUtils.keyVault import KeyVaultInstance
+from azure_utils.logger.ai_logger import StatisticsCollector, CollectionEntry
+from azure_utils.logger.key_vault import KeyVaultInstance
 
-from MetricsUtils.storageutils import StorageConnection
+from azure_utils.logger.storageutils import StorageConnection
 
 __version__ = "0.1"
 DATA_IN_STORAGE_ = "Current data in storage ->"
@@ -16,7 +16,7 @@ kvc = kvInst.get_key_vlt_client()
 
 sct = kvInst.get_vault_secrets("dangtestvault")
 print(sct)
-sct = kvInst.set_vault_secret("dangtestvault", "secret2", "asecretvalue")
+kvInst.set_vault_secret("dangtestvault", "secret2", "asecretvalue")
 sct = kvInst.get_vault_secrets("dangtestvault")
 print(sct)
 
@@ -52,15 +52,15 @@ if storageConnString is None:
 '''
     Tests with putting in time indirectly
 '''
-statisticsCollector.start_task(CollectionEntry.AML_COMPUTE_CREATION)
+StatisticsCollector.start_task(CollectionEntry.AML_COMPUTE_CREATION)
 time.sleep(1.5)
-statisticsCollector.end_task(CollectionEntry.AML_COMPUTE_CREATION)
+StatisticsCollector.end_task(CollectionEntry.AML_COMPUTE_CREATION)
 
 # Upload the content to storage
-statisticsCollector.upload_content(storageConnString)
+StatisticsCollector.upload_content(storageConnString)
 
 # Retrieve the content from storage
-content = statisticsCollector.retrieve_content(storageConnString)
+content = StatisticsCollector.retrieve_content(storageConnString)
 print(DATA_IN_STORAGE_)
 print(content)
 print("")
@@ -69,15 +69,15 @@ print("")
     Tests with putting in time directly
 '''
 
-statisticsCollector.add_entry(CollectionEntry.AKS_CLUSTER_CREATION, 200)
-statisticsCollector.add_entry(CollectionEntry.AML_COMPUTE_CREATION, 200)
-statisticsCollector.add_entry(CollectionEntry.AML_WORKSPACE_CREATION, 200)
+StatisticsCollector.add_entry(CollectionEntry.AKS_CLUSTER_CREATION, 200)
+StatisticsCollector.add_entry(CollectionEntry.AML_COMPUTE_CREATION, 200)
+StatisticsCollector.add_entry(CollectionEntry.AML_WORKSPACE_CREATION, 200)
 
 # Upload the content to storage
-statisticsCollector.upload_content(storageConnString)
+StatisticsCollector.upload_content(storageConnString)
 
 # Retrieve the content from storage
-content = statisticsCollector.retrieve_content(storageConnString)
+content = StatisticsCollector.retrieve_content(storageConnString)
 print(DATA_IN_STORAGE_)
 print(content)
 print("")
@@ -87,19 +87,19 @@ print("")
 
     First change a bunch of data so we know it's not cached....
 '''
-statisticsCollector.add_entry(CollectionEntry.AKS_CLUSTER_CREATION, 0)
-statisticsCollector.add_entry(CollectionEntry.AML_COMPUTE_CREATION, 0)
+StatisticsCollector.add_entry(CollectionEntry.AKS_CLUSTER_CREATION, 0)
+StatisticsCollector.add_entry(CollectionEntry.AML_COMPUTE_CREATION, 0)
 
-statisticsCollector.hydrate_from_storage(storageConnString)
+StatisticsCollector.hydrate_from_storage(storageConnString)
 
 # Now change a 200 to 300
-statisticsCollector.add_entry(CollectionEntry.AML_WORKSPACE_CREATION, 300)
+StatisticsCollector.add_entry(CollectionEntry.AML_WORKSPACE_CREATION, 300)
 
 # Upload the content to storage
-statisticsCollector.upload_content(storageConnString)
+StatisticsCollector.upload_content(storageConnString)
 
 # Retrieve the content from storage
-content = statisticsCollector.retrieve_content(storageConnString)
+content = StatisticsCollector.retrieve_content(storageConnString)
 print(DATA_IN_STORAGE_)
 print(content)
 print("")

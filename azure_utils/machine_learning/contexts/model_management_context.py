@@ -4,7 +4,6 @@ AI-Utilities - model_management_context.py
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
-import hashlib
 
 from azureml.core import Model, ScriptRunConfig, Experiment
 from azureml.exceptions import ActivityFailedException
@@ -15,6 +14,10 @@ from azure_utils.machine_learning.train_local import get_local_run_configuration
 
 
 class ModelManagementContext(WorkspaceContext):
+    """
+
+    """
+
     def __init__(self, subscription_id, resource_group, workspace_name,
                  configuration_file: str = project_configuration_file,
                  train_py=train_py_default, score_py=score_py_default,
@@ -56,24 +59,27 @@ class ModelManagementContext(WorkspaceContext):
         return model
 
     def train_model(self):
+        """
+
+        :return:
+        """
         run = self.submit_experiment_run(wait_for_completion=self.wait_for_completion)
         model = run.register_model(model_name=self.model_name, model_path=self.model_path)
         return model
 
     def submit_experiment_run(self, wait_for_completion=True):
-        raise NotImplementedError
+        """
 
-    @staticmethod
-    def _get_file_md5(file_name):
-        hasher = hashlib.md5()
-        with open(file_name, 'rb') as afile:
-            buf = afile.read()
-            hasher.update(buf)
-        file_hash = hasher.hexdigest()
-        return file_hash
+        :param wait_for_completion:
+        """
+        raise NotImplementedError
 
 
 class ModelTrainingContext(ModelManagementContext):
+    """
+
+    """
+
     def __init__(self, subscription_id, resource_group, workspace_name, run_configuration,
                  configuration_file: str = project_configuration_file,
                  train_py=train_py_default, score_py=score_py_default):
@@ -92,10 +98,18 @@ class ModelTrainingContext(ModelManagementContext):
         self.model_path = None
 
     def submit_experiment_run(self, wait_for_completion=True):
+        """
+
+        :param wait_for_completion:
+        """
         raise NotImplementedError
 
 
 class LocalTrainingContext(ModelTrainingContext):
+    """
+
+    """
+
     def __init__(self, subscription_id, resource_group, workspace_name,
                  configuration_file: str = project_configuration_file,
                  train_py=train_py_default, score_py=score_py_default,
@@ -104,6 +118,11 @@ class LocalTrainingContext(ModelTrainingContext):
                          train_py=train_py, score_py=score_py)
 
     def submit_experiment_run(self, wait_for_completion=True):
+        """
+
+        :param wait_for_completion:
+        :return:
+        """
         assert self.source_directory
         assert self.train_py
         assert self.args

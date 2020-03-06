@@ -4,7 +4,7 @@ AI-Utilities - ai_workspace.py
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
-
+import hashlib
 from azureml.core import Workspace
 
 from azure_utils.configuration.notebook_config import project_configuration_file, train_py_default, score_py_default
@@ -12,10 +12,14 @@ from azure_utils.configuration.project_configuration import ProjectConfiguration
 
 
 class WorkspaceContext(Workspace):
-    def __init__(self, subscription_id, resource_group, workspace_name,
+    """
+
+    """
+
+    def __init__(self, subscription_id, resource_group, workspace_name, workspace_region='eastus',
                  configuration_file: str = project_configuration_file,
                  train_py=train_py_default, score_py=score_py_default):
-        super().__init__(subscription_id, resource_group, workspace_name)
+        super().__init__(subscription_id, resource_group, workspace_name, workspace_region)
         self.configuration_file = configuration_file
         self.image_tags = None
         self.args = None
@@ -54,3 +58,12 @@ class WorkspaceContext(Workspace):
                  project_configuration.get_value('workspace_name'),
                  configuration_file, train_py=train_py, score_py=score_py)
         return ws
+
+    @staticmethod
+    def _get_file_md5(file_name):
+        hasher = hashlib.md5()
+        with open(file_name, 'rb') as afile:
+            buf = afile.read()
+            hasher.update(buf)
+        file_hash = hasher.hexdigest()
+        return file_hash

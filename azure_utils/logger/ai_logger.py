@@ -18,13 +18,14 @@ import json
 from datetime import datetime
 from enum import Enum
 
-from MetricsUtils.blob_storage import BlobStorageAccount
-from MetricsUtils.storageutils import StorageConnection
+from azure_utils.logger.blob_storage import BlobStorageAccount
+from azure_utils.logger.storageutils import StorageConnection
 
 __version__ = "0.1"
 
 
 class CollectionEntry(Enum):
+    """ Deploy Steps Enums"""
     AKS_CLUSTER_CREATION = "akscreate"
     AML_COMPUTE_CREATION = "amlcompute"
     AML_WORKSPACE_CREATION = "amlworkspace"
@@ -114,6 +115,11 @@ class StatisticsCollector:
 
     @staticmethod
     def get_entry(collection_entry):
+        """
+
+        :param collection_entry:
+        :return:
+        """
         return_data_point = None
         if collection_entry.value in StatisticsCollector.__metrics__.keys():
             return_data_point = StatisticsCollector.__metrics__[collection_entry.value]
@@ -131,6 +137,10 @@ class StatisticsCollector:
 
     @staticmethod
     def get_collection():
+        """
+
+        :return:
+        """
         return json.dumps(StatisticsCollector.__metrics__)
 
     '''
@@ -146,6 +156,10 @@ class StatisticsCollector:
 
     @staticmethod
     def upload_content(connection_string):
+        """
+
+        :param connection_string:
+        """
         connection_object = StorageConnection(connection_string)
         storage_account = BlobStorageAccount(connection_object)
         containers = storage_account.getContainers()
@@ -168,6 +182,11 @@ class StatisticsCollector:
 
     @staticmethod
     def retrieve_content(connection_string):
+        """
+
+        :param connection_string:
+        :return:
+        """
         return_content = None
         connection_object = StorageConnection(connection_string)
         storage_account = BlobStorageAccount(connection_object)
@@ -191,6 +210,10 @@ class StatisticsCollector:
 
     @staticmethod
     def hydrate_from_storage(connection_string):
+        """
+
+        :param connection_string:
+        """
         return_content = StatisticsCollector.retrieve_content(connection_string)
         if return_content is not None:
             StatisticsCollector.__metrics__ = json.loads(return_content)

@@ -12,6 +12,12 @@ def _get_resource_group_client(profile_credentials, subscription_id):
 
 
 def resource_group_exists(resource_group_name, resource_group_client=None):
+    """
+
+    :param resource_group_name:
+    :param resource_group_client:
+    :return:
+    """
     return resource_group_client.resource_groups.check_existence(resource_group_name)
 
 
@@ -21,19 +27,19 @@ class ResourceGroupException(Exception):
 
 def create_resource_group(profile_credentials, subscription_id, location, resource_group_name):
     """Creates resource group if it doesn't exist
-    
+
     Args:
-        profile_credentials : credentials from Azure login 
+        profile_credentials : credentials from Azure login
         subscription_id (str): subscription you wish to use
         location (str): location you wish the strage to be created in
         resource_group_name (str): the name of the resource group you want the storage to be created under
-    
+
     Raises:
         ResourceGroupException: Exception if the resource group could not be created
-    
+
     Returns:
         ResourceGroup: an Azure resource group object
-    
+
     Examples:
     >>> profile = get_cli_profile()
     >>> profile.set_active_subscription("YOUR-SUBSCRIPTION")

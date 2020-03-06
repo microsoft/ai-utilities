@@ -19,9 +19,9 @@ __version__ = "0.1"
 
 
 class BlobStorageAccount:
-    '''
+    """
         Constructor that recieves a logger.storagutils.storageConnection instance
-    '''
+    """
 
     def __init__(self, storage_connection):
         self.connection = storage_connection
@@ -30,6 +30,10 @@ class BlobStorageAccount:
     # Creates a new storage container in the Azure Storage account
 
     def create_container(self, container_name):
+        """
+
+        :param container_name:
+        """
         if self.connection and self.service:
             self.service.create_container(container_name)
             self.service.set_container_acl(container_name, public_access=PublicAccess.Blob)
@@ -37,6 +41,12 @@ class BlobStorageAccount:
     # Retrieve a blob SAS token on a specific blob
 
     def get_blob_sas_token(self, container_name, blob_name):
+        """
+
+        :param container_name:
+        :param blob_name:
+        :return:
+        """
         return_token = None
         if self.connection and self.service:
             return_token = self.service.generate_blob_shared_access_signature(container_name, blob_name,
@@ -49,6 +59,10 @@ class BlobStorageAccount:
     # the storageConnection object
 
     def get_containers(self):
+        """
+
+        :return:
+        """
         return_list = []
         if self.connection and self.service:
             containers = self.service.list_containers()
@@ -61,6 +75,11 @@ class BlobStorageAccount:
     # the storageConnection object
 
     def get_blobs(self, container_name):
+        """
+
+        :param container_name:
+        :return:
+        """
         return_list = []
         if self.connection and self.service:
             blobs = self.service.list_blobs(container_name)
@@ -71,12 +90,24 @@ class BlobStorageAccount:
     # Upload text to a blob (fileContent is a simple string)
 
     def upload_blob(self, container_name, blob_name, file_content):
+        """
+
+        :param container_name:
+        :param blob_name:
+        :param file_content:
+        """
         if self.connection and self.service:
             self.service.create_blob_from_text(container_name, blob_name, file_content)
 
     # Download the blob as a string.
 
     def download_blob(self, container_name, blob_name):
+        """
+
+        :param container_name:
+        :param blob_name:
+        :return:
+        """
         return_content = None
         if self.connection and self.service:
             blob = self.service.get_blob_to_text(container_name, blob_name)

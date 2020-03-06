@@ -38,11 +38,6 @@ setup(
         'Pillow',
         'keras',
         'resnet',
-        'azureml-contrib-functions'
-    ],
-    entry_points = {
-        'console_scripts': [
-            'aml-sample=azure_utils.cli.cli:main',
-        ],
-    },
+        'azureml-contrib-functions', 'toolz', 'knack', 'ipywidgets', 'tabulate'
+    ]
 )

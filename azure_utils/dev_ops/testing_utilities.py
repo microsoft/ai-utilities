@@ -11,7 +11,7 @@ import sys
 
 import nbformat
 from nbconvert import MarkdownExporter, RSTExporter
-from junit_xml import TestCase, TestSuite
+from junit_xml import TestCase, TestSuite, to_xml_report_file
 import papermill as pm
 
 notebook_output_ext = ".output_ipynb"
@@ -64,7 +64,7 @@ def run_notebook(input_notebook, add_nunit_attachment, parameters=None, kernel_n
             test_suite = TestSuite("my test suite", test_cases)
 
             with open('test-timing-output.xml', 'w') as test_file:
-                TestSuite.to_file(test_file, [test_suite], prettyprint=False)
+                to_xml_report_file(test_file, [test_suite], prettyprint=False)
 
 
 def export_notebook(exporter, jupyter_output, output_notebook, add_nunit_attachment, file_ext, root='.'):

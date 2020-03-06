@@ -8,21 +8,37 @@
 Adaptation of code from flyyufelix, mvoelk, BigMoyan, fchollet at https://github.com/adamcasson/resnet152
 
 """
-import sys
 
 
 class RTSEstimator:
     def predict(self, request):
+        """
+
+        :param request:
+        """
         raise NotImplementedError
 
     def load_model(self):
+        """
+
+        """
         raise NotImplementedError
 
-    def save_model(self):
+    def save_model(self, path):
+        """
+
+        """
         raise NotImplementedError
 
     def train(self):
+        """
+
+        """
         raise NotImplementedError
 
     def create_model(self, **kwargs):
+        """
+
+        :param kwargs:
+        """
         raise NotImplementedError

@@ -8,15 +8,14 @@ import inspect
 import os
 import warnings
 
-import keras.backend as K
+import keras.backend as keras_backend
 import numpy as np
-from azure_utils.machine_learning.models.training_arg_parsers import get_model_path, process_request, \
+from azure_utils.machine_learning.training_arg_parsers import get_model_path, process_request, \
     prepare_response, \
     default_response
-from azure_utils.resnet152 import RTSEstimator
+
 from azureml.contrib.services import rawhttp
 from keras import initializers
-from keras.applications.imagenet_utils import _obtain_input_shape
 from keras.applications.imagenet_utils import decode_predictions
 from keras.applications.imagenet_utils import preprocess_input
 from keras.engine import Layer, InputSpec
@@ -39,6 +38,7 @@ from keras.utils import layer_utils
 from keras.utils.data_utils import get_file
 
 from azure_utils.machine_learning.factories.realtime_factory import RealTimeFactory
+from azure_utils.rts_estimator import RTSEstimator
 
 WEIGHTS_PATH = 'https://github.com/adamcasson/resnet152/releases/download/v0.1/resnet152_weights_tf.h5'
 WEIGHTS_PATH_NO_TOP = 'https://github.com/adamcasson/resnet152/releases/download/v0.1/resnet152_weights_tf_notop.h5'
@@ -82,60 +82,98 @@ class Scale(Layer):
         self.beta_init = initializers.get(beta_init)
         self.gamma_init = initializers.get(gamma_init)
         self.initial_weights = weights
+
+        self.gamma = None
+        self.beta = None
         super(Scale, self).__init__(**kwargs)
 
     def build(self, input_shape):
+        """
+
+        :param input_shape:
+        """
         self.input_spec = [InputSpec(shape=input_shape)]
         shape = (int(input_shape[self.axis]),)
 
-        self.gamma = K.variable(self.gamma_init(shape), name='%s_gamma' % self.name)
-        self.beta = K.variable(self.beta_init(shape), name='%s_beta' % self.name)
+        self.gamma = keras_backend.variable(self.gamma_init(shape), name='%s_gamma' % self.name)
+        self.beta = keras_backend.variable(self.beta_init(shape), name='%s_beta' % self.name)
         self.trainable_weights = [self.gamma, self.beta]
 
         if self.initial_weights is not None:
             self.set_weights(self.initial_weights)
             del self.initial_weights
 
-    def call(self, x, mask=None):
+    def call(self, layers, mask=None):
+        """
+
+        :param layers:
+        :param mask:
+        :return:
+        """
         input_shape = self.input_spec[0].shape
         broadcast_shape = [1] * len(input_shape)
         broadcast_shape[self.axis] = input_shape[self.axis]
 
-        out = K.reshape(self.gamma, broadcast_shape) * x + K.reshape(self.beta, broadcast_shape)
+        out = keras_backend.reshape(self.gamma, broadcast_shape) * layers + keras_backend.reshape(self.beta,
+                                                                                                  broadcast_shape)
         return out
 
-    def get_config(self):
+    def get_config(self) -> dict:
+        """
+
+        :return:
+        """
         config = {"momentum": self.momentum, "axis": self.axis}
         base_config = super(Scale, self).get_config()
-        return dict(list(base_config.items()) + list(config.items()))
+        return {**base_config, **config}
 
 
 class ResNet152(RTSEstimator):
+    """
+
+    """
+
     def __init__(self):
         self.model = None
-        print("Created")
 
     def train(self):
+        """
+
+        :return:
+        """
         self.model = self.create_model()
         return self.model
 
-    def save_model(self, path):
+    def save_model(self, path="model.pkl"):
+        """
+
+        :param path:
+        """
         self.model.save_weights(path)
 
     @classmethod
     def load_model(cls, model_file="/model.pkl"):
+        """
+
+        :param model_file:
+        :return:
+        """
         resnet_152 = ResNet152()
-        model = resnet_152.train()
-        model.load_weights(get_model_path(model_file))
+        resnet_152.train().load_weights(get_model_path(model_file))
         return resnet_152
 
     def predict(self, request):
+        """
+
+        :param request:
+        :return:
+        """
         img_array, transformed_dict = process_request(request)
-        preds = self.model.predict(img_array)
-        return prepare_response(preds, transformed_dict)
+        predictions = self.model.predict(img_array)
+        return prepare_response(predictions, transformed_dict)
 
     @staticmethod
-    def _identity_block(input_tensor, kernel_size, filters, stage, block):
+    def _identity_block(input_tensor, kernel_size, filters, stage, block, strides=(1, 1)):
         """The identity_block is the block that has no conv layer at shortcut
 
         Keyword arguments
@@ -148,7 +186,7 @@ class ResNet152(RTSEstimator):
         """
         eps = 1.1e-5
 
-        if K.image_dim_ordering() == 'tf':
+        if keras_backend.image_dim_ordering() == 'tf':
             bn_axis = 3
         else:
             bn_axis = 1
@@ -158,27 +196,29 @@ class ResNet152(RTSEstimator):
         bn_name_base = 'bn' + str(stage) + block + '_branch'
         scale_name_base = 'scale' + str(stage) + block + '_branch'
 
-        x = Conv2D(nb_filter1, (1, 1), name=conv_name_base + '2a', use_bias=False)(input_tensor)
-        x = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2a')(x)
-        x = Scale(axis=bn_axis, name=scale_name_base + '2a')(x)
-        x = Activation('relu', name=conv_name_base + '2a_relu')(x)
+        stacked_layers = Conv2D(nb_filter1, (1, 1), strides=strides, name=conv_name_base + '2a', use_bias=False)(
+            input_tensor)
+        stacked_layers = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2a')(stacked_layers)
+        stacked_layers = Scale(axis=bn_axis, name=scale_name_base + '2a')(stacked_layers)
+        stacked_layers = Activation('relu', name=conv_name_base + '2a_relu')(stacked_layers)
 
-        x = ZeroPadding2D((1, 1), name=conv_name_base + '2b_zeropadding')(x)
-        x = Conv2D(nb_filter2, (kernel_size, kernel_size), name=conv_name_base + '2b', use_bias=False)(x)
-        x = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2b')(x)
-        x = Scale(axis=bn_axis, name=scale_name_base + '2b')(x)
-        x = Activation('relu', name=conv_name_base + '2b_relu')(x)
+        stacked_layers = ZeroPadding2D((1, 1), name=conv_name_base + '2b_zeropadding')(stacked_layers)
+        stacked_layers = Conv2D(nb_filter2, (kernel_size, kernel_size), name=conv_name_base + '2b', use_bias=False)(
+            stacked_layers)
+        stacked_layers = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2b')(stacked_layers)
+        stacked_layers = Scale(axis=bn_axis, name=scale_name_base + '2b')(stacked_layers)
+        stacked_layers = Activation('relu', name=conv_name_base + '2b_relu')(stacked_layers)
 
-        x = Conv2D(nb_filter3, (1, 1), name=conv_name_base + '2c', use_bias=False)(x)
-        x = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2c')(x)
-        x = Scale(axis=bn_axis, name=scale_name_base + '2c')(x)
+        stacked_layers = Conv2D(nb_filter3, (1, 1), name=conv_name_base + '2c', use_bias=False)(stacked_layers)
+        stacked_layers = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2c')(stacked_layers)
+        stacked_layers = Scale(axis=bn_axis, name=scale_name_base + '2c')(stacked_layers)
 
-        x = add([x, input_tensor], name='res' + str(stage) + block)
-        x = Activation('relu', name='res' + str(stage) + block + '_relu')(x)
-        return x
+        stacked_layers = add([stacked_layers, input_tensor], name='res' + str(stage) + block)
+        stacked_layers = Activation('relu', name='res' + str(stage) + block + '_relu')(stacked_layers)
+        return stacked_layers
 
-    @staticmethod
-    def _conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2)):
+    @classmethod
+    def _conv_block(cls, input_tensor, kernel_size, filters, stage, block, strides=(2, 2)):
         """conv_block is the block that has a conv layer at shortcut
 
         Keyword arguments:
@@ -192,46 +232,10 @@ class ResNet152(RTSEstimator):
         And the shortcut should have subsample=(2,2) as well
 
         """
-        eps = 1.1e-5
+        return cls._identity_block(input_tensor, kernel_size, filters, stage, block, strides)
 
-        if K.image_dim_ordering() == 'tf':
-            bn_axis = 3
-        else:
-            bn_axis = 1
-
-        nb_filter1, nb_filter2, nb_filter3 = filters
-        conv_name_base = 'res' + str(stage) + block + '_branch'
-        bn_name_base = 'bn' + str(stage) + block + '_branch'
-        scale_name_base = 'scale' + str(stage) + block + '_branch'
-
-        x = Conv2D(nb_filter1, (1, 1), strides=strides, name=conv_name_base + '2a', use_bias=False)(input_tensor)
-        x = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2a')(x)
-        x = Scale(axis=bn_axis, name=scale_name_base + '2a')(x)
-        x = Activation('relu', name=conv_name_base + '2a_relu')(x)
-
-        x = ZeroPadding2D((1, 1), name=conv_name_base + '2b_zeropadding')(x)
-        x = Conv2D(nb_filter2, (kernel_size, kernel_size),
-                   name=conv_name_base + '2b', use_bias=False)(x)
-        x = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2b')(x)
-        x = Scale(axis=bn_axis, name=scale_name_base + '2b')(x)
-        x = Activation('relu', name=conv_name_base + '2b_relu')(x)
-
-        x = Conv2D(nb_filter3, (1, 1), name=conv_name_base + '2c', use_bias=False)(x)
-        x = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2c')(x)
-        x = Scale(axis=bn_axis, name=scale_name_base + '2c')(x)
-
-        shortcut = Conv2D(nb_filter3, (1, 1), strides=strides,
-                          name=conv_name_base + '1', use_bias=False)(input_tensor)
-        shortcut = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '1')(shortcut)
-        shortcut = Scale(axis=bn_axis, name=scale_name_base + '1')(shortcut)
-
-        x = add([x, shortcut], name='res' + str(stage) + block)
-        x = Activation('relu', name='res' + str(stage) + block + '_relu')(x)
-        return x
-
-    @staticmethod
-    def create_model(include_top=True, weights=None, input_tensor=None, input_shape=None, large_input=False,
-                     pooling=None, classes=1000):
+    def create_model(self, include_top=True, weights=None, input_tensor=None, input_shape=None, large_input=False,
+                     pooling=None, classes=1000, save_model=False, model_path=None):
         """Instantiate the ResNet152 architecture.
 
         Keyword arguments:
@@ -288,13 +292,13 @@ class ResNet152(RTSEstimator):
         input_shape = _obtain_input_shape(input_shape,
                                           default_size=img_size,
                                           min_size=197,
-                                          data_format=K.image_data_format(),
+                                          data_format=keras_backend.image_data_format(),
                                           require_flatten=include_top)
 
         img_input = ResNet152.get_image_input(input_shape, input_tensor)
 
         # handle dimension ordering for different backends
-        if K.image_dim_ordering() == 'tf':
+        if keras_backend.image_dim_ordering() == 'tf':
             bn_axis = 3
         else:
             bn_axis = 1
@@ -339,10 +343,23 @@ class ResNet152(RTSEstimator):
         model = Model(inputs, layers_x, name='resnet152')
 
         ResNet152._load_weights(include_top, model, weights)
+        self.model = model
+
+        if save_model:
+            self.save_model(model_path)
+
         return model
 
     @staticmethod
     def add_classification_layer(classes, include_top, layers_x, pooling):
+        """
+
+        :param classes:
+        :param include_top:
+        :param layers_x:
+        :param pooling:
+        :return:
+        """
         # include classification layer by default, not included for feature extraction
         if include_top:
             layers_x = Flatten()(layers_x)
@@ -356,10 +373,16 @@ class ResNet152(RTSEstimator):
 
     @staticmethod
     def get_image_input(input_shape, input_tensor):
+        """
+
+        :param input_shape:
+        :param input_tensor:
+        :return:
+        """
         if input_tensor is None:
             img_input = Input(shape=input_shape)
         else:
-            if not K.is_keras_tensor(input_tensor):
+            if not keras_backend.is_keras_tensor(input_tensor):
                 img_input = Input(tensor=input_tensor, shape=input_shape)
             else:
                 img_input = input_tensor
@@ -380,7 +403,7 @@ class ResNet152(RTSEstimator):
                                         cache_subdir='models',
                                         md5_hash='4a90dcdafacbd17d772af1fb44fc2660')
             model.load_weights(weights_path, by_name=True)
-            if K.backend() == 'theano':
+            if keras_backend.backend() == 'theano':
                 layer_utils.convert_all_kernels_in_model(model)
                 if include_top:
                     maxpool = model.get_layer(name='avg_pool')
@@ -388,7 +411,7 @@ class ResNet152(RTSEstimator):
                     dense = model.get_layer(name='fc1000')
                     layer_utils.convert_dense_weights_data_format(dense, shape, 'channels_first')
 
-            if K.image_data_format() == 'channels_first' and K.backend() == 'tensorflow':
+            if keras_backend.image_data_format() == 'channels_first' and keras_backend.backend() == 'tensorflow':
                 warnings.warn('You are using the TensorFlow backend, yet you '
                               'are using the Theano '
                               'image data format convention '
@@ -399,26 +422,35 @@ class ResNet152(RTSEstimator):
                               'at ~/.keras/keras.json.')
 
 
-model = ResNet152.create_model(include_top=True, weights='imagenet')
+resnet_152_model = ResNet152().create_model(include_top=True, weights='imagenet')
 img_path = 'elephant.jpg'
 img = image.load_img(img_path, target_size=(224, 224))
-x = image.img_to_array(img)
+image_array = image.img_to_array(img)
 
 if __name__ == '__main__':
-    x = np.expand_dims(x, axis=0)
-    x = preprocess_input(x)
-    print('Input image shape:', x.shape)
-
-    preds = model.predict(x)
-    print('Predicted:', decode_predictions(preds))
+    image_array = np.expand_dims(image_array, axis=0)
+    image_array = preprocess_input(image_array)
+    print('Input image shape:', image_array.shape)
+    print('Predicted:', decode_predictions(resnet_152_model.predict(image_array)))
 
 
 class RealTimeDeepFactory(RealTimeFactory):
+    """
+
+    """
+
     def train(self, args):
-        resnet_152 = ResNet152.create_model(weights="imagenet")
-        resnet_152.save_model(os.path.join(args.outputs, args.model))
+        """
+
+        :param args:
+        """
+        ResNet152().create_model(weights="imagenet", save_model=True,
+                                 model_path=os.path.join(args.outputs, args.model))
 
     def score_init(self):
+        """
+
+        """
         self.resnet_152 = ResNet152.load_model()
 
     @rawhttp
@@ -429,11 +461,16 @@ class RealTimeDeepFactory(RealTimeFactory):
         return default_response(request)
 
     def __init__(self):
+        super().__init__()
         self.resnet_152 = None
         print("")
 
     @staticmethod
-    def make_file():
+    def make_file(**kwargs):
+        """
+
+        :param kwargs:
+        """
         file = inspect.getsource(RealTimeFactory)
         file = file.replace('def train(self, args):\n        raise NotImplementedError\n',
                             inspect.getsource(RealTimeDeepFactory.train))
@@ -443,4 +480,101 @@ class RealTimeDeepFactory(RealTimeFactory):
                             inspect.getsource(RealTimeDeepFactory.score_run))
         file = file.replace('def __init__(self):\n        raise NotImplementedError\n',
                             inspect.getsource(RealTimeDeepFactory.__init__))
-        file
+        return file
+
+
+def _obtain_input_shape(input_shape,
+                        default_size,
+                        min_size,
+                        data_format,
+                        require_flatten,
+                        weights=None):
+    """Internal utility to compute/validate a model's input shape.
+
+    # Arguments
+        input_shape: Either None (will return the default network input shape),
+            or a user-provided shape to be validated.
+        default_size: Default input width/height for the model.
+        min_size: Minimum input width/height accepted by the model.
+        data_format: Image data format to use.
+        require_flatten: Whether the model is expected to
+            be linked to a classifier via a Flatten layer.
+        weights: One of `None` (random initialization)
+            or 'imagenet' (pre-training on ImageNet).
+            If weights='imagenet' input channels must be equal to 3.
+
+    # Returns
+        An integer shape tuple (may include None entries).
+
+    # Raises
+        ValueError: In case of invalid argument values.
+    """
+    if weights != 'imagenet' and input_shape and len(input_shape) == 3:
+        if data_format == 'channels_first':
+            if input_shape[0] not in {1, 3}:
+                warnings.warn(
+                    'This model usually expects 1 or 3 input channels. '
+                    'However, it was passed an input_shape with ' +
+                    str(input_shape[0]) + ' input channels.')
+            default_shape = (input_shape[0], default_size, default_size)
+        else:
+            if input_shape[-1] not in {1, 3}:
+                warnings.warn(
+                    'This model usually expects 1 or 3 input channels. '
+                    'However, it was passed an input_shape with ' +
+                    str(input_shape[-1]) + ' input channels.')
+            default_shape = (default_size, default_size, input_shape[-1])
+    else:
+        if data_format == 'channels_first':
+            default_shape = (3, default_size, default_size)
+        else:
+            default_shape = (default_size, default_size, 3)
+    if weights == 'imagenet' and require_flatten:
+        if input_shape is not None:
+            if input_shape != default_shape:
+                raise ValueError('When setting`include_top=True` '
+                                 'and loading `imagenet` weights, '
+                                 '`input_shape` should be ' +
+                                 str(default_shape) + '.')
+        return default_shape
+    if input_shape:
+        if data_format == 'channels_first':
+            if input_shape is not None:
+                if len(input_shape) != 3:
+                    raise ValueError(
+                        '`input_shape` must be a tuple of three integers.')
+                if input_shape[0] != 3 and weights == 'imagenet':
+                    raise ValueError('The input must have 3 channels; got '
+                                     '`input_shape=' + str(input_shape) + '`')
+                if ((input_shape[1] is not None and input_shape[1] < min_size) or
+                        (input_shape[2] is not None and input_shape[2] < min_size)):
+                    raise ValueError('Input size must be at least ' +
+                                     str(min_size) + 'x' + str(min_size) + '; got '
+                                                                           '`input_shape=' + str(input_shape) + '`')
+        else:
+            if input_shape is not None:
+                if len(input_shape) != 3:
+                    raise ValueError(
+                        '`input_shape` must be a tuple of three integers.')
+                if input_shape[-1] != 3 and weights == 'imagenet':
+                    raise ValueError('The input must have 3 channels; got '
+                                     '`input_shape=' + str(input_shape) + '`')
+                if ((input_shape[0] is not None and input_shape[0] < min_size) or
+                        (input_shape[1] is not None and input_shape[1] < min_size)):
+                    raise ValueError('Input size must be at least ' +
+                                     str(min_size) + 'x' + str(min_size) + '; got '
+                                                                           '`input_shape=' + str(input_shape) + '`')
+    else:
+        if require_flatten:
+            input_shape = default_shape
+        else:
+            if data_format == 'channels_first':
+                input_shape = (3, None, None)
+            else:
+                input_shape = (None, None, 3)
+    if require_flatten:
+        if None in input_shape:
+            raise ValueError('If `include_top` is True, '
+                             'you should specify a static `input_shape`. '
+                             'Got `input_shape=' + str(input_shape) + '`')
+    return input_shape

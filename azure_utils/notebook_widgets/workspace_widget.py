@@ -1,27 +1,46 @@
+"""
+AI-Utilities - azure_utils/notebook_widgets/workspace_widget.py
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the MIT License.
+"""
 from ipywidgets import widgets
 
 
-def make_workspace_widget(model_dict, aks_dict):
-    def make_vbox(model_dict):
-        labels = []
-        for k in model_dict:
-            if type(model_dict[k]) is not dict:
-                string = str(model_dict[k])
-                labels.append(widgets.HBox([widgets.HTML(value="<b>" + k + ":</b>"), widgets.Label(string)]))
-            else:
-                mini_labels = []
-                mini_dic = model_dict[k]
-                if mini_dic and mini_dic is not dict:
-                    for mini_k in mini_dic:
-                        string = str(mini_dic[mini_k])
-                        mini_labels.append(
-                            widgets.HBox([widgets.HTML(value="<b>" + mini_k + ":</b>"), widgets.Label(string)]))
-                    mini_model_accordion = widgets.Accordion(children=[widgets.VBox(mini_labels)])
-                    mini_model_accordion.set_title(0, k)
-                    labels.append(mini_model_accordion)
+def make_vbox(model_dict):
+    """
 
-        model_widget = widgets.VBox(labels)
-        return widgets.VBox(children=[model_widget])
+    :param model_dict:
+    :return:
+    """
+    labels = []
+    for k in model_dict:
+        if type(model_dict[k]) is not dict:
+            string = str(model_dict[k])
+            labels.append(widgets.HBox([widgets.HTML(value="<b>" + k + ":</b>"), widgets.Label(string)]))
+        else:
+            mini_labels = []
+            mini_dic = model_dict[k]
+            if mini_dic and mini_dic is not dict:
+                for mini_k in mini_dic:
+                    string = str(mini_dic[mini_k])
+                    mini_labels.append(
+                        widgets.HBox([widgets.HTML(value="<b>" + mini_k + ":</b>"), widgets.Label(string)]))
+                mini_model_accordion = widgets.Accordion(children=[widgets.VBox(mini_labels)])
+                mini_model_accordion.set_title(0, k)
+                labels.append(mini_model_accordion)
+
+    model_widget = widgets.VBox(labels)
+    return widgets.VBox(children=[model_widget])
+
+
+def make_workspace_widget(model_dict, aks_dict):
+    """
+
+    :param model_dict:
+    :param aks_dict:
+    :return:
+    """
 
     ws_image = widgets.HTML(
         value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/studio.png">')

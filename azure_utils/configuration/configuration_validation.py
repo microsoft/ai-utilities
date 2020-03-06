@@ -177,8 +177,6 @@ class Validation:
     # custom_validator- If not none, a routine to call if length and content checks pass.
 
     FIELD_NOT_RECOGNIZED = "Field not recognized/validated."
-    VALIDATION_RESTRICTIONS = collections.namedtuple('validation_restrictions',
-                                                     'length regex_pattern invalid_charset custom_validator')
 
     def __init__(self, default_field_value: str = '<>'):
         """
@@ -188,15 +186,17 @@ class Validation:
 
         :param default_field_value: The default value for a field, default = <>
         """
+        validation_restrictions = collections.namedtuple('validation_restrictions',
+                                                         ['length', 'regex_pattern', 'invalid_charset',
+                                                          'custom_validator'])
         self.type_restrictions = {
-
-            ValidationType.subscription_id: Validation.VALIDATION_RESTRICTIONS(None, False, "<>",
-                                                                               self._validate_subscription),
-            ValidationType.resource_group: Validation.VALIDATION_RESTRICTIONS([1, 90], True, r"^[-\w\._\(\)]+$",
-                                                                              self._validate_resource_group),
-            ValidationType.workspace_name: Validation.VALIDATION_RESTRICTIONS([1, 260], False, r"<>*%&:?+/\\", None),
-            ValidationType.storage_account: Validation.VALIDATION_RESTRICTIONS([1, 260], True, r"^[a-zA-Z0-9_\-]+$",
-                                                                               None)
+            ValidationType.subscription_id: validation_restrictions(None, False, "<>",
+                                                                    self._validate_subscription),
+            ValidationType.resource_group: validation_restrictions([1, 90], True, r"^[-\w\._\(\)]+$",
+                                                                   self._validate_resource_group),
+            ValidationType.workspace_name: validation_restrictions([1, 260], False, r"<>*%&:?+/\\", None),
+            ValidationType.storage_account: validation_restrictions([1, 260], True, r"^[a-zA-Z0-9_\-]+$",
+                                                                    None)
         }
 
         # Get names of fields validated for checks by user.
@@ -245,6 +245,14 @@ class Validation:
         return return_result
 
     def check_valid_type(self, return_result, type_name, validation_type, value):
+        """
+
+        :param return_result:
+        :param type_name:
+        :param validation_type:
+        :param value:
+        :return:
+        """
         # Type is valid, perform the following checks
         #
         # 1. Validate length requirements, if provided

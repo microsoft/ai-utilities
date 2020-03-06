@@ -6,7 +6,7 @@ from azure.mgmt.storage import StorageManagementClient
 from azure.mgmt.storage.models import StorageAccountCreateParameters
 from azure.mgmt.storage.v2019_04_01.models import Kind, Sku, SkuName
 
-from deepseismic_interpretation.azureml_tools.resource_group import \
+from azure_utils.azureml_tools.resource_group import \
     create_resource_group
 
 
@@ -15,7 +15,7 @@ class StorageAccountCreateFailure(Exception):
 
 
 def create_premium_storage(
-    profile_credentials, subscription_id, location, resource_group_name, storage_name,
+        profile_credentials, subscription_id, location, resource_group_name, storage_name,
 ):
     """Create premium blob storage
 
@@ -41,7 +41,7 @@ def create_premium_storage(
     """
     storage_client = StorageManagementClient(profile_credentials, subscription_id)
     create_resource_group(profile_credentials, subscription_id, location, resource_group_name)
-    if storage_client.storage_accounts.check_name_availability(storage_name).name_available == False:
+    if not storage_client.storage_accounts.check_name_availability(storage_name).name_available:
         storage_account = storage_client.storage_accounts.get_properties(resource_group_name, storage_name)
     else:
         storage_async_operation = storage_client.storage_accounts.create(

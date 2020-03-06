@@ -41,6 +41,15 @@ def get_or_create_lightgbm_image(configuration_file: str = project_configuration
 
 def get_or_create_image(image_config, image_settings_name, models, show_output,
                         configuration_file: str = project_configuration_file):
+    """
+
+    :param image_config:
+    :param image_settings_name:
+    :param models:
+    :param show_output:
+    :param configuration_file:
+    :return:
+    """
     project_configuration = ProjectConfiguration(configuration_file)
 
     assert project_configuration.has_value(image_settings_name)

@@ -1,7 +1,9 @@
 # Data Tracker
 <sub>Dan Grecoe - A Microsoft Employee </sub>
 
-When running Python projects through Azure Dev Ops (https://dev.azure.com) there is a need to collect certain statistics such as deployment time, or to pass out information related to a deployment as the agent the build runs on will be torn down once the build os complete.
+When running Python projects through Azure Dev Ops (https://dev.azure.com) there is a need to collect certain statistics
+such as deployment time, or to pass out information related to a deployment as the agent the build runs on will be torn
+down once the build os complete.
 
 Of course, there are several optiosn for doing so and this repository contains one option.
 
@@ -26,10 +28,12 @@ First you need to include the following
     from MetricsUtils.storageutils import storageConnection
 ```
 
-This gives you access to the code. This assumes that you have installed either as a submodule or manually, the files in a folder called MetricsUtils in the same directory as the notebooks themselves.
+This gives you access to the code. This assumes that you have installed either as a submodule or manually, the files in
+a folder called MetricsUtils in the same directory as the notebooks themselves.
 
 ### First notebook
-In the first notebook, you can certainly make use of the tracker to collect stats before the workspace is created, for example: 
+In the first notebook, you can certainly make use of the tracker to collect stats before the workspace is created, for
+example: 
 
 ```
 statisticsCollector.startTask(CollectionEntry.AML_WORKSPACE_CREATION)
@@ -47,14 +51,17 @@ ws = Workspace.create(
 statisticsCollector.endTask(CollectionEntry.AML_WORKSPACE_CREATION)
 ```
 
-In fact, you are going to need to create this workspace to get the storage account name. So, in that first notebook, you will likely want to save off the storage connection string into the environment or .env file. 
+In fact, you are going to need to create this workspace to get the storage account name. So, in that first notebook, you
+ will likely want to save off the storage connection string into the environment or .env file. 
 
 The storage account name can be found with this code:
 ```
 stgAcctName = ws.get_details()['storageAccount'].split('/')[-1]
 ```
 
-Once you have the storage account name, you save the statistics to storage using the following at or near the bottom of your notebook. If you believe there may be failures along the way, you can perform the upload multiple times, it will just overwrite what is there.
+Once you have the storage account name, you save the statistics to storage using the following at or near the bottom of
+your notebook. If you believe there may be failures along the way, you can perform the upload multiple times, it will
+just overwrite what is there.
 
 Also note that this assumes the user is logged in to the same subscription as the storage account.
 ```
@@ -63,14 +70,16 @@ statisticsCollector.uploadContent(storageConnString)
 ```
 
 ### Follow on notebooks
-The difference in a follow up notebook is that settings have likely already been saved. Since we have the storage account name now in the environment, we just need to pull the information from storage into the tracking class such as:
+The difference in a follow up notebook is that settings have likely already been saved. Since we have the storage
+account name now in the environment, we just need to pull the information from storage into the tracking class such as:
 
 ```
 storageConnString = storageConnection.getConnectionStringWithAzCredentials(resource_group, stgAcct)
 statisticsCollector.hydrateFromStorage(storageConnString)
 ```
 
-Then continue to use the object as you did in the first notebook being sure to call teh uploadContent() method to save whatever changes you want to storage.
+Then continue to use the object as you did in the first notebook being sure to call teh uploadContent() method to save
+whatever changes you want to storage.
 
 # Contributing
 

@@ -31,17 +31,32 @@ class RealTimeFactory:
         raise NotImplementedError
 
     def train(self, args):
+        """
+
+        :param args:
+        """
         raise NotImplementedError
 
     def score_init(self):
+        """
+
+        """
         raise NotImplementedError
 
     @rawhttp
     def score_run(self, request):
+        """
+
+        :param request:
+        """
         raise NotImplementedError
 
     @classmethod
     def make_file(cls):
+        """
+
+        :return:
+        """
         file = inspect.getsource(cls)
 
         file = file.replace(inspect.getsource(RealTimeFactory.train), inspect.getsource(cls.train))

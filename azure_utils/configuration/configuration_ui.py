@@ -138,15 +138,28 @@ class SettingsUpdate(Frame):
 
     @staticmethod
     def print_if_errors(error_count, message):
+        """
+
+        :param error_count:
+        :param message:
+        :return:
+        """
         if error_count > 0:
             user_prefix = "The following fields either failed validation or produced a warning :\n\n"
             user_postfix = "Click Yes to continue with these validation issues or No to correct them."
             return messagebox.askyesno('Validate Errors',
-                                               "{}{}{}".format(user_prefix, message, user_postfix))
+                                       "{}{}{}".format(user_prefix, message, user_postfix))
         return True
 
     @staticmethod
     def get_warning_message(warn, error_count=0, message=""):
+        """
+
+        :param warn:
+        :param error_count:
+        :param message:
+        :return:
+        """
         if warn:
             message += "WARNINGS:\n"
             for resp in warn:
@@ -158,6 +171,13 @@ class SettingsUpdate(Frame):
 
     @staticmethod
     def get_failed_message(failed, error_count=0, message=""):
+        """
+
+        :param failed:
+        :param error_count:
+        :param message:
+        :return:
+        """
         if failed:
             message += "ERRORS:\n"
             for resp in failed:

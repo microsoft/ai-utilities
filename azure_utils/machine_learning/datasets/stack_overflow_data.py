@@ -8,7 +8,6 @@ import os
 
 import pandas as pd
 
-from azure_utils import directory
 from azure_utils.utilities import read_csv_gz, clean_text, round_sample_strat, random_merge
 
 

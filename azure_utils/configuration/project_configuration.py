@@ -6,8 +6,6 @@ Licensed under the MIT License.
 """
 
 import os
-import sys
-from queue import Queue
 from typing import Optional, Dict
 
 import yaml
