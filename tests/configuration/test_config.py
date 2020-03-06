@@ -25,9 +25,10 @@ def test_config():
     assert proj_config.project_name() == project_name
     assert proj_config.get_value('sub_id') == 'my_sub'
     assert proj_config.get_value('workspace') == 'my_ws'
-    assert len(proj_config.get_settings()) == 17
+    assert len(proj_config.get_settings()) == 14
 
     # Save it and ensure the file exists
+    assert proj_config.configuration
     proj_config.save_configuration()
     assert os.path.isfile(new_config_file)
 
@@ -36,7 +37,7 @@ def test_config():
     assert proj_config.project_name() == project_name
     assert proj_config.get_value('sub_id') == 'my_sub'
     assert proj_config.get_value('workspace') == 'my_ws'
-    assert len(proj_config.get_settings()) == 17
+    assert len(proj_config.get_settings()) == 14
 
     # Change a setting and test we get the right value
     proj_config.set_value('sub_id', 'new_sub')
@@ -44,8 +45,6 @@ def test_config():
 
     remove_config_file(new_config_file)
 
-
-def test_find_file():
     file1 = "this_is_file.txt"
     open(file1, "w+")
     found, path = find_file(file1)

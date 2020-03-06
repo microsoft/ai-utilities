@@ -6,8 +6,8 @@ Licensed under the MIT License.
 """
 import pytest
 
-from azure_utils.machine_learning.ai_workspace import DeepRealtimeScore, MLRealtimeScore
-
+from azure_utils.machine_learning.contexts.realtime_score_context import DeepRealtimeScore, MLRealtimeScore
+from deprecated import deprecated
 
 class WorkspaceCreationTests:
     @pytest.fixture(scope="class")
@@ -44,6 +44,7 @@ class TestDeployRTS(WorkspaceCreationTests):
     def test_get_or_create_model(self, realtime_score_workspace):
         assert realtime_score_workspace.get_or_create_model()
 
+    @deprecated(version='0.3.81', reason="Switch to using Env, this will be removed in 0.4.0")
     def test_get_or_create_image(self, realtime_score_workspace):
         models = [realtime_score_workspace.get_or_create_model()]
         assert models

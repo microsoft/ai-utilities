@@ -43,8 +43,8 @@ class ProjectConfiguration:
         found = False
         self.configuration = {}
         # found, file_dir = find_file(configuration_file)
+        self.configuration_file = configuration_file
         if os.path.isfile(configuration_file):
-            self.configuration_file = configuration_file
             found = True
         if not found:
             # self.configuration = ProjectConfiguration(configuration_file).configuration

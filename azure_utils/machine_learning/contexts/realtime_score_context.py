@@ -18,12 +18,13 @@ from azureml.core.conda_dependencies import CondaDependencies
 from azureml.core.image import ContainerImage
 from azureml.core.model import InferenceConfig
 from azureml.core.webservice import AksWebservice
+from deprecated import deprecated
 
 from azure_utils import directory
 from azure_utils.configuration.notebook_config import project_configuration_file, train_py_default, score_py_default
 from azure_utils.configuration.project_configuration import ProjectConfiguration
-from azure_utils.machine_learning.contexts.workspace_contexts import WorkspaceContext
 from azure_utils.machine_learning.contexts.model_management_context import LocalTrainingContext
+from azure_utils.machine_learning.contexts.workspace_contexts import WorkspaceContext
 from azure_utils.machine_learning.datasets.stack_overflow_data import download_datasets, clean_data, split_duplicates, \
     save_data
 from azure_utils.machine_learning.deep.create_deep_model import get_or_create_resnet_image
@@ -258,6 +259,7 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
             f.write(aks_target.get_credentials()['userKubeConfig'])
 
     @classmethod
+    @deprecated(version='0.3.81', reason="Switch to using Env, this will be removed in 0.4.0")
     def get_or_or_create_with_image(cls, configuration_file: str = project_configuration_file,
                                     train_py=train_py_default, score_py=score_py_default):
         """ Get or Create Real-time Endpoint
@@ -274,6 +276,7 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         web_service = workspace.get_or_create_aks_service_with_image(aks_target)
         return workspace, web_service
 
+    @deprecated(version='0.3.81', reason="Switch to using Env, this will be removed in 0.4.0")
     def get_or_create_aks_service_with_image(self, aks_target) -> AksWebservice:
         """
         Get or Create AKS Service with new or existing Kubernetes Compute
@@ -321,6 +324,7 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
 
         return aks_service
 
+    @deprecated(version='0.3.81', reason="Switch to using Env, this will be removed in 0.4.0")
     def get_or_create_image_configuration(self, **kwargs):
         """ Get or Create new Docker Image Configuration for Machine Learning Workspace
 
@@ -345,6 +349,7 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
                                                   dependencies=self.image_dependencies, docker_file=self.dockerfile,
                                                   tags=self.image_tags, enable_gpu=self.image_enable_gpu, **kwargs)
 
+    @deprecated(version='0.3.81', reason="Switch to using Env, this will be removed in 0.4.0")
     def get_or_create_image(self, image_config, models=None):
         """Get or Create new Docker Image from Machine Learning Workspace
 
@@ -482,7 +487,7 @@ class MLRealtimeScore(RealtimeScoreAKSContext, RealtimeScoreFunctionsContext, Lo
     """ Light GBM Real Time Scoring"""
 
     def __init__(self, subscription_id, resource_group, workspace_name,
-                 configuration_file: str = project_configuration_file,
+                 configuration_file: str = project_configuration_file, conda_file="img_ml_env.yml",
                  run_configuration=get_local_run_configuration(), **kwargs):
         super().__init__(subscription_id, resource_group, workspace_name, configuration_file, **kwargs)
         self.get_docker_file()
@@ -518,10 +523,6 @@ def run(body):
 
 """)
 
-        self.description = "Image with lightgbm model"
-        self.tags = {"area": "text", "type": "lightgbm"}
-        self.get_image = get_or_create_lightgbm_image
-
         self.model_name = "question_match_model"
         self.experiment_name = "mlaks-train-on-local"
         self.model_path = "./outputs/model.pkl"
@@ -555,7 +556,14 @@ def run(body):
         self.match = 20
 
         self.prepare_data()
+        # Image Configuration
+        self.get_image = get_or_create_lightgbm_image
+        self.image_tags = {"area": "text", "type": "lightgbm", "name": "AKS", "project": "AML"}
+        self.image_description = "Image for lightgbm model"
+        self.image_dependencies = None
+        self.image_enable_gpu = False
 
+        self.conda_file = conda_file
         self.conda_pack = [
             "scikit-learn==0.19.1",
             "pandas==0.23.3"
