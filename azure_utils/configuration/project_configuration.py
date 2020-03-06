@@ -40,14 +40,12 @@ class ProjectConfiguration:
 
         :param configuration_file: File path to configuration file
         """
-        found = False
         self.configuration = {}
-        # found, file_dir = find_file(configuration_file)
+        found, file_dir = find_file(configuration_file)
         self.configuration_file = configuration_file
         if os.path.isfile(configuration_file):
             found = True
         if not found:
-            # self.configuration = ProjectConfiguration(configuration_file).configuration
             self.set_project_name("project_name")
             self.add_setting("subscription_id", "Your Azure Subscription", "<>")
             self.add_setting("resource_group", "Azure Resource Group Name", "<>")

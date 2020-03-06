@@ -10,6 +10,10 @@ import warnings
 
 import keras.backend as K
 import numpy as np
+from azure_utils.machine_learning.models.training_arg_parsers import get_model_path, process_request, \
+    prepare_response, \
+    default_response
+from azure_utils.resnet152 import RTSEstimator
 from azureml.contrib.services import rawhttp
 from keras import initializers
 from keras.applications.imagenet_utils import _obtain_input_shape
@@ -35,9 +39,6 @@ from keras.utils import layer_utils
 from keras.utils.data_utils import get_file
 
 from azure_utils.machine_learning.factories.realtime_factory import RealTimeFactory
-from azure_utils.machine_learning.models.training_arg_parsers import get_model_path, process_request, prepare_response, \
-    default_response
-from azure_utils.resnet152 import RTSEstimator
 
 WEIGHTS_PATH = 'https://github.com/adamcasson/resnet152/releases/download/v0.1/resnet152_weights_tf.h5'
 WEIGHTS_PATH_NO_TOP = 'https://github.com/adamcasson/resnet152/releases/download/v0.1/resnet152_weights_tf_notop.h5'
@@ -270,14 +271,11 @@ class ResNet152(RTSEstimator):
         ValueError: in case of invalid argument for `weights`,
             or invalid input shape.
         """
-        if weights not in {'imagenet', None}:
-            raise ValueError('The `weights` argument should be either '
-                             '`None` (random initialization) or `imagenet` '
-                             '(pre-training on ImageNet).')
+        assert weights not in {'imagenet', None}, """The `weights` argument should be either `None` (random 
+        initialization) or `imagenet` (pre-training on ImageNet)."""
 
-        if weights == 'imagenet' and include_top and classes != 1000:
-            raise ValueError('If using `weights` as imagenet with `include_top`'
-                             ' as true, `classes` should be 1000')
+        assert weights == 'imagenet' and include_top and classes != 1000, """If using `weights` as imagenet with 
+        `include_top` as true, `classes` should be 1000"""
 
         eps = 1.1e-5
 
@@ -293,13 +291,7 @@ class ResNet152(RTSEstimator):
                                           data_format=K.image_data_format(),
                                           require_flatten=include_top)
 
-        if input_tensor is None:
-            img_input = Input(shape=input_shape)
-        else:
-            if not K.is_keras_tensor(input_tensor):
-                img_input = Input(tensor=input_tensor, shape=input_shape)
-            else:
-                img_input = input_tensor
+        img_input = ResNet152.get_image_input(input_shape, input_tensor)
 
         # handle dimension ordering for different backends
         if K.image_dim_ordering() == 'tf':
@@ -307,43 +299,35 @@ class ResNet152(RTSEstimator):
         else:
             bn_axis = 1
 
-        x = ZeroPadding2D((3, 3), name='conv1_zeropadding')(img_input)
-        x = Conv2D(64, (7, 7), strides=(2, 2), name='conv1', use_bias=False)(x)
-        x = BatchNormalization(epsilon=eps, axis=bn_axis, name='bn_conv1')(x)
-        x = Scale(axis=bn_axis, name='scale_conv1')(x)
-        x = Activation('relu', name='conv1_relu')(x)
-        x = MaxPooling2D((3, 3), strides=(2, 2), name='pool1')(x)
+        layers_x = ZeroPadding2D((3, 3), name='conv1_zeropadding')(img_input)
+        layers_x = Conv2D(64, (7, 7), strides=(2, 2), name='conv1', use_bias=False)(layers_x)
+        layers_x = BatchNormalization(epsilon=eps, axis=bn_axis, name='bn_conv1')(layers_x)
+        layers_x = Scale(axis=bn_axis, name='scale_conv1')(layers_x)
+        layers_x = Activation('relu', name='conv1_relu')(layers_x)
+        layers_x = MaxPooling2D((3, 3), strides=(2, 2), name='pool1')(layers_x)
 
-        x = ResNet152._conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
-        x = ResNet152._identity_block(x, 3, [64, 64, 256], stage=2, block='b')
-        x = ResNet152._identity_block(x, 3, [64, 64, 256], stage=2, block='c')
+        layers_x = ResNet152._conv_block(layers_x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
+        layers_x = ResNet152._identity_block(layers_x, 3, [64, 64, 256], stage=2, block='b')
+        layers_x = ResNet152._identity_block(layers_x, 3, [64, 64, 256], stage=2, block='c')
 
-        x = ResNet152._conv_block(x, 3, [128, 128, 512], stage=3, block='a')
+        layers_x = ResNet152._conv_block(layers_x, 3, [128, 128, 512], stage=3, block='a')
         for i in range(1, 8):
-            x = ResNet152._identity_block(x, 3, [128, 128, 512], stage=3, block='b' + str(i))
+            layers_x = ResNet152._identity_block(layers_x, 3, [128, 128, 512], stage=3, block='b' + str(i))
 
-        x = ResNet152._conv_block(x, 3, [256, 256, 1024], stage=4, block='a')
+        layers_x = ResNet152._conv_block(layers_x, 3, [256, 256, 1024], stage=4, block='a')
         for i in range(1, 36):
-            x = ResNet152._identity_block(x, 3, [256, 256, 1024], stage=4, block='b' + str(i))
+            layers_x = ResNet152._identity_block(layers_x, 3, [256, 256, 1024], stage=4, block='b' + str(i))
 
-        x = ResNet152._conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
-        x = ResNet152._identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
-        x = ResNet152._identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
+        layers_x = ResNet152._conv_block(layers_x, 3, [512, 512, 2048], stage=5, block='a')
+        layers_x = ResNet152._identity_block(layers_x, 3, [512, 512, 2048], stage=5, block='b')
+        layers_x = ResNet152._identity_block(layers_x, 3, [512, 512, 2048], stage=5, block='c')
 
         if large_input:
-            x = AveragePooling2D((14, 14), name='avg_pool')(x)
+            layers_x = AveragePooling2D((14, 14), name='avg_pool')(layers_x)
         else:
-            x = AveragePooling2D((7, 7), name='avg_pool')(x)
+            layers_x = AveragePooling2D((7, 7), name='avg_pool')(layers_x)
 
-        # include classification layer by default, not included for feature extraction
-        if include_top:
-            x = Flatten()(x)
-            x = Dense(classes, activation='softmax', name='fc1000')(x)
-        else:
-            if pooling == 'avg':
-                x = GlobalAveragePooling2D()(x)
-            elif pooling == 'max':
-                x = GlobalMaxPooling2D()(x)
+        layers_x = ResNet152.add_classification_layer(classes, include_top, layers_x, pooling)
 
         # Ensure that the model takes into account
         # any potential predecessors of `input_tensor`.
@@ -352,8 +336,37 @@ class ResNet152(RTSEstimator):
         else:
             inputs = img_input
         # Create model.
-        model = Model(inputs, x, name='resnet152')
+        model = Model(inputs, layers_x, name='resnet152')
 
+        ResNet152._load_weights(include_top, model, weights)
+        return model
+
+    @staticmethod
+    def add_classification_layer(classes, include_top, layers_x, pooling):
+        # include classification layer by default, not included for feature extraction
+        if include_top:
+            layers_x = Flatten()(layers_x)
+            layers_x = Dense(classes, activation='softmax', name='fc1000')(layers_x)
+        else:
+            if pooling == 'avg':
+                layers_x = GlobalAveragePooling2D()(layers_x)
+            elif pooling == 'max':
+                layers_x = GlobalMaxPooling2D()(layers_x)
+        return layers_x
+
+    @staticmethod
+    def get_image_input(input_shape, input_tensor):
+        if input_tensor is None:
+            img_input = Input(shape=input_shape)
+        else:
+            if not K.is_keras_tensor(input_tensor):
+                img_input = Input(tensor=input_tensor, shape=input_shape)
+            else:
+                img_input = input_tensor
+        return img_input
+
+    @staticmethod
+    def _load_weights(include_top, model, weights):
         # load weights
         if weights == 'imagenet':
             if include_top:
@@ -384,7 +397,6 @@ class ResNet152(RTSEstimator):
                               '`image_data_format="channels_last"` in '
                               'your Keras config '
                               'at ~/.keras/keras.json.')
-        return model
 
 
 model = ResNet152.create_model(include_top=True, weights='imagenet')
@@ -423,8 +435,12 @@ class RealTimeDeepFactory(RealTimeFactory):
     @staticmethod
     def make_file():
         file = inspect.getsource(RealTimeFactory)
-        file = file.replace('def train(self, args):\n        raise NotImplementedError\n', inspect.getsource(RealTimeDeepFactory.train))
-        file = file.replace('def score_init(self):\n        raise NotImplementedError\n', inspect.getsource(RealTimeDeepFactory.score_init))
-        file = file.replace('@rawhttp\n    def score_run(self, request):\n        raise NotImplementedError\n', inspect.getsource(RealTimeDeepFactory.score_run))
-        file = file.replace('def __init__(self):\n        raise NotImplementedError\n', inspect.getsource(RealTimeDeepFactory.__init__))
+        file = file.replace('def train(self, args):\n        raise NotImplementedError\n',
+                            inspect.getsource(RealTimeDeepFactory.train))
+        file = file.replace('def score_init(self):\n        raise NotImplementedError\n',
+                            inspect.getsource(RealTimeDeepFactory.score_init))
+        file = file.replace('@rawhttp\n    def score_run(self, request):\n        raise NotImplementedError\n',
+                            inspect.getsource(RealTimeDeepFactory.score_run))
+        file = file.replace('def __init__(self):\n        raise NotImplementedError\n',
+                            inspect.getsource(RealTimeDeepFactory.__init__))
         file

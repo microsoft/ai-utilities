@@ -229,24 +229,7 @@ class Validation:
 
         validation_type = self._get_validation_type(type_name)
         if validation_type:
-            # Type is valid, perform the following checks
-            #
-            # 1. Validate length requirements, if provided
-            # 2. Validate content against invalid characters, if provided
-            # 3. Custom validation, if provided
-            if not self._validate_length(self.type_restrictions[validation_type], value):
-                return_result = ResultsGenerator.create_length_failure(
-                    type_name, value, self.type_restrictions[validation_type].length
-                )
-
-            if not return_result and not self._validate_content(self.type_restrictions[validation_type], value):
-                return_result = ResultsGenerator.create_content_failure(
-                    type_name, value, self.type_restrictions[validation_type].invalid_charset
-                )
-
-            if not return_result:
-                if self.type_restrictions[validation_type].custom_validator:
-                    return_result = self.type_restrictions[validation_type].custom_validator(type_name, value)
+            return_result = self.check_valid_type(return_result, type_name, validation_type, value)
         else:
             if value == self.default_field_value:
                 return_result = ResultsGenerator.create_warning(type_name, value,
@@ -259,6 +242,25 @@ class Validation:
         if not return_result:
             return_result = ResultsGenerator.create_success(type_name, value, "")
 
+        return return_result
+
+    def check_valid_type(self, return_result, type_name, validation_type, value):
+        # Type is valid, perform the following checks
+        #
+        # 1. Validate length requirements, if provided
+        # 2. Validate content against invalid characters, if provided
+        # 3. Custom validation, if provided
+        if not self._validate_length(self.type_restrictions[validation_type], value):
+            return_result = ResultsGenerator.create_length_failure(
+                type_name, value, self.type_restrictions[validation_type].length
+            )
+        if not return_result and not self._validate_content(self.type_restrictions[validation_type], value):
+            return_result = ResultsGenerator.create_content_failure(
+                type_name, value, self.type_restrictions[validation_type].invalid_charset
+            )
+        if not return_result:
+            if self.type_restrictions[validation_type].custom_validator:
+                return_result = self.type_restrictions[validation_type].custom_validator(type_name, value)
         return return_result
 
     @staticmethod

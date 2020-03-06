@@ -61,13 +61,8 @@ class SettingsUpdate(Frame):
             if len(setting.keys()) == 1:
                 for setting_name in setting.keys():
                     details = setting[setting_name]
-                    description = None
-                    value = None
-                    for detail in details:
-                        if ProjectConfiguration.setting_description in detail.keys():
-                            description = detail[ProjectConfiguration.setting_description]
-                        elif ProjectConfiguration.setting_value in detail.keys():
-                            value = detail[ProjectConfiguration.setting_value]
+                    description = details[0][ProjectConfiguration.setting_description]
+                    value = details[1][ProjectConfiguration.setting_value]
 
                     lbl = Label(self.master_win, text=description)
                     lbl.grid(row=current_row, column=0, columnspan=1, sticky='nwse')
@@ -130,36 +125,46 @@ class SettingsUpdate(Frame):
         :param validation_responses: Response to validate
         :return: `bool` validation outcome
         """
-        return_value = True
 
-        if len(validation_responses) > 0:
+        if validation_responses:
             failed = [x for x in validation_responses if x.status == ValidationResult.failure]
             warn = [x for x in validation_responses if x.status == ValidationResult.warning]
 
-            error_count = 0
-            message = ""
-            if failed:
-                message += "ERRORS:\n"
-                for resp in failed:
+            error_count, message = SettingsUpdate.get_failed_message(failed)
+            error_count, message = SettingsUpdate.get_warning_message(warn, error_count, message)
+
+            return SettingsUpdate.print_if_errors(error_count, message)
+        return True
+
+    @staticmethod
+    def print_if_errors(error_count, message):
+        if error_count > 0:
+            user_prefix = "The following fields either failed validation or produced a warning :\n\n"
+            user_postfix = "Click Yes to continue with these validation issues or No to correct them."
+            return messagebox.askyesno('Validate Errors',
+                                               "{}{}{}".format(user_prefix, message, user_postfix))
+        return True
+
+    @staticmethod
+    def get_warning_message(warn, error_count=0, message=""):
+        if warn:
+            message += "WARNINGS:\n"
+            for resp in warn:
+                if resp.reason != Validation.FIELD_NOT_RECOGNIZED:
                     error_count += 1
-                    message += "   {}\n".format(resp.type)
-                message += '\n'
+                    message += "   {}:\n{}\n\n".format(resp.type, resp.reason)
+            message += '\n'
+        return error_count, message
 
-            if warn:
-                message += "WARNINGS:\n"
-                for resp in warn:
-                    if resp.reason != Validation.FIELD_NOT_RECOGNIZED:
-                        error_count += 1
-                        message += "   {}:\n{}\n\n".format(resp.type, resp.reason)
-                message += '\n'
-
-            if error_count > 0:
-                user_prefix = "The following fields either failed validation or produced a warning :\n\n"
-                user_postfix = "Click Yes to continue with these validation issues or No to correct them."
-                return_value = messagebox.askyesno('Validate Errors',
-                                                   "{}{}{}".format(user_prefix, message, user_postfix))
-
-        return return_value
+    @staticmethod
+    def get_failed_message(failed, error_count=0, message=""):
+        if failed:
+            message += "ERRORS:\n"
+            for resp in failed:
+                error_count += 1
+                message += "   {}\n".format(resp.type)
+            message += '\n'
+        return error_count, message
 
     def prompt_field_validation(self) -> bool:
         """
