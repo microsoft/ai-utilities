@@ -47,7 +47,7 @@ class ProjectConfiguration:
             self.configuration_file = configuration_file
             found = True
         if not found:
-            self.configuration = ProjectConfiguration(configuration_file).configuration
+            # self.configuration = ProjectConfiguration(configuration_file).configuration
             self.set_project_name("project_name")
             self.add_setting("subscription_id", "Your Azure Subscription", "<>")
             self.add_setting("resource_group", "Azure Resource Group Name", "<>")
@@ -108,7 +108,7 @@ class ProjectConfiguration:
 
         :param project_name: Project Configuration Name
         """
-        self._validate_configuration(ProjectConfiguration.project_key)
+        # self._validate_configuration(ProjectConfiguration.project_key)
         self.configuration[ProjectConfiguration.project_key] = project_name
 
     def has_value(self, setting_name: str) -> bool:
@@ -145,9 +145,10 @@ class ProjectConfiguration:
         :param description: Text describing the setting
         :param value: Value of setting to saving in configuration
         """
-        self._validate_configuration(ProjectConfiguration.settings_key)
+        # self._validate_configuration(ProjectConfiguration.settings_key)
 
-        if not isinstance(self.configuration[ProjectConfiguration.settings_key], list):
+        if ProjectConfiguration.settings_key not in self.configuration or not isinstance(
+                self.configuration[ProjectConfiguration.settings_key], list):
             self.configuration[ProjectConfiguration.settings_key] = []
 
         new_setting = {setting_name: []}
