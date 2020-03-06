@@ -1,29 +1,29 @@
 """
-AI-Utilities - ai_workspace.py
+AI-Utilities - realtime_score_context.py
 
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
-import hashlib
 import json
 import os
 import time
 
 from azure.mgmt.deploymentmanager.models import DeploymentMode
 from azure.mgmt.resource import ResourceManagementClient
-from azureml.contrib.functions import HTTP_TRIGGER, package
-from azureml.core import Workspace, Model, Webservice, ComputeTarget, ScriptRunConfig, Experiment, Environment
+from azureml.contrib.functions import package, HTTP_TRIGGER
+from azureml.core import Model, Environment, ComputeTarget, Webservice
 from azureml.core.authentication import AzureCliAuthentication
 from azureml.core.compute import AksCompute
 from azureml.core.conda_dependencies import CondaDependencies
 from azureml.core.image import ContainerImage
 from azureml.core.model import InferenceConfig
 from azureml.core.webservice import AksWebservice
-from azureml.exceptions import ActivityFailedException
 
 from azure_utils import directory
 from azure_utils.configuration.notebook_config import project_configuration_file, train_py_default, score_py_default
 from azure_utils.configuration.project_configuration import ProjectConfiguration
+from azure_utils.machine_learning.contexts.workspace_contexts import WorkspaceContext
+from azure_utils.machine_learning.contexts.model_management_context import LocalTrainingContext
 from azure_utils.machine_learning.datasets.stack_overflow_data import download_datasets, clean_data, split_duplicates, \
     save_data
 from azure_utils.machine_learning.deep.create_deep_model import get_or_create_resnet_image
@@ -32,161 +32,12 @@ from azure_utils.machine_learning.train_local import get_local_run_configuration
 from azure_utils.notebook_widgets.workspace_widget import make_workspace_widget
 
 
-class WorkspaceContext(Workspace):
-    def __init__(self, subscription_id, resource_group, workspace_name,
-                 configuration_file: str = project_configuration_file,
-                 train_py=train_py_default, score_py=score_py_default):
-        super().__init__(subscription_id, resource_group, workspace_name)
-        self.configuration_file = configuration_file
-        self.image_tags = None
-        self.args = None
-        self.train_py = train_py
-        self.score_py = score_py
-        self.show_output = True
-        self.source_directory = "./script"
-        self.experiment_name = None
-        self.model_name = None
-        self.wait_for_completion = True
-        self.model_path = None
-
-    @classmethod
-    def get_or_create_workspace(cls, configuration_file: str = project_configuration_file,
-                                train_py=train_py_default, score_py=score_py_default):
-        """ Get or create a workspace if it doesn't exist.
-
-        :param score_py:
-        :param train_py:
-        :param configuration_file:
-        """
-        project_configuration = ProjectConfiguration(configuration_file)
-        assert project_configuration.has_value('subscription_id')
-        assert project_configuration.has_value('resource_group')
-        assert project_configuration.has_value('workspace_name')
-        assert project_configuration.has_value('workspace_region')
-
-        cls.create(subscription_id=project_configuration.get_value('subscription_id'),
-                   resource_group=project_configuration.get_value('resource_group'),
-                   name=project_configuration.get_value('workspace_name'),
-                   location=project_configuration.get_value('workspace_region'),
-                   create_resource_group=True, exist_ok=True)
-
-        ws = cls(project_configuration.get_value('subscription_id'),
-                 project_configuration.get_value('resource_group'),
-                 project_configuration.get_value('workspace_name'),
-                 configuration_file, train_py=train_py, score_py=score_py)
-        return ws
-
-
-class ModelManagementContext(WorkspaceContext):
-    def __init__(self, subscription_id, resource_group, workspace_name,
-                 configuration_file: str = project_configuration_file,
-                 train_py=train_py_default, score_py=score_py_default,
-                 run_configuration=get_local_run_configuration()):
-        super().__init__(subscription_id, resource_group, workspace_name)
-        self.configuration_file = configuration_file
-        self.image_tags = None
-        self.args = None
-        self.train_py = train_py
-        self.score_py = score_py
-        self.show_output = True
-        self.source_directory = "./script"
-        self.experiment_name = None
-        self.run_configuration = run_configuration
-        self.model_name = None
-        self.wait_for_completion = True
-        self.model_path = None
-
-    def get_or_create_model(self) -> Model:
-        """
-        Get or Create Model
-
-        :return: Model from Workspace
-        """
-        assert self.model_name
-
-        if self.model_name in self.models:
-            # if get_model(self.model_name).tags['train_py_hash'] == self.get_file_md5(
-            #         self.source_directory + "/" + self.script):
-            model = Model(self, name=self.model_name)
-            model.download("outputs", exist_ok=True)
-            return model
-
-        model = self.train_model()
-
-        assert model
-        if self.show_output:
-            print(model.name, model.version, model.url, sep="\n")
-        return model
-
-    def train_model(self):
-        run = self.submit_experiment_run(wait_for_completion=self.wait_for_completion)
-        model = run.register_model(model_name=self.model_name, model_path=self.model_path)
-        return model
-
-    def submit_experiment_run(self, wait_for_completion=True):
-        raise NotImplementedError
-
-    @staticmethod
-    def _get_file_md5(file_name):
-        hasher = hashlib.md5()
-        with open(file_name, 'rb') as afile:
-            buf = afile.read()
-            hasher.update(buf)
-        file_hash = hasher.hexdigest()
-        return file_hash
-
-
-class LocalModelTraining(ModelManagementContext):
-    def __init__(self, subscription_id, resource_group, workspace_name,
-                 configuration_file: str = project_configuration_file,
-                 train_py=train_py_default, score_py=score_py_default,
-                 run_configuration=get_local_run_configuration()):
-        super().__init__(subscription_id, resource_group, workspace_name)
-        self.configuration_file = configuration_file
-        self.image_tags = None
-        self.args = None
-        self.train_py = train_py
-        self.score_py = score_py
-        self.show_output = True
-        self.source_directory = "./script"
-        self.experiment_name = None
-        self.run_configuration = run_configuration
-        self.model_name = None
-        self.wait_for_completion = True
-        self.model_path = None
-
-    def submit_experiment_run(self, wait_for_completion=True):
-        assert self.source_directory
-        assert self.train_py
-        assert self.args
-        assert self.run_configuration
-        assert self.experiment_name
-
-        src = ScriptRunConfig(
-            source_directory=self.source_directory,
-            script=self.train_py,
-            arguments=self.args,
-            run_config=self.run_configuration,
-        )
-        self.image_tags['train_py_hash'] = self._get_file_md5(self.source_directory + "/" + self.train_py)
-        exp = Experiment(workspace=self, name=self.experiment_name)
-        run = exp.submit(src)
-        if wait_for_completion:
-            try:
-                run.wait_for_completion(show_output=self.show_output)
-            except ActivityFailedException as e:
-                print(run.get_details())
-                raise e
-        return run
-
-
-class RealtimeScoreContext(ModelManagementContext):
-    """ AI Workspace """
+class RealtimeScoreContext(WorkspaceContext):
+    """ Real-time Score Context """
 
     def __init__(self, subscription_id, resource_group, workspace_name,
                  configuration_file: str = project_configuration_file,
-                 train_py="train.py", score_py="score.py",
-                 run_configuration=get_local_run_configuration(), **kwargs):
+                 score_py="score.py", **kwargs):
         super().__init__(subscription_id, resource_group, workspace_name, **kwargs)
         project_configuration = ProjectConfiguration(configuration_file)
         self.project_configuration = project_configuration
@@ -196,8 +47,6 @@ class RealtimeScoreContext(ModelManagementContext):
         self.settings_image_name = "image_name"
         self.settings_aks_name = "aks_name"
         self.settings_aks_service_name = "aks_service_name"
-
-        # Experiment Configuration
 
         # Model Configuration
         self.model_tags = None
@@ -229,12 +78,12 @@ class RealtimeScoreContext(ModelManagementContext):
 
         self.workspace_widget = None
 
-    # def test_service_local(self):
-    #     Model(self, self.model_name).download(exist_ok=True)
-    #     exec(open(self.score_py).read())
-    #     exec("init()")
-    #     exec("response = run(MockRequest())")
-    #     exec("assert response")
+    def test_service_local(self):
+        Model(self, self.model_name).download(exist_ok=True)
+        exec(open(self.score_py).read())
+        exec("init()")
+        exec("response = run(MockRequest())")
+        exec("assert response")
 
     def get_inference_config(self):
         environment = Environment("conda-env")
@@ -629,7 +478,7 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         deployment_async_operation.wait()
 
 
-class MLRealtimeScore(RealtimeScoreAKSContext, RealtimeScoreFunctionsContext, LocalModelTraining):
+class MLRealtimeScore(RealtimeScoreAKSContext, RealtimeScoreFunctionsContext, LocalTrainingContext):
     """ Light GBM Real Time Scoring"""
 
     def __init__(self, subscription_id, resource_group, workspace_name,
@@ -746,7 +595,7 @@ def run(body):
                       questions_path, self.show_output)
 
 
-class DeepRealtimeScore(RealtimeScoreAKSContext, RealtimeScoreFunctionsContext, LocalModelTraining):
+class DeepRealtimeScore(RealtimeScoreAKSContext, RealtimeScoreFunctionsContext, LocalTrainingContext):
     """ Resnet Real-time Scoring"""
 
     def __init__(self, subscription_id, resource_group, workspace_name,
@@ -755,7 +604,7 @@ class DeepRealtimeScore(RealtimeScoreAKSContext, RealtimeScoreFunctionsContext, 
                  setting_image_name="deep_image_name", settings_aks_name="deep_aks_name",
                  settings_aks_service_name="deep_aks_service_name", **kwargs):
         super().__init__(subscription_id, resource_group, workspace_name, configuration_file,
-                         train_py=train_py, score_py=score_py, **kwargs)
+                         score_py=score_py, train_py=train_py, **kwargs)
         self.setting_image_name = setting_image_name
         self.settings_aks_name = settings_aks_name
         self.settings_aks_service_name = settings_aks_service_name
