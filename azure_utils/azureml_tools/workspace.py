@@ -45,6 +45,7 @@ def create_workspace(workspace_name: str, resource_group: str, subscription_id: 
     logger = logging.getLogger(__name__)
     auth = _get_auth()
 
+    # noinspection PyTypeChecker
     ws = azureml.core.Workspace.create(name=workspace_name, subscription_id=subscription_id,
                                        resource_group=resource_group, location=workspace_region, exist_ok=True,
                                        auth=auth)
@@ -57,6 +58,7 @@ def create_workspace(workspace_name: str, resource_group: str, subscription_id: 
 def load_workspace(path: str) -> Workspace:
     """Loads Azure Machine Learning workspace from a config file."""
     auth = _get_auth()
+    # noinspection PyTypeChecker
     workspace = azureml.core.Workspace.from_config(auth=auth, path=path)
     logger = logging.getLogger(__name__)
     logger.info("\n".join(["Workspace name: " + str(workspace.name), "Azure region: " + str(workspace.location),

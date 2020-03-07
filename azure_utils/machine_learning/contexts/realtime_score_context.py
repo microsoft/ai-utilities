@@ -527,13 +527,7 @@ def run(body):
 
         self.source_directory = "./script"
         self.script = "create_model.py"
-        if not os.path.isfile(self.source_directory + "/" + self.script):
-            os.makedirs("script", exist_ok=True)
-
-            create_model_py = "from azure_utils.machine_learning import create_model\n\nif __name__ == '__main__':\n" \
-                              "    create_model.main()"
-            with open(self.source_directory + "/" + self.script, "w") as file:
-                file.write(create_model_py)
+        self.create_model_script_file()
 
         self.show_output = True
         self.args = ["--inputs", os.path.abspath(directory + "/data_folder"), "--outputs", "outputs", "--estimators",
@@ -557,6 +551,20 @@ def run(body):
         self.requirements = ["lightgbm==2.1.2", "azureml-defaults==1.0.57", "azureml-contrib-services",
                              "opencensus-ext-flask", "Microsoft-AI-Azure-Utility-Samples"]
         self.conda_env = CondaDependencies.create(conda_packages=self.conda_pack, pip_packages=self.requirements)
+
+    def create_model_script_file(self):
+        if not os.path.isfile(self.source_directory + "/" + self.script):
+            os.makedirs("script", exist_ok=True)
+
+            create_model_py = """
+from azure_utils.samples import deep_rts_samples
+
+if __name__ == '__main__':
+    deep_rts_samples.main()            
+
+"""
+            with open(self.source_directory + "/" + self.script, "w") as file:
+                file.write(create_model_py)
 
     def get_docker_file(self) -> None:
         """

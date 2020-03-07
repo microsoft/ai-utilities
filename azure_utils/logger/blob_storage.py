@@ -49,7 +49,7 @@ class BlobStorageAccount:
         """
         return_token = None
         if self.connection and self.service:
-            # noinspection PyUnresolvedReferences
+            # noinspection PyUnresolvedReferences,PyTypeChecker
             return_token = self.service.generate_blob_shared_access_signature(container_name, blob_name,
                                                                               BlobPermissions.READ,
                                                                               datetime.utcnow() + timedelta(hours=1))
