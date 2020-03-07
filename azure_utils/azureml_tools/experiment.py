@@ -1,6 +1,9 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
+"""
+AI-Utilities - azureml_tools/experiment.py
 
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the MIT License.
+"""
 
 import logging
 import logging.config
@@ -38,9 +41,8 @@ def _create_cluster(workspace, cluster_name, vm_size, min_nodes, max_nodes):
         logger.info("Found existing compute target.")
     except ComputeTargetException:
         logger.info("Creating a new compute target...")
-        compute_config = AmlCompute.provisioning_configuration(
-            vm_size=vm_size, min_nodes=min_nodes, max_nodes=max_nodes
-        )
+        compute_config = AmlCompute.provisioning_configuration(vm_size=vm_size, min_nodes=min_nodes,
+                                                               max_nodes=max_nodes)
 
         # create the cluster
         compute_target = ComputeTarget.create(workspace, cluster_name, compute_config)
@@ -53,28 +55,20 @@ def _create_cluster(workspace, cluster_name, vm_size, min_nodes, max_nodes):
 
 
 @curry
-def _create_estimator(
-        estimator_class, project_folder, entry_script, compute_target, script_params, node_count, env_def, distributed,
-):
+def _create_estimator(estimator_class, project_folder, entry_script, compute_target, script_params, node_count, env_def,
+                      distributed, ):
     logger = logging.getLogger(__name__)
 
-    estimator = estimator_class(
-        project_folder,
-        entry_script=entry_script,
-        compute_target=compute_target,
-        script_params=script_params,
-        node_count=node_count,
-        environment_definition=env_def,
-        distributed_training=distributed,
-    )
+    estimator = estimator_class(project_folder, entry_script=entry_script, compute_target=compute_target,
+                                script_params=script_params, node_count=node_count, environment_definition=env_def,
+                                distributed_training=distributed, )
 
     logger.debug(estimator.conda_dependencies.__dict__)
     return estimator
 
 
-def _create_datastore(
-        aml_workspace, datastore_name, container_name, account_name, account_key, create_if_not_exists=True,
-):
+def _create_datastore(aml_workspace, datastore_name, container_name, account_name, account_key,
+                      create_if_not_exists=True, ):
     """Creates datastore
 
     Args:
@@ -87,14 +81,9 @@ def _create_datastore(
         azureml.core.Datastore
     """
     logger = logging.getLogger(__name__)
-    ds = Datastore.register_azure_blob_container(
-        workspace=aml_workspace,
-        datastore_name=datastore_name,
-        container_name=container_name,
-        account_name=account_name,
-        account_key=account_key,
-        create_if_not_exists=create_if_not_exists,
-    )
+    ds = Datastore.register_azure_blob_container(workspace=aml_workspace, datastore_name=datastore_name,
+                                                 container_name=container_name, account_name=account_name,
+                                                 account_key=account_key, create_if_not_exists=create_if_not_exists, )
     logger.info(f"Registered existing blob storage: {ds.name}.")
     return ds
 
@@ -110,6 +99,7 @@ _CHECK_FUNCTIONS = (_check_subscription_id,)
 
 
 class ConfigError(Exception):
+    """Raise this Error when checking configuration fails."""
     pass
 
 
@@ -126,10 +116,16 @@ def _check_config(config):
 
 class BaseExperiment(object):
     """
-
+    Simple Base Experiment Interface
     """
 
-    def __init__(self, experiment_name, config=experiment_config):
+    def __init__(self, experiment_name: str, config=experiment_config):
+        """
+        Create new BaseExperiment with a name and optional config.
+
+        :param experiment_name: name of experiment
+        :param config: experiment configuration
+        """
         self._logger = logging.getLogger(__name__)
         self._logger.info("SDK version:" + str(azureml.core.VERSION))
         _check_config(config)
@@ -137,32 +133,18 @@ class BaseExperiment(object):
         profile = select_subscription(sub_name_or_id=config.SUBSCRIPTION_ID)
         profile_credentials, subscription_id, _ = profile.get_login_credentials()
 
-        prem_str, storage_keys = create_premium_storage(
-            profile_credentials, subscription_id, config.REGION, config.RESOURCE_GROUP, config.ACCOUNT_NAME,
-        )
+        prem_str, storage_keys = create_premium_storage(profile_credentials, subscription_id, config.REGION,
+                                                        config.RESOURCE_GROUP, config.ACCOUNT_NAME, )
 
-        self._ws = WorkspaceContext.create(
-            name=config.WORKSPACE,
-            resource_group=config.RESOURCE_GROUP,
-            subscription_id=config.SUBSCRIPTION_ID,
-            location=config.REGION,
-        )
+        self._ws = WorkspaceContext.create(name=config.WORKSPACE, resource_group=config.RESOURCE_GROUP,
+                                           subscription_id=config.SUBSCRIPTION_ID, location=config.REGION, )
         self._experiment = azureml.core.Experiment(self._ws, name=experiment_name)
-        self._cluster = _create_cluster(
-            self._ws,
-            cluster_name=config.CLUSTER_NAME,
-            vm_size=config.CLUSTER_VM_SIZE,
-            min_nodes=config.CLUSTER_MIN_NODES,
-            max_nodes=config.CLUSTER_MAX_NODES,
-        )
+        self._cluster = _create_cluster(self._ws, cluster_name=config.CLUSTER_NAME, vm_size=config.CLUSTER_VM_SIZE,
+                                        min_nodes=config.CLUSTER_MIN_NODES, max_nodes=config.CLUSTER_MAX_NODES, )
 
-        self._datastore = _create_datastore(
-            self._ws,
-            datastore_name=config.DATASTORE_NAME,
-            container_name=config.CONTAINER_NAME,
-            account_name=prem_str.name,
-            account_key=storage_keys["key1"],
-        )
+        self._datastore = _create_datastore(self._ws, datastore_name=config.DATASTORE_NAME,
+                                            container_name=config.CONTAINER_NAME, account_name=prem_str.name,
+                                            account_key=storage_keys["key1"], )
 
     @property
     def cluster(self):
@@ -238,15 +220,7 @@ class PyTorchExperiment(BaseExperiment):
 
         return {key: _replace(value) for key, value in script_params.items()}
 
-    def submit(
-            self,
-            project_folder,
-            entry_script,
-            script_params,
-            node_count=1,
-            distributed=None,
-            environment=None,
-    ):
+    def submit(self, project_folder, entry_script, script_params, node_count=1, distributed=None, environment=None, ):
         """Submit experiment for remote execution on AzureML clusters.
 
         Args:
@@ -280,16 +254,8 @@ class PyTorchExperiment(BaseExperiment):
         environment.docker.shm_size = "8g"
         environment.docker.base_image = _GPU_IMAGE
 
-        estimator = _create_estimator(
-            PyTorch,
-            project_folder,
-            entry_script,
-            self.cluster,
-            transformed_params,
-            node_count,
-            environment,
-            _get_distributed(distributed),
-        )
+        estimator = _create_estimator(PyTorch, project_folder, entry_script, self.cluster, transformed_params,
+                                      node_count, environment, _get_distributed(distributed), )
 
         self._logger.debug(estimator.conda_dependencies.__dict__)
         return self._experiment.submit(estimator)

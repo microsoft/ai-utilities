@@ -6,13 +6,13 @@ Licensed under the MIT License.
 """
 import os
 
+import pytest
 from azureml.core import Workspace
 
 from azure_utils import directory
 from azure_utils.machine_learning.contexts.workspace_contexts import WorkspaceContext
-from azure_utils.machine_learning.utils import load_configuration, get_or_create_workspace, \
-    get_workspace_from_config, get_or_create_workspace_from_file
-import pytest
+from azure_utils.machine_learning.utils import get_or_create_workspace, get_or_create_workspace_from_file, \
+    get_workspace_from_config, load_configuration
 
 filepath = directory
 
@@ -64,11 +64,20 @@ def test_get_workspace_from_project_config():
 
 @pytest.fixture
 def cfg():
+    """
+
+    :return:
+    """
     cfg = load_configuration(filepath + "/../workspace_conf.yml")
     return cfg
 
 
 @pytest.fixture
 def workspace(cfg):
+    """
+
+    :param cfg:
+    :return:
+    """
     return get_or_create_workspace(cfg['workspace_name'], cfg['subscription_id'], cfg['resource_group'],
                                    cfg['workspace_region'])

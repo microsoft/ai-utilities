@@ -6,7 +6,7 @@ Licensed under the MIT License.
 """
 
 import os
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 import yaml
 
@@ -79,12 +79,12 @@ class ProjectConfiguration:
         if key_name not in self.configuration.keys():
             raise Exception("Invalid configuration file")
 
-    def _load_configuration(self):
+    def _load_configuration(self) -> None:
         """
         Load the configuration file from disk, there is no security around this. Although
         it will be called from the constructor, which will create a default file for the user.
         """
-        with open(self.configuration_file, 'r') as ymlfile:
+        with open(self.configuration_file) as ymlfile:
             self.configuration = yaml.load(ymlfile, Loader=yaml.BaseLoader)
 
         assert self.configuration
@@ -145,6 +145,7 @@ class ProjectConfiguration:
 
         if ProjectConfiguration.settings_key not in self.configuration or not isinstance(
                 self.configuration[ProjectConfiguration.settings_key], list):
+            # noinspection PyTypeChecker
             self.configuration[ProjectConfiguration.settings_key] = []
 
         new_setting = {setting_name: []}
@@ -173,7 +174,13 @@ class ProjectConfiguration:
 
         return return_value
 
-    def get_settings_from_config(self, setting_name):
+    def get_settings_from_config(self, setting_name: str) -> list:
+        """
+        Get list of project settings from yaml configuration.
+
+        :param setting_name: Name of settings key in YAML file
+        :return: list of project settings
+        """
         setting = [x for x in self.configuration[ProjectConfiguration.settings_key] if setting_name in x.keys()]
         return setting
 
@@ -195,12 +202,21 @@ class ProjectConfiguration:
                     current_value[0][ProjectConfiguration.setting_value] = value
                 else:
                     value_setting = {ProjectConfiguration.setting_value: value}
+                    # noinspection PyTypeChecker
                     setting[0][setting_name].append(value_setting)
 
-    def get_value_from_config(self, setting, setting_name):
+    @staticmethod
+    def get_value_from_config(setting: list, setting_name: str) -> list:
+        """
+        Get a setting from the list of settings
+
+        :param setting: list of settings
+        :param setting_name: name of setting to return
+        :return: settings of given name
+        """
         return [x for x in setting[0][setting_name] if ProjectConfiguration.setting_value in x.keys()]
 
-    def save_configuration(self):
+    def save_configuration(self) -> None:
         """ Save the configuration file """
         with open(self.configuration_file, 'w') as ymlfile:
             yaml.dump(self.configuration, ymlfile)

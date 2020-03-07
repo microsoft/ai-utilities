@@ -1,10 +1,15 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
+"""
+AI-Utilities - resource_group.py
 
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the MIT License.
+"""
 
-from azure.mgmt.resource import ResourceManagementClient
-from azure.common.credentials import get_cli_profile
 import logging
+
+from azure.common.credentials import get_cli_profile
+from azure.mgmt.resource import ResourceManagementClient
+from azure.mgmt.resource.resources.models import ResourceGroup
 
 
 def _get_resource_group_client(profile_credentials, subscription_id):
@@ -22,10 +27,12 @@ def resource_group_exists(resource_group_name, resource_group_client=None):
 
 
 class ResourceGroupException(Exception):
+    """Except when checking for Resource Group"""
     pass
 
 
-def create_resource_group(profile_credentials, subscription_id, location, resource_group_name):
+def create_resource_group(profile_credentials, subscription_id: str, location: str,
+                          resource_group_name: str) -> ResourceGroup:
     """Creates resource group if it doesn't exist
 
     Args:
@@ -54,13 +61,11 @@ def create_resource_group(profile_credentials, subscription_id, location, resour
     else:
         logger.debug(f"Creating resource group {resource_group_name} in {location}")
         resource_group_params = {"location": location}
-        resource_group = resource_group_client.resource_groups.create_or_update(
-            resource_group_name, resource_group_params
-        )
+        resource_group = resource_group_client.resource_groups.create_or_update(resource_group_name,
+                                                                                resource_group_params)
 
     if "Succeeded" not in resource_group.properties.provisioning_state:
         raise ResourceGroupException(
-            f"Resource group not created successfully | State {resource_group.properties.provisioning_state}"
-        )
+                f"Resource group not created successfully | State {resource_group.properties.provisioning_state}")
 
     return resource_group

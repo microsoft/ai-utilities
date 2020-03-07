@@ -70,11 +70,9 @@ class ResultsGenerator:
         :param length: Length to validate
         :return: Returns a VALIDATION_RESULT failure object
         """
-        return validation_result(
-            type_name,
-            value,
-            ValidationResult.failure,
-            "Field failed length validation : {} \n    See: {}".format(length, ResultsGenerator.NAMES_LINK))
+        return validation_result(type_name, value, ValidationResult.failure,
+                                 "Field failed length validation: {} \n    See: {}".format(length,
+                                                                                           ResultsGenerator.NAMES_LINK))
 
     @staticmethod
     def create_content_failure(type_name, value, content) -> validation_result:
@@ -87,12 +85,9 @@ class ResultsGenerator:
         :param content: Content to validate against
         :return: Returns a VALIDATION_RESULT failure object
         """
-        return validation_result(
-            type_name,
-            value,
-            ValidationResult.failure,
-            "Field failed content validation by containing one or more of the following : {} \n    See: {}".format(
-                content, ResultsGenerator.NAMES_LINK))
+        return validation_result(type_name, value, ValidationResult.failure,
+                                 "Field failed content validation by containing one or more of the following : {} \n  "
+                                 "  See: {}".format(content, ResultsGenerator.NAMES_LINK))
 
     @staticmethod
     def create_success(type_name, value, content) -> validation_result:
@@ -105,11 +100,7 @@ class ResultsGenerator:
         :param content: Content that succeeded validate
         :return: Returns a VALIDATION_RESULT success object
         """
-        return validation_result(
-            type_name,
-            value,
-            ValidationResult.success,
-            content)
+        return validation_result(type_name, value, ValidationResult.success, content)
 
     @staticmethod
     def create_failure(type_name, value, content):
@@ -122,11 +113,7 @@ class ResultsGenerator:
         :param content: Content that failed validate
         :return: Returns a VALIDATION_RESULT failure object
         """
-        return validation_result(
-            type_name,
-            value,
-            ValidationResult.failure,
-            content)
+        return validation_result(type_name, value, ValidationResult.failure, content)
 
     @staticmethod
     def create_warning(type_name, value, content) -> validation_result:
@@ -139,11 +126,7 @@ class ResultsGenerator:
         :param content: Content that passed validate with warnings
         :return: Returns a VALIDATION_RESULT warning object
         """
-        return validation_result(
-            type_name,
-            value,
-            ValidationResult.warning,
-            content)
+        return validation_result(type_name, value, ValidationResult.warning, content)
 
     @staticmethod
     def create_generic_format_failure(type_name, value) -> validation_result:
@@ -155,11 +138,8 @@ class ResultsGenerator:
         :param value: Value to validate.
         :return: Returns a generic VALIDATION_RESULT failure object
         """
-        return validation_result(
-            type_name,
-            value,
-            ValidationResult.failure,
-            "See: {}".format(ResultsGenerator.NAMES_LINK))
+        return validation_result(type_name, value, ValidationResult.failure,
+                                 "See: {}".format(ResultsGenerator.NAMES_LINK))
 
 
 class Validation:
@@ -190,14 +170,11 @@ class Validation:
                                                          ['length', 'regex_pattern', 'invalid_charset',
                                                           'custom_validator'])
         self.type_restrictions = {
-            ValidationType.subscription_id: validation_restrictions(None, False, "<>",
-                                                                    self._validate_subscription),
+            ValidationType.subscription_id: validation_restrictions(None, False, "<>", self._validate_subscription),
             ValidationType.resource_group: validation_restrictions([1, 90], True, r"^[-\w\._\(\)]+$",
                                                                    self._validate_resource_group),
             ValidationType.workspace_name: validation_restrictions([1, 260], False, r"<>*%&:?+/\\", None),
-            ValidationType.storage_account: validation_restrictions([1, 260], True, r"^[a-zA-Z0-9_\-]+$",
-                                                                    None)
-        }
+            ValidationType.storage_account: validation_restrictions([1, 260], True, r"^[a-zA-Z0-9_\-]+$", None)}
 
         # Get names of fields validated for checks by user.
         self.default_field_value = default_field_value
@@ -259,13 +236,11 @@ class Validation:
         # 2. Validate content against invalid characters, if provided
         # 3. Custom validation, if provided
         if not self._validate_length(self.type_restrictions[validation_type], value):
-            return_result = ResultsGenerator.create_length_failure(
-                type_name, value, self.type_restrictions[validation_type].length
-            )
+            return_result = ResultsGenerator.create_length_failure(type_name, value,
+                                                                   self.type_restrictions[validation_type].length)
         if not return_result and not self._validate_content(self.type_restrictions[validation_type], value):
-            return_result = ResultsGenerator.create_content_failure(
-                type_name, value, self.type_restrictions[validation_type].invalid_charset
-            )
+            return_result = ResultsGenerator.create_content_failure(type_name, value, self.type_restrictions[
+                validation_type].invalid_charset)
         if not return_result:
             if self.type_restrictions[validation_type].custom_validator:
                 return_result = self.type_restrictions[validation_type].custom_validator(type_name, value)
@@ -299,8 +274,8 @@ class Validation:
         """
         return_value = True
         if validation_restriction.length:
-            return_value = (len(value) >= validation_restriction.length[0]) \
-                           and (len(value) <= validation_restriction.length[1])
+            return_value = (len(value) >= validation_restriction.length[0]) and (
+                    len(value) <= validation_restriction.length[1])
         return return_value
 
     @staticmethod
@@ -393,8 +368,7 @@ class Validation:
         if not return_result and sub_id != current_sub:
             return_result = ResultsGenerator.create_warning(type_name, sub_id,
                                                             "Subscription {} is not your current sub {}. Use 'az "
-                                                            "account set -s <subid>'".format(
-                                                                sub_id, current_sub))
+                                                            "account set -s <subid>'".format(sub_id, current_sub))
         return return_result
 
     def _validate_resource_group(self, type_name, group_name) -> validation_result:

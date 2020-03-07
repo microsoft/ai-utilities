@@ -13,14 +13,13 @@ import re
 
 import pandas as pd
 import requests
-from azureml.core.authentication import AuthenticationException
-from azureml.core.authentication import AzureCliAuthentication
-from azureml.core.authentication import InteractiveLoginAuthentication
-from azureml.core.authentication import ServicePrincipalAuthentication
+from azureml.core.authentication import AuthenticationException, AzureCliAuthentication, \
+    InteractiveLoginAuthentication, \
+    ServicePrincipalAuthentication, AbstractAuthentication
 from dotenv import get_key
 
 
-def check_login():
+def check_login() -> bool:
     """
 
     :return:
@@ -34,8 +33,7 @@ def check_login():
 
 def read_csv_gz(url, **kwargs):
     """Load raw data from a .tsv.gz file into Pandas data frame."""
-    dataframe = pd.read_csv(gzip.open(requests.get(url, stream=True).raw, mode='rb'),
-                            sep='\t', encoding='utf8', **kwargs)
+    dataframe = pd.read_csv(gzip.open(requests.get(url, stream=True).raw), sep='\t', encoding='utf8', **kwargs)
     return dataframe.set_index('Id')
 
 
@@ -83,7 +81,7 @@ def random_merge(dataframe_a, dataframe_b, number_to_merge=20, merge_col='Answer
     for i in dataframe_a.index:
         dataframe_a_copy = dataframe_a.loc[[i]]
         dataframe_b_copy = dataframe_b[dataframe_b[merge_col] != dataframe_a_copy[merge_col].iloc[0]].sample(
-            number_to_merge - 1)
+                number_to_merge - 1)
         dataframe_a_copy[key] = 1
         dataframe_b_copy[key] = 1
         z = dataframe_a_copy.merge(dataframe_b_copy, how='outer', on=key).drop(key, axis=1)
@@ -123,7 +121,7 @@ def read_questions(path, question_id, answerid):
     return questions
 
 
-def get_auth(env_path):
+def get_auth(env_path: str) -> AbstractAuthentication:
     """
 
     :param env_path:
@@ -135,11 +133,8 @@ def get_auth(env_path):
         aml_sp_password = get_key(env_path, 'password')
         aml_sp_tennant_id = get_key(env_path, 'tenant_id')
         aml_sp_username = get_key(env_path, 'username')
-        auth = ServicePrincipalAuthentication(
-            tenant_id=aml_sp_tennant_id,
-            service_principal_id=aml_sp_username,
-            service_principal_password=aml_sp_password
-        )
+        auth = ServicePrincipalAuthentication(tenant_id=aml_sp_tennant_id, service_principal_id=aml_sp_username,
+                                              service_principal_password=aml_sp_password)
     else:
         logger.debug("Trying to create Workspace with CLI Authentication")
         try:

@@ -1,22 +1,24 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
+"""
+AI-Utilities - storage.py
 
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the MIT License.
+"""
+from typing import Any, Tuple
 
 from azure.mgmt.storage import StorageManagementClient
-from azure.mgmt.storage.models import StorageAccountCreateParameters
-from azure.mgmt.storage.v2019_04_01.models import Kind, Sku, SkuName
+from azure.mgmt.storage.models import Kind, Sku, SkuName, StorageAccountCreateParameters
 
-from azure_utils.azureml_tools.resource_group import \
-    create_resource_group
+from azure_utils.azureml_tools.resource_group import create_resource_group
 
 
 class StorageAccountCreateFailure(Exception):
+    """Storage Account Create Failure Exception"""
     pass
 
 
-def create_premium_storage(
-        profile_credentials, subscription_id, location, resource_group_name, storage_name,
-):
+def create_premium_storage(profile_credentials: object, subscription_id: str, location: str, resource_group_name: str,
+                           storage_name: str, ) -> Tuple[Any, dict]:
     """Create premium blob storage
 
     Args:
@@ -44,19 +46,16 @@ def create_premium_storage(
     if not storage_client.storage_accounts.check_name_availability(storage_name).name_available:
         storage_account = storage_client.storage_accounts.get_properties(resource_group_name, storage_name)
     else:
-        storage_async_operation = storage_client.storage_accounts.create(
-            resource_group_name,
-            storage_name,
-            StorageAccountCreateParameters(
-                sku=Sku(name=SkuName.premium_lrs), kind=Kind.block_blob_storage, location="eastus",
-            ),
-        )
+        storage_async_operation = storage_client.storage_accounts.create(resource_group_name, storage_name,
+                                                                         StorageAccountCreateParameters(
+                                                                                 sku=Sku(name=SkuName.premium_lrs),
+                                                                                 kind=Kind.block_blob_storage,
+                                                                                 location="eastus", ), )
         storage_account = storage_async_operation.result()
 
     if "Succeeded" not in storage_account.provisioning_state:
         raise StorageAccountCreateFailure(
-            f"Storage account not created successfully | State {storage_account.provisioning_state}"
-        )
+                f"Storage account not created successfully | State {storage_account.provisioning_state}")
 
     storage_keys = storage_client.storage_accounts.list_keys(resource_group_name, storage_name)
     storage_keys = {v.key_name: v.value for v in storage_keys.keys}

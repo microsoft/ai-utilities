@@ -8,8 +8,8 @@ import json
 import os
 from typing import Union
 
-import yaml
 import azureml.core
+import yaml
 from azureml.core import Workspace
 from azureml.core.authentication import InteractiveLoginAuthentication, ServicePrincipalAuthentication
 from deprecated import deprecated
@@ -36,15 +36,17 @@ def load_configuration(configuration_file: str):
     if not os.path.isfile(configuration_file):
         configuration_file = directory + "/../sample_workspace_conf.yml"
 
-    with open(configuration_file, 'r') as ymlfile:
+    with open(configuration_file) as ymlfile:
         cfg = yaml.load(ymlfile)
 
     return cfg
 
 
 def get_or_create_workspace(workspace_name: str, subscription_id: str, resource_group: str, workspace_region: str,
-                            auth: Union[InteractiveLoginAuthentication, ServicePrincipalAuthentication] =
-                            InteractiveLoginAuthentication(), log=True) -> Workspace:
+                            auth: Union[
+                                InteractiveLoginAuthentication, ServicePrincipalAuthentication] =
+                            InteractiveLoginAuthentication(),
+                            log=True) -> Workspace:
     """
     Create a new Azure Machine Learning workspace. If the workspace already exists, the existing workspace will be
     returned. Also create a CONFIG file to quickly reload the workspace.
@@ -56,7 +58,8 @@ def get_or_create_workspace(workspace_name: str, subscription_id: str, resource_
 
     :param workspace_name: Name of Azure Machine Learning Workspace to get or create within the Azure Subscription
     :type workspace_name: str
-    :param subscription_id: Azure Subscription ID
+    :param subscription_id: Azure subscription id
+        Azure Subscription ID
     :type subscription_id: str
     :param resource_group: Azure Resource Group to get or create the workspace within. If the resource group does not
     exist it will be created.
@@ -76,7 +79,7 @@ def get_or_create_workspace(workspace_name: str, subscription_id: str, resource_
         print("AML SDK Version:", azureml.core.VERSION)
 
     workspace = Workspace.create(name=workspace_name, subscription_id=subscription_id, resource_group=resource_group,
-                                 location=workspace_region, create_resource_group=True, auth=auth, exist_ok=True)
+                                 location=workspace_region, auth=auth, exist_ok=True)
 
     workspace.write_config()
 
@@ -87,9 +90,9 @@ def get_or_create_workspace(workspace_name: str, subscription_id: str, resource_
     return workspace
 
 
-def get_or_create_workspace_from_project(project_configuration: ProjectConfiguration,
-                                         auth: Union[InteractiveLoginAuthentication, ServicePrincipalAuthentication] =
-                                         InteractiveLoginAuthentication(), show_output=True) -> Workspace:
+def get_or_create_workspace_from_project(project_configuration: ProjectConfiguration, auth: Union[
+    InteractiveLoginAuthentication, ServicePrincipalAuthentication] = InteractiveLoginAuthentication(),
+                                         show_output=True) -> Workspace:
     """
     Create a new Azure Machine Learning workspace. If the workspace already exists, the existing workspace will be
     returned. Also create a CONFIG file to quickly reload the workspace.
@@ -112,13 +115,12 @@ def get_or_create_workspace_from_project(project_configuration: ProjectConfigura
     return get_or_create_workspace(project_configuration.get_value('workspace_name'),
                                    project_configuration.get_value('subscription_id'),
                                    project_configuration.get_value('resource_group'),
-                                   project_configuration.get_value('workspace_region'),
-                                   auth=auth, log=show_output)
+                                   project_configuration.get_value('workspace_region'), auth=auth, log=show_output)
 
 
-def get_or_create_workspace_from_file(configuration_file: str = project_configuration_file,
-                                      auth: Union[InteractiveLoginAuthentication, ServicePrincipalAuthentication] =
-                                      InteractiveLoginAuthentication(), log=True) -> Workspace:
+def get_or_create_workspace_from_file(configuration_file: str = project_configuration_file, auth: Union[
+    InteractiveLoginAuthentication, ServicePrincipalAuthentication] = InteractiveLoginAuthentication(),
+                                      log=True) -> Workspace:
     """
     Create a new Azure Machine Learning workspace. If the workspace already exists, the existing workspace will be
     returned. Also create a CONFIG file to quickly reload the workspace.
@@ -143,11 +145,10 @@ def get_or_create_workspace_from_file(configuration_file: str = project_configur
     return get_or_create_workspace(project_configuration.get_value('workspace_name'),
                                    project_configuration.get_value('subscription_id'),
                                    project_configuration.get_value('resource_group'),
-                                   project_configuration.get_value('workspace_region'),
-                                   auth=auth, log=log)
+                                   project_configuration.get_value('workspace_region'), auth=auth, log=log)
 
 
-def get_workspace_from_config():
+def get_workspace_from_config() -> Workspace:
     """
     Retrieve an AML Workspace from a previously saved configuration
 

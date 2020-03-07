@@ -36,8 +36,7 @@ def download_test_image():
 
 
 def get_or_create_resnet_image(configuration_file: str = project_configuration_file, show_output=True,
-                               models: list = None,
-                               image_settings_name="deep_image_name"):
+                               models: list = None, image_settings_name="deep_image_name"):
     """
     Build Image
 

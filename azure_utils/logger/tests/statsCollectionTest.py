@@ -1,8 +1,13 @@
+"""
+AI-Utilities - statsCollectionTest.py
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the MIT License.
+"""
 import time
 
-from azure_utils.logger.ai_logger import StatisticsCollector, CollectionEntry
+from azure_utils.logger.ai_logger import CollectionEntry, StatisticsCollector
 from azure_utils.logger.key_vault import KeyVaultInstance
-
 from azure_utils.logger.storageutils import StorageConnection
 
 __version__ = "0.1"

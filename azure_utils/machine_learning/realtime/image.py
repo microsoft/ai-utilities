@@ -6,7 +6,7 @@ Licensed under the MIT License.
 """
 import time
 
-import pandas as pd
+from azureml.core import Image
 from azureml.core.conda_dependencies import CondaDependencies
 from azureml.core.image import ContainerImage
 from azureml.core.image.container import ContainerImageConfig
@@ -47,8 +47,8 @@ def get_or_create_image(image_config, image_settings_name, show_output, models=N
     :param image_settings_name:
     :param models:
     :param show_output:
-    :param configuration_file:
-    :return:
+    :param configuration_file: path to project configuration file. default: project.yml
+:return:
     """
     if not models:
         models = []
@@ -69,16 +69,30 @@ def get_or_create_image(image_config, image_settings_name, show_output, models=N
     image.wait_for_creation(show_output=show_output)
     assert image.creation_state != "Failed"
     if show_output:
-        print_deployment_time(image_name, image_create_start, "Image")
-        print_image_deployment_info(image)
+        print_image_deployment_info(image, image_name, image_create_start)
     return image
 
-def print_deployment_time(aks_service_name, deploy_aks_start, service_name):
-    deployment_time_secs = str(time.time() - deploy_aks_start)
-    print("Deployed " + service_name + " with name "
-          + aks_service_name + ". Took " + deployment_time_secs + " seconds.")
 
-def print_image_deployment_info(image, image_name, image_create_start):
+def print_deployment_time(service_name: str, deploy_start_time: float, service_id: str):
+    """
+    Print the deployment time of the service so it can be captured in devops logs.
+
+    :param service_name:
+    :param deploy_start_time:
+    :param service_id:
+    """
+    deployment_time_secs = str(time.time() - deploy_start_time)
+    print(f"Deployed {service_id} with name {service_name}. Took {deployment_time_secs} seconds.")
+
+
+def print_image_deployment_info(image: Image, image_name: str, image_create_start: float):
+    """
+    Print general information about deploying an image.
+
+    :param image:
+    :param image_name:
+    :param image_create_start:
+    """
     print_deployment_time(image_name, image_create_start, "Image")
     print(image.name)
     print(image.version)
@@ -121,33 +135,25 @@ def run(body):
     description = "Image with lightgbm model"
     tags = {"area": "text", "type": "lightgbm"}
     return ContainerImage.image_configuration(execution_script=execution_script, runtime="python",
-                                              conda_file=conda_file, description=description,
-                                              dependencies=dependencies, docker_file=dockerfile,
-                                              tags=tags)
+                                              conda_file=conda_file, description=description, dependencies=dependencies,
+                                              docker_file=dockerfile, tags=tags)
 
 
-def create_lightgbm_conda_file(conda_file="lgbmenv.yml"):
+def create_lightgbm_conda_file(conda_file: str = "lgbmenv.yml"):
     """
     Create new Conda File with LightGBM requirements.
 
     :param conda_file: filename of LightGBM conda file, which is created during call.
     """
-    conda_pack = [
-        "scikit-learn==0.19.1",
-        "pandas==0.23.3"
-    ]
-    requirements = [
-        "lightgbm==2.1.2",
-        "azureml-defaults==1.0.57",
-        "azureml-contrib-services",
-        "Microsoft-AI-Azure-Utility-Samples"
-    ]
+    conda_pack = ["scikit-learn==0.19.1", "pandas==0.23.3"]
+    requirements = ["lightgbm==2.1.2", "azureml-defaults==1.0.57", "azureml-contrib-services",
+                    "Microsoft-AI-Azure-Utility-Samples"]
     lgbmenv = CondaDependencies.create(conda_packages=conda_pack, pip_packages=requirements)
     with open(conda_file, "w") as file:
         file.write(lgbmenv.serialize_to_string())
 
 
-def lightgbm_test_image_locally(image, directory):
+def lightgbm_test_image_locally(image: Image, directory: str):
     """
     Test LightGBM image Locally.
 

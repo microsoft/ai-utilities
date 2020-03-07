@@ -6,6 +6,7 @@ Licensed under the MIT License.
 """
 import argparse
 import os
+from argparse import Namespace
 
 import numpy as np
 from PIL import Image, ImageOps
@@ -15,10 +16,11 @@ from keras.preprocessing import image
 from toolz import compose
 
 
-def get_training_parser():
+def get_training_parser() -> Namespace:
     """
+    Argument Parser for Training Model Scripts
 
-    :return:
+    :return: parsed args
     """
     parser = argparse.ArgumentParser(description='Fit and evaluate a model based on train-test datasets.')
     parser.add_argument('--outputs', help='the outputs directory', default='outputs')
@@ -29,20 +31,21 @@ def get_training_parser():
 NUMBER_RESULTS = 3
 
 
-def get_model_path(model_pkl):
+def get_model_path(model_pkl: str = "model.pkl"):
     """
+    Get Model Path either locally or in web service
 
-    :param model_pkl:
-    :return:
+    :param model_pkl: filename of file
+    :return: Model Directory
     """
     model_dir = "."
     if os.getenv('AZUREML_MODEL_DIR'):
         model_dir = os.getenv('AZUREML_MODEL_DIR')
     assert os.path.isfile(model_dir + model_pkl)
-    return model_dir + "/model.pkl"
+    return model_dir + "/" + model_pkl
 
 
-def image_ref_to_pil_image(image_ref):
+def image_ref_to_pil_image(image_ref: str):
     """ Load image with PIL (RGB)
     """
     return Image.open(image_ref).convert("RGB")
@@ -59,14 +62,14 @@ def pil_to_numpy(pil_image):
     return img
 
 
-def default_response(request):
+def default_response(request) -> AMLResponse:
     """
 
     :param request:
     :return:
     """
     if request.method == 'GET':
-        return {"azEnvironment": "Azure"}
+        return AMLResponse({"azEnvironment": "Azure"}, 201)
     return AMLResponse("bad request", 500)
 
 

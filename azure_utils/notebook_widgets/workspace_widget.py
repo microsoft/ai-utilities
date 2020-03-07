@@ -7,7 +7,7 @@ Licensed under the MIT License.
 from ipywidgets import widgets
 
 
-def make_vbox(model_dict):
+def make_vbox(model_dict: dict) -> widgets.VBox:
     """
 
     :param model_dict:
@@ -33,11 +33,17 @@ def make_vbox(model_dict):
     return widgets.VBox(children=[model_widget])
 
 
-def make_setting_hbox(mini_k, string):
+def make_setting_hbox(mini_k: str, string: str) -> widgets.HBox:
+    """
+
+    :param mini_k:
+    :param string:
+    :return:
+    """
     return widgets.HBox([widgets.HTML(value="<b>" + mini_k + ":</b>"), widgets.Label(string)])
 
 
-def make_workspace_widget(model_dict, aks_dict):
+def make_workspace_widget(model_dict: dict, aks_dict: dict) -> widgets.Widget:
     """
 
     :param model_dict:
@@ -46,7 +52,7 @@ def make_workspace_widget(model_dict, aks_dict):
     """
 
     ws_image = widgets.HTML(
-        value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/studio.png">')
+            value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/studio.png">')
     model_vbox = make_vbox(model_dict)
     aks_box = make_vbox(aks_dict)
 
@@ -54,20 +60,15 @@ def make_workspace_widget(model_dict, aks_dict):
     deployment_accordion.set_title(0, 'Workspace')
     deployment_accordion.set_title(1, 'Model')
 
-    application_insights_images = [
-        widgets.HTML(
+    application_insights_images = [widgets.HTML(
             value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/app_insights_1.png'
                   '">'),
-        widgets.HTML(
-            value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs'
-                  '/app_insights_availability.png">'),
-        widgets.HTML(
-            value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs'
-                  '/app_insights_perf_dash.png">'),
-        widgets.HTML(
-            value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/app_insights_perf'
-                  '.png">')
-    ]
+        widgets.HTML(value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs'
+                           '/app_insights_availability.png">'),
+        widgets.HTML(value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs'
+                           '/app_insights_perf_dash.png">'), widgets.HTML(
+                value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/app_insights_perf'
+                      '.png">')]
     application_insights_accordion = widgets.Accordion(children=application_insights_images)
     application_insights_accordion.set_title(0, 'Main')
     application_insights_accordion.set_title(1, 'Availability')
@@ -75,7 +76,7 @@ def make_workspace_widget(model_dict, aks_dict):
     application_insights_accordion.set_title(3, 'Load Testing')
 
     kubernetes_image = widgets.HTML(
-        value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/kubernetes.png">')
+            value='<img src="https://raw.githubusercontent.com/microsoft/AI-Utilities/master/docs/kubernetes.png">')
     kubernetes_accordion = widgets.Accordion(children=[aks_box, kubernetes_image])
     kubernetes_accordion.set_title(0, 'Main')
     kubernetes_accordion.set_title(1, 'Performance')

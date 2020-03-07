@@ -9,7 +9,7 @@ import os
 from azure_utils.configuration.project_configuration import ProjectConfiguration, find_file
 
 
-def test_config():
+def test_config() -> None:
     new_config_file = "./testconfiguration.yml"
     project_name = "Test Project"
 

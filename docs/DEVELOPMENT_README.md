@@ -24,4 +24,3 @@ Import code style which matches pylint/autopep8 from `.developer/pycharm_code_st
 #### Inspections
 This will offer to automatically fix common issues with code. 
 Import code style which matches pylint/autopep8 from `.developer/pycharm_inspections.xml`)
-![Load Configuration](images/pycharm_inspections.png)

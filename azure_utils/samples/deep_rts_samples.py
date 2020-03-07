@@ -7,38 +7,29 @@ Licensed under the MIT License.
 import inspect
 import os
 import warnings
+from typing import Any, Tuple
 
 import keras.backend as keras_backend
 import numpy as np
-from azure_utils.machine_learning.training_arg_parsers import get_model_path, process_request, \
-    prepare_response, \
-    default_response
-
 from azureml.contrib.services import rawhttp
+from azureml.contrib.services.aml_response import AMLResponse
 from keras import initializers
-from keras.applications.imagenet_utils import decode_predictions
-from keras.applications.imagenet_utils import preprocess_input
-from keras.engine import Layer, InputSpec
+from keras.applications.imagenet_utils import decode_predictions, preprocess_input
+from keras.engine import InputSpec, Layer
 from keras.engine.topology import get_source_inputs
-from keras.layers import Activation
-from keras.layers import AveragePooling2D
-from keras.layers import BatchNormalization
-from keras.layers import Conv2D
-from keras.layers import Dense
-from keras.layers import Flatten
-from keras.layers import GlobalAveragePooling2D
-from keras.layers import GlobalMaxPooling2D
-from keras.layers import Input
-from keras.layers import MaxPooling2D
-from keras.layers import ZeroPadding2D
-from keras.layers import add
+from keras.layers import Activation, AveragePooling2D, BatchNormalization, Conv2D, Dense, Flatten, \
+    GlobalAveragePooling2D, GlobalMaxPooling2D, Input, MaxPooling2D, ZeroPadding2D, add
 from keras.models import Model
 from keras.preprocessing import image
 from keras.utils import layer_utils
 from keras.utils.data_utils import get_file
 
 from azure_utils.machine_learning.factories.realtime_factory import RealTimeFactory
+from azure_utils.machine_learning.training_arg_parsers import default_response, get_model_path, prepare_response, \
+    process_request
 from azure_utils.rts_estimator import RTSEstimator
+
+IMAGENET_ = 'imagenet'
 
 WEIGHTS_PATH = 'https://github.com/adamcasson/resnet152/releases/download/v0.1/resnet152_weights_tf.h5'
 WEIGHTS_PATH_NO_TOP = 'https://github.com/adamcasson/resnet152/releases/download/v0.1/resnet152_weights_tf_notop.h5'
@@ -130,7 +121,7 @@ class Scale(Layer):
 
 class ResNet152(RTSEstimator):
     """
-
+    ResNet-152 Wrapped for Azure Machine Learning
     """
 
     def __init__(self):
@@ -197,14 +188,14 @@ class ResNet152(RTSEstimator):
         scale_name_base = 'scale' + str(stage) + block + '_branch'
 
         stacked_layers = Conv2D(nb_filter1, (1, 1), strides=strides, name=conv_name_base + '2a', use_bias=False)(
-            input_tensor)
+                input_tensor)
         stacked_layers = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2a')(stacked_layers)
         stacked_layers = Scale(axis=bn_axis, name=scale_name_base + '2a')(stacked_layers)
         stacked_layers = Activation('relu', name=conv_name_base + '2a_relu')(stacked_layers)
 
         stacked_layers = ZeroPadding2D((1, 1), name=conv_name_base + '2b_zeropadding')(stacked_layers)
         stacked_layers = Conv2D(nb_filter2, (kernel_size, kernel_size), name=conv_name_base + '2b', use_bias=False)(
-            stacked_layers)
+                stacked_layers)
         stacked_layers = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2b')(stacked_layers)
         stacked_layers = Scale(axis=bn_axis, name=scale_name_base + '2b')(stacked_layers)
         stacked_layers = Activation('relu', name=conv_name_base + '2b_relu')(stacked_layers)
@@ -275,10 +266,10 @@ class ResNet152(RTSEstimator):
         ValueError: in case of invalid argument for `weights`,
             or invalid input shape.
         """
-        assert weights not in {'imagenet', None}, """The `weights` argument should be either `None` (random 
+        assert weights not in {IMAGENET_, None}, """The `weights` argument should be either `None` (random 
         initialization) or `imagenet` (pre-training on ImageNet)."""
 
-        assert weights == 'imagenet' and include_top and classes != 1000, """If using `weights` as imagenet with 
+        assert weights == IMAGENET_ and include_top and classes != 1000, """If using `weights` as imagenet with 
         `include_top` as true, `classes` should be 1000"""
 
         eps = 1.1e-5
@@ -289,11 +280,8 @@ class ResNet152(RTSEstimator):
             img_size = 224
 
         # Determine proper input shape
-        input_shape = _obtain_input_shape(input_shape,
-                                          default_size=img_size,
-                                          min_size=197,
-                                          data_format=keras_backend.image_data_format(),
-                                          require_flatten=include_top)
+        input_shape = _obtain_input_shape(input_shape, default_size=img_size, min_size=197,
+                                          data_format=keras_backend.image_data_format(), require_flatten=include_top)
 
         img_input = ResNet152.get_image_input(input_shape, input_tensor)
 
@@ -391,16 +379,12 @@ class ResNet152(RTSEstimator):
     @staticmethod
     def _load_weights(include_top, model, weights):
         # load weights
-        if weights == 'imagenet':
+        if weights == IMAGENET_:
             if include_top:
-                weights_path = get_file('resnet152_weights_tf.h5',
-                                        WEIGHTS_PATH,
-                                        cache_subdir='models',
+                weights_path = get_file('resnet152_weights_tf.h5', WEIGHTS_PATH, cache_subdir='models',
                                         md5_hash='cdb18a2158b88e392c0905d47dcef965')
             else:
-                weights_path = get_file('resnet152_weights_tf_notop.h5',
-                                        WEIGHTS_PATH_NO_TOP,
-                                        cache_subdir='models',
+                weights_path = get_file('resnet152_weights_tf_notop.h5', WEIGHTS_PATH_NO_TOP, cache_subdir='models',
                                         md5_hash='4a90dcdafacbd17d772af1fb44fc2660')
             model.load_weights(weights_path, by_name=True)
             if keras_backend.backend() == 'theano':
@@ -409,7 +393,7 @@ class ResNet152(RTSEstimator):
                     maxpool = model.get_layer(name='avg_pool')
                     shape = maxpool.output_shape[1:]
                     dense = model.get_layer(name='fc1000')
-                    layer_utils.convert_dense_weights_data_format(dense, shape, 'channels_first')
+                    layer_utils.convert_dense_weights_data_format(dense, shape)
 
             if keras_backend.image_data_format() == 'channels_first' and keras_backend.backend() == 'tensorflow':
                 warnings.warn('You are using the TensorFlow backend, yet you '
@@ -422,7 +406,7 @@ class ResNet152(RTSEstimator):
                               'at ~/.keras/keras.json.')
 
 
-resnet_152_model = ResNet152().create_model(include_top=True, weights='imagenet')
+resnet_152_model = ResNet152().create_model(weights=IMAGENET_)
 img_path = 'elephant.jpg'
 img = image.load_img(img_path, target_size=(224, 224))
 image_array = image.img_to_array(img)
@@ -436,7 +420,7 @@ if __name__ == '__main__':
 
 class RealTimeDeepFactory(RealTimeFactory):
     """
-
+    Factory to create Real-time Scoring service with Azure Machine Learning
     """
 
     def train(self, args):
@@ -444,30 +428,34 @@ class RealTimeDeepFactory(RealTimeFactory):
 
         :param args:
         """
-        ResNet152().create_model(weights="imagenet", save_model=True,
-                                 model_path=os.path.join(args.outputs, args.model))
+        self.trained_model = ResNet152().create_model(weights="imagenet", save_model=True,
+                                                      model_path=os.path.join(args.outputs, args.model))
 
     def score_init(self):
         """
-
+        Start up function for Scoring Applet
         """
-        self.resnet_152 = ResNet152.load_model()
+        self.scoring_model = ResNet152.load_model()
 
     @rawhttp
-    def score_run(self, request):
+    def score_run(self, request) -> AMLResponse:
         """ Make a prediction based on the data passed in using the preloaded model"""
         if request.method == 'POST':
-            return self.resnet_152.predict(request)
+            return self.scoring_model.predict(request)
         return default_response(request)
 
     def __init__(self):
+        """
+        Create Training and Scoring Models
+        """
         super().__init__()
-        self.resnet_152 = None
-        print("")
+        self.trained_model = None
+        self.scoring_model = None
 
     @staticmethod
     def make_file(**kwargs):
         """
+        Write this class to a string.
 
         :param kwargs:
         """
@@ -483,12 +471,7 @@ class RealTimeDeepFactory(RealTimeFactory):
         return file
 
 
-def _obtain_input_shape(input_shape,
-                        default_size,
-                        min_size,
-                        data_format,
-                        require_flatten,
-                        weights=None):
+def _obtain_input_shape(input_shape, default_size, min_size, data_format, require_flatten, weights=None):
     """Internal utility to compute/validate a model's input shape.
 
     # Arguments
@@ -500,8 +483,8 @@ def _obtain_input_shape(input_shape,
         require_flatten: Whether the model is expected to
             be linked to a classifier via a Flatten layer.
         weights: One of `None` (random initialization)
-            or 'imagenet' (pre-training on ImageNet).
-            If weights='imagenet' input channels must be equal to 3.
+            or IMAGENET_ (pre-training on ImageNet).
+            If weights=IMAGENET_ input channels must be equal to 3.
 
     # Returns
         An integer shape tuple (may include None entries).
@@ -509,48 +492,12 @@ def _obtain_input_shape(input_shape,
     # Raises
         ValueError: In case of invalid argument values.
     """
-    if weights != 'imagenet' and input_shape and len(input_shape) == 3:
-        if data_format == 'channels_first':
-            if input_shape[0] not in {1, 3}:
-                warnings.warn(
-                    'This model usually expects 1 or 3 input channels. '
-                    'However, it was passed an input_shape with ' +
-                    str(input_shape[0]) + ' input channels.')
-            default_shape = (input_shape[0], default_size, default_size)
-        else:
-            if input_shape[-1] not in {1, 3}:
-                warnings.warn(
-                    'This model usually expects 1 or 3 input channels. '
-                    'However, it was passed an input_shape with ' +
-                    str(input_shape[-1]) + ' input channels.')
-            default_shape = (default_size, default_size, input_shape[-1])
-    else:
-        if data_format == 'channels_first':
-            default_shape = (3, default_size, default_size)
-        else:
-            default_shape = (default_size, default_size, 3)
-    if weights == 'imagenet' and require_flatten:
-        if input_shape is not None:
-            if input_shape != default_shape:
-                raise ValueError('When setting`include_top=True` '
-                                 'and loading `imagenet` weights, '
-                                 '`input_shape` should be ' +
-                                 str(default_shape) + '.')
+    default_shape = get_default_shape(data_format, default_size, input_shape, weights)
+    if weights == IMAGENET_ and require_flatten:
+        assert_same_shape(default_shape, input_shape)
         return default_shape
     if input_shape:
-        if data_format == 'channels_first':
-            if input_shape is not None:
-                assert_three_int_tuple(input_shape)
-                if input_shape[0] != 3 and weights == 'imagenet':
-                    raise channel_error(input_shape)
-                assert_input_size(input_shape, min_size, 1, 2)
-
-        else:
-            if input_shape is not None:
-                assert_three_int_tuple(input_shape)
-                if input_shape[-1] != 3 and weights == 'imagenet':
-                    raise channel_error(input_shape)
-                assert_input_size(input_shape, min_size, 0, 1)
+        validate_input_shape(data_format, input_shape, min_size, weights)
     else:
         if require_flatten:
             input_shape = default_shape
@@ -567,24 +514,111 @@ def _obtain_input_shape(input_shape,
     return input_shape
 
 
-def channel_error(input_shape):
-    return ValueError('The input must have 3 channels; got '
-                      '`input_shape=' + str(input_shape) + '`')
+def validate_input_shape(data_format: str, input_shape: Tuple[int, int, int], min_size: int, weights: str):
+    """ Validate the shape of the input
+
+    :param data_format: ex:  'channels_first'
+    :param input_shape: Tuple
+    :param min_size: minimum size of the shape
+    :param weights: ex: imagenet
+    """
+    if data_format == 'channels_first':
+        if input_shape is not None:
+            assert_three_int_tuple(input_shape)
+            if input_shape[0] != 3 and weights == IMAGENET_:
+                raise channel_error(input_shape)
+            assert_input_size(input_shape, min_size, 1, 2)
+    else:
+        if input_shape is not None:
+            assert_three_int_tuple(input_shape)
+            if input_shape[-1] != 3 and weights == IMAGENET_:
+                raise channel_error(input_shape)
+            assert_input_size(input_shape, min_size, 0, 1)
 
 
-def assert_three_int_tuple(input_shape):
+def assert_same_shape(default_shape: Tuple[int, int, int], input_shape: Tuple[int, int, int]):
+    """
+    Assert the input shape is the same the as the default shape
+
+    :param default_shape: Default Three Int Tuple to validate with
+    :param input_shape: Three Int Tuple to assert
+    """
+    if input_shape is not None and input_shape != default_shape:
+        raise ValueError(f"When setting`include_top=True` and loading `imagenet` weights, `input_shape` should be "
+                         f"{str(default_shape)}.")
+
+
+def get_default_shape(data_format: str, default_size, input_shape: Tuple[int, int, int], weights: str) -> Tuple[
+    Any, Any, Any]:
+    """
+    Get the default shape for validation
+
+    :param data_format: ex: 'channels_first'
+    :param default_size: Default Three Int Tuple
+    :param input_shape: Three Int Tuple
+    :param weights: ex: IMAGENET_
+    :return:
+    """
+    if weights != IMAGENET_ and input_shape and len(input_shape) == 3:
+        if data_format == 'channels_first':
+            if input_shape[0] not in {1, 3}:
+                warnings.warn(
+                        f'This model usually expects 1 or 3 input channels. However, it was passed an input_shape '
+                        f'with {str(input_shape[0])} input channels.')
+            default_shape = (input_shape[0], default_size, default_size)
+        else:
+            if input_shape[-1] not in {1, 3}:
+                warnings.warn(
+                        f"This model usually expects 1 or 3 input channels. However, it was passed an input_shape "
+                        f"with {str(input_shape[-1])} input channels.")
+            default_shape = (default_size, default_size, input_shape[-1])
+    else:
+        if data_format == 'channels_first':
+            default_shape = (3, default_size, default_size)
+        else:
+            default_shape = (default_size, default_size, 3)
+    return default_shape
+
+
+def channel_error(input_shape: Tuple[int, int, int]) -> ValueError:
+    """
+    Value Error Message for Channel Error
+    :param input_shape: Three Int Tuple
+    :return: Custom text Value Error
+    """
+    return ValueError(f"The input must have 3 channels; got `input_shape={str(input_shape)}`")
+
+
+def assert_three_int_tuple(input_shape: Tuple[int, int, int]):
+    """
+    Assert Tuple has 3 objects
+    :param input_shape: Three Int Tuple
+    """
     if len(input_shape) != 3:
+        raise ValueError("`input_shape` must be a tuple of three integers.")
+
+
+def assert_input_size(input_shape: Tuple[int, int, int], min_size: int, first_index: int, second_index: int):
+    """
+    Assert that the Input Shape size is above minimum.
+    :param input_shape: Three Int Tuple
+    :param min_size: Minimum size of Input Shape
+    :param first_index: First Tuple Index to test
+    :param second_index: Second Tuple Index to test against
+    """
+    if (check_shape_by_index(first_index, input_shape, min_size) or check_shape_by_index(second_index, input_shape,
+                                                                                         min_size)):
         raise ValueError(
-            '`input_shape` must be a tuple of three integers.')
+                f"Input size must be at least {str(min_size)}x{str(min_size)}; got `input_shape={str(input_shape)}`")
 
 
-def assert_input_size(input_shape, min_size, first_index, second_index):
-    if (check_shape_by_index(first_index, input_shape, min_size) or
-            check_shape_by_index(second_index, input_shape, min_size)):
-        raise ValueError('Input size must be at least ' +
-                         str(min_size) + 'x' + str(min_size) + '; got '
-                                                               '`input_shape=' + str(input_shape) + '`')
+def check_shape_by_index(index, input_shape, min_size) -> bool:
+    """
+    Check the Shape of one object of the tuple.
 
-
-def check_shape_by_index(first_index, input_shape, min_size):
-    return input_shape[first_index] is not None and input_shape[first_index] < min_size
+    :param index: Index of Tuple to Test
+    :param input_shape: Input Tuple to test
+    :param min_size: Minimum size of of tuple object
+    :return: 'bool' result of test
+    """
+    return input_shape[index] is not None and input_shape[index] < min_size

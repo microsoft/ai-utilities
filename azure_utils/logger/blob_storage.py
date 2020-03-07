@@ -13,7 +13,7 @@ pip install azure-storage-blob
 
 from datetime import datetime, timedelta
 
-from azure.storage.blob import BlockBlobService, PublicAccess, BlobPermissions
+from azure.storage.blob import BlobPermissions, BlockBlobService, PublicAccess
 
 __version__ = "0.1"
 
@@ -49,6 +49,7 @@ class BlobStorageAccount:
         """
         return_token = None
         if self.connection and self.service:
+            # noinspection PyUnresolvedReferences
             return_token = self.service.generate_blob_shared_access_signature(container_name, blob_name,
                                                                               BlobPermissions.READ,
                                                                               datetime.utcnow() + timedelta(hours=1))

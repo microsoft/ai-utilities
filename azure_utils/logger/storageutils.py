@@ -1,22 +1,27 @@
-# ImportError: You need to install 'azure-cli-core' to load CLI active Cloud
-from azure.common.client_factory import get_client_from_cli_profile
-from azure.mgmt.storage import StorageManagementClient
+"""
+AI-Utilities - storageutils.py
 
-__version__ = "0.1"
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the MIT License.
 
-'''
+ImportError: You need to install 'azure-cli-core' to load CLI active Cloud
+
     REQUIREMENT : pip install azure-cli-core
 
     Class that parses out a true connection string from Azure Storage account in the form:
 
     DefaultEndpointsProtocol=https;AccountName=ACCT_NAME;AccountKey=ACCT_KEY;EndpointSuffix=core.windows.net
 
-    Ends up with 4 attributes : 
+    Ends up with 4 attributes :
         DefaultEndpointsProtocol
         AccountName
         AccountKey
         EndpointSuffix
-'''
+"""
+from azure.common.client_factory import get_client_from_cli_profile
+from azure.mgmt.storage import StorageManagementClient
+
+__version__ = "0.1"
 
 
 class StorageConnection:

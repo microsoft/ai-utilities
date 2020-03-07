@@ -62,7 +62,7 @@ class StatisticsCollector:
 
     # No need to create an instance, all methods are static.
 
-    def __init__(self, path_name):
+    def __init__(self, path_name: str):
         self.path_name = path_name
 
     @staticmethod
@@ -196,6 +196,7 @@ class StatisticsCollector:
     def _get_containers(connection_string):
         connection_object = StorageConnection(connection_string)
         storage_account = BlobStorageAccount(connection_object)
+        # noinspection PyUnresolvedReferences
         containers = storage_account.getContainers()
         return containers, storage_account
 

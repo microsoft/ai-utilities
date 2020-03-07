@@ -5,8 +5,7 @@ Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
 
-from tkinter import Frame, TRUE, Label, Text, END, Button
-from tkinter import messagebox
+from tkinter import Button, END, Frame, Label, TRUE, Text, messagebox
 
 from azure_utils.configuration.configuration_validation import Validation, ValidationResult
 from azure_utils.configuration.project_configuration import ProjectConfiguration
@@ -147,8 +146,7 @@ class SettingsUpdate(Frame):
         if error_count > 0:
             user_prefix = "The following fields either failed validation or produced a warning :\n\n"
             user_postfix = "Click Yes to continue with these validation issues or No to correct them."
-            return messagebox.askyesno('Validate Errors',
-                                       "{}{}{}".format(user_prefix, message, user_postfix))
+            return messagebox.askyesno('Validate Errors', "{}{}{}".format(user_prefix, message, user_postfix))
         return True
 
     @staticmethod

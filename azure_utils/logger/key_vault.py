@@ -1,8 +1,13 @@
+"""
+AI-Utilities - azureml_tools/key_vault.py
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the MIT License.
+"""
 from azure.common.client_factory import get_client_from_cli_profile
 from azure.keyvault import KeyVaultClient
 from azure.mgmt.keyvault import KeyVaultManagementClient
 
-# pip install azure-keyvault
 __version__ = "0.1"
 
 

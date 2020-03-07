@@ -32,20 +32,21 @@ class RealTimeFactory:
 
     def train(self, args):
         """
-
+        Train Abstract Method
         :param args:
         """
         raise NotImplementedError
 
     def score_init(self):
         """
-
+        Score Init Abstract Method
         """
         raise NotImplementedError
 
     @rawhttp
     def score_run(self, request):
         """
+        Score Run Abstract Method
 
         :param request:
         """
@@ -54,14 +55,14 @@ class RealTimeFactory:
     @classmethod
     def make_file(cls):
         """
+        Make file from class
 
-        :return:
+        :return: string of file of class
         """
         file = inspect.getsource(cls)
 
         file = file.replace(inspect.getsource(RealTimeFactory.train), inspect.getsource(cls.train))
-        file = file.replace(inspect.getsource(RealTimeFactory.score_init),
-                            inspect.getsource(cls.score_init))
+        file = file.replace(inspect.getsource(RealTimeFactory.score_init), inspect.getsource(cls.score_init))
         file = file.replace(inspect.getsource(RealTimeFactory.score_run), inspect.getsource(cls.score_run))
         file = file.replace(inspect.getsource(RealTimeFactory.__init__), inspect.getsource(cls.__init__))
         file = file.replace("RealTimeFactory", "DeepRealTimeFactory(RealTimeFactory)")

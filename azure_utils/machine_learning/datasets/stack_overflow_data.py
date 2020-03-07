@@ -8,7 +8,7 @@ import os
 
 import pandas as pd
 
-from azure_utils.utilities import read_csv_gz, clean_text, round_sample_strat, random_merge
+from azure_utils.utilities import clean_text, random_merge, read_csv_gz, round_sample_strat
 
 
 def split_duplicates(dupes, label_column, match, questions, show_output, test_size):
@@ -30,6 +30,7 @@ def split_duplicates(dupes, label_column, match, questions, show_output, test_si
     # Use AnswerId to pair each training dupe with its matching question and also with N-1 questions not its match.
     balanced_pairs_train = random_merge(dupes_train, questions, number_to_merge=match)
     # Label records by matching AnswerIds.
+    # noinspection PyUnresolvedReferences
     balanced_pairs_train["Label"] = (balanced_pairs_train.AnswerId_x == balanced_pairs_train.AnswerId_y).astype(int)
     # Keep only the relevant data.
     balanced_pairs_train = balanced_pairs_train[balanced_pairs_columns]
@@ -38,6 +39,7 @@ def split_duplicates(dupes, label_column, match, questions, show_output, test_si
     # Use AnswerId to pair each testing dupe with all questions.
     balanced_pairs_test = random_merge(dupes_test, questions, number_to_merge=questions.shape[0])
     # Label records by matching AnswerIds.
+    # noinspection PyUnresolvedReferences
     balanced_pairs_test["Label"] = (balanced_pairs_test.AnswerId_x == balanced_pairs_test.AnswerId_y).astype(int)
     # Keep only the relevant data.
     balanced_pairs_test = balanced_pairs_test[balanced_pairs_columns]
@@ -83,11 +85,9 @@ def clean_data(answers, dupes, min_dupes, min_text, questions, show_output):
     # Report on the data.
     if show_output:
         print("Text statistics:")
-        print(pd.DataFrame([
-            questions.Text.str.len().describe().rename("questions"),
-            answers.Text.str.len().describe().rename("answers"),
-            dupes.Text.str.len().describe().rename("dupes"),
-        ]))
+        print(pd.DataFrame([questions.Text.str.len().describe().rename("questions"),
+                            answers.Text.str.len().describe().rename("answers"),
+                            dupes.Text.str.len().describe().rename("dupes"), ]))
         print("\nDuplication statistics:")
         print(pd.DataFrame([dupes.AnswerId.value_counts().describe().rename("duplications")]))
         print("\nLargest class: {:.2%}".format(dupes.AnswerId.value_counts().max() / dupes.shape[0]))
@@ -114,10 +114,8 @@ def clean_data(answers, dupes, min_dupes, min_text, questions, show_output):
     if show_output:
         print("Restrictions: min_text={}, min_dupes={}".format(min_text, min_dupes))
         print("Restricted text statistics:")
-        print(pd.DataFrame([
-            questions.Text.str.len().describe().rename("questions"),
-            dupes.Text.str.len().describe().rename("dupes"),
-        ]))
+        print(pd.DataFrame([questions.Text.str.len().describe().rename("questions"),
+                            dupes.Text.str.len().describe().rename("dupes"), ]))
         print("\nRestricted duplication statistics:")
         print(pd.DataFrame([dupes[label_column].value_counts().describe().rename("duplications")]))
         print("\nRestricted largest class: {:.2%}".format(dupes[label_column].value_counts().max() / dupes.shape[0]))

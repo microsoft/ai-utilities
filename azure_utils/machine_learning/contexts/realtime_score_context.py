@@ -7,30 +7,34 @@ Licensed under the MIT License.
 import json
 import os
 import time
+from abc import ABC
+from typing import Tuple, Any
 
 from azure.mgmt.deploymentmanager.models import DeploymentMode
 from azure.mgmt.resource import ResourceManagementClient
-from azureml.contrib.functions import package, HTTP_TRIGGER
-from azureml.core import Model, Environment, ComputeTarget, Webservice
+from azureml.contrib.functions import HTTP_TRIGGER, package
+from azureml.core import ComputeTarget, Environment, Model, Webservice, Workspace, Image
 from azureml.core.authentication import AzureCliAuthentication
 from azureml.core.compute import AksCompute
 from azureml.core.conda_dependencies import CondaDependencies
 from azureml.core.image import ContainerImage
+from azureml.core.image.container import ContainerImageConfig
 from azureml.core.model import InferenceConfig
 from azureml.core.webservice import AksWebservice
+from azureml.core.webservice.aks import AksServiceDeploymentConfiguration
 from azureml.exceptions import WebserviceException
 from deprecated import deprecated
 
 from azure_utils import directory
-from azure_utils.configuration.notebook_config import project_configuration_file, train_py_default, score_py_default
+from azure_utils.configuration.notebook_config import project_configuration_file, score_py_default, train_py_default
 from azure_utils.configuration.project_configuration import ProjectConfiguration
-from azure_utils.machine_learning.contexts.model_management_context import LocalTrainingContext
+from azure_utils.machine_learning.contexts.model_management_context import LocalTrainingContext, ModelManagementContext
 from azure_utils.machine_learning.contexts.workspace_contexts import WorkspaceContext
-from azure_utils.machine_learning.datasets.stack_overflow_data import download_datasets, clean_data, split_duplicates, \
-    save_data
+from azure_utils.machine_learning.datasets.stack_overflow_data import clean_data, download_datasets, save_data, \
+    split_duplicates
 from azure_utils.machine_learning.deep.create_deep_model import get_or_create_resnet_image
-from azure_utils.machine_learning.realtime.image import get_or_create_lightgbm_image, print_image_deployment_info, \
-    print_deployment_time
+from azure_utils.machine_learning.realtime.image import get_or_create_lightgbm_image, print_deployment_time, \
+    print_image_deployment_info
 from azure_utils.machine_learning.train_local import get_local_run_configuration
 from azure_utils.notebook_widgets.workspace_widget import make_workspace_widget
 
@@ -39,8 +43,8 @@ class RealtimeScoreContext(WorkspaceContext):
     """ Real-time Score Context """
 
     def __init__(self, subscription_id, resource_group, workspace_name,
-                 configuration_file: str = project_configuration_file,
-                 score_py="score.py", settings_image_name="image_name", settings_aks_name="aks_name",
+                 configuration_file: str = project_configuration_file, score_py="score.py",
+                 settings_image_name="image_name", settings_aks_name="aks_name",
                  settings_aks_service_name="aks_service_name", **kwargs):
         super().__init__(subscription_id, resource_group, workspace_name, **kwargs)
         project_configuration = ProjectConfiguration(configuration_file)
@@ -82,9 +86,9 @@ class RealtimeScoreContext(WorkspaceContext):
 
         self.workspace_widget = None
 
-    def test_service_local(self):
+    def test_service_local(self) -> None:
         """
-
+        Test Scoring Service Locally by loading file
         """
         Model(self, self.model_name).download(exist_ok=True)
         exec(open(self.score_py).read())
@@ -92,9 +96,9 @@ class RealtimeScoreContext(WorkspaceContext):
         exec("response = run(MockRequest())")
         exec("assert response")
 
-    def get_inference_config(self):
+    def get_inference_config(self) -> InferenceConfig:
         """
-
+        Get Infernce Configuration
         :return:
         """
         environment = Environment("conda-env")
@@ -104,23 +108,27 @@ class RealtimeScoreContext(WorkspaceContext):
                                            source_directory="source")
         return inference_config
 
-    def write_conda_env(self):
+    def write_conda_env(self) -> None:
         """
-
+        Write Conda Config to file.
         """
         with open(self.conda_file, "w") as file:
             file.write(self.conda_env.serialize_to_string())
 
-    def assert_image_params(self):
+    def assert_image_params(self) -> None:
+        """
+        Assert required params
+        """
         assert self.score_py
         assert self.conda_file
         assert self.image_description
         assert self.image_tags
 
 
-class RealtimeScoreFunctionsContext(RealtimeScoreContext):
+class RealtimeScoreFunctionsContext(RealtimeScoreContext, ModelManagementContext, ABC):
+    """ Realtime Scoring Function Context"""
     @classmethod
-    def get_or_or_create_function_endpoint(cls):
+    def get_or_or_create_function_endpoint(cls) -> Tuple[Workspace, Image]:
         """ Get or Create Real-time Endpoint """
         workspace = cls.get_or_create_workspace()
         model = workspace.get_or_create_model()
@@ -128,7 +136,7 @@ class RealtimeScoreFunctionsContext(RealtimeScoreContext):
         image = workspace.get_or_create_function_image(config, models=[model])
         return workspace, image
 
-    def get_or_create_function_image_configuration(self):
+    def get_or_create_function_image_configuration(self) -> InferenceConfig:
         """ Get or Create new Docker Image Configuration for Machine Learning Workspace
 
         Image Configuration for running LightGBM in Azure Machine Learning Workspace
@@ -149,8 +157,9 @@ class RealtimeScoreFunctionsContext(RealtimeScoreContext):
                                                                    pip_packages=['azureml-defaults'])
         return InferenceConfig(entry_script=self.score_py, environment=myenv)
 
-    def get_or_create_function_image(self, config, models):
+    def get_or_create_function_image(self, config: InferenceConfig, models: list):
         """
+        Create new configuration for deploying an scoring service to function image.
 
         :param config:
         :param models:
@@ -162,21 +171,32 @@ class RealtimeScoreFunctionsContext(RealtimeScoreContext):
 
 
 class RealtimeScoreAKSContext(RealtimeScoreContext):
+    """
+    Real-time Scoring with AKS Interface
+    """
 
-    def __init__(self, subscription_id, resource_group, workspace_name, **kwargs):
+    def __init__(self, subscription_id: str, resource_group: str, workspace_name: str, kwargs: dict):
+        """
+        Create new Real-time Scoring on AKS Context.
+
+        :param subscription_id: Azure subscription id
+        :param resource_group: Azure Resource Group name
+        :param workspace_name: Azure Machine Learning Workspace
+        :param kwargs: additional args
+        """
         super().__init__(subscription_id, resource_group, workspace_name, **kwargs)
         self.aks_name = self.assert_and_get_value(self.settings_aks_name)
         self.aks_service_name = self.assert_and_get_value(self.settings_aks_service_name)
         self.aks_location = self.assert_and_get_value("workspace_region")
 
     @classmethod
-    def get_or_or_create(cls, configuration_file: str = project_configuration_file,
-                         train_py=train_py_default, score_py=score_py_default):
+    def get_or_or_create(cls, configuration_file: str = project_configuration_file, train_py=train_py_default,
+                         score_py=score_py_default):
         """ Get or Create Real-time Endpoint on AKS
 
-        :param configuration_file:
-        :param train_py:
-        :param score_py:
+        :param configuration_file: path to project configuration file. default: project.yml
+        :param train_py: python source file for training
+        :param score_py: python source file for scoring
         """
         model, workspace = cls._get_workspace_and_model(configuration_file, score_py, train_py)
         inference_config = workspace.get_inference_config()
@@ -186,19 +206,27 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         return workspace, web_service
 
     @classmethod
-    def _get_workspace_and_model(cls, configuration_file, score_py, train_py):
+    def _get_workspace_and_model(cls, configuration_file: str, score_py: str, train_py: str) -> Tuple[Model, Any]:
+        """
+        Retrieve Workspace and Model
+
+        :param configuration_file: path to project configuration file
+        :param score_py: python source file for scoring
+        :param train_py: python source file for training
+        :return: Model and Workspace
+        """
         workspace = cls.get_or_create_workspace(configuration_file, train_py=train_py, score_py=score_py)
         model = workspace.get_or_create_model()
         return model, workspace
 
-    def get_or_create_aks(self):
+    def get_or_create_aks(self) -> ComputeTarget:
         """
         Get or Create AKS Cluster
 
         :return: AKS Compute from Workspace
         """
         assert "_" not in self.project_configuration.get_value(
-            self.settings_aks_service_name), self.settings_aks_service_name + " can not contain _"
+                self.settings_aks_service_name), self.settings_aks_service_name + " can not contain _"
         assert self.project_configuration.has_value("workspace_region")
 
         workspace_compute = self.compute_targets
@@ -221,20 +249,16 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         assert aks_status == 'Succeeded', 'AKS failed to create'
         return aks_target
 
-    def get_aks_deployment_config(self):
+    def get_aks_deployment_config(self) -> AksServiceDeploymentConfiguration:
         """
 
         :return:
         """
-        aks_deployment_configuration = {
-            "num_replicas": self.num_replicas,
-            "cpu_cores": self.cpu_cores,
-            "enable_app_insights": True,
-            "collect_model_data": True
-        }
+        aks_deployment_configuration = {"num_replicas": self.num_replicas, "cpu_cores": self.cpu_cores,
+                                        "enable_app_insights": True, "collect_model_data": True}
         return AksWebservice.deploy_configuration(**aks_deployment_configuration)
 
-    def get_or_create_aks_service(self, model, aks_target, inference_config):
+    def get_or_create_aks_service(self, model: Model, aks_target: AksCompute, inference_config: InferenceConfig) -> Webservice:
         """
 
         :param model:
@@ -242,7 +266,6 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         :param inference_config:
         :return:
         """
-        self.get_or_create_image(inference_config, models=[model])
         model_dict = model.serialize()
 
         if self._aks_exists():
@@ -262,17 +285,22 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
                 print(aks_service.get_logs())
         return aks_service
 
-    def _post_process_aks_deployment(self, aks_service, aks_target, model_dict):
+    def _post_process_aks_deployment(self, aks_service: AksWebservice, aks_target: AksCompute, model_dict: dict):
         aks_dict = aks_service.serialize()
         self.workspace_widget = make_workspace_widget(model_dict, aks_dict)
         self.create_kube_config(aks_target)
 
     def wait_then_configure_ping_test(self, aks_service: AksWebservice, aks_service_name):
+        """
+
+        :param aks_service:
+        :param aks_service_name:
+        """
         aks_service.wait_for_deployment(show_output=self.show_output)
         self.configure_ping_test("ping-test-" + aks_service_name, self.get_details()['applicationInsights'],
                                  aks_service.scoring_uri, aks_service.get_keys()[0])
 
-    def has_web_service(self, service_name):
+    def has_web_service(self, service_name: str) -> bool:
         """
 
         :param service_name:
@@ -281,7 +309,7 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         assert self.webservices
         return service_name in self.webservices
 
-    def get_web_service_state(self, service_name):
+    def get_web_service_state(self, service_name: str) -> str:
         """
 
         :param service_name:
@@ -292,7 +320,7 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         assert web_service.state
         return web_service.state
 
-    def get_web_service(self, service_name):
+    def get_web_service(self, service_name: str) -> Webservice:
         """
 
         :param service_name:
@@ -315,13 +343,14 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         with open(config_path, 'a') as f:
             f.write(aks_target.get_credentials()['userKubeConfig'])
 
-    def _aks_exists(self):
+    def _aks_exists(self) -> bool:
+        """Check if Kubernetes Cluster Exists or has Failed"""
         aks_exists = self.has_web_service(self.aks_service_name) and self.get_web_service_state(
-            self.aks_service_name) != "Failed"
+                self.aks_service_name) != "Failed"
         return aks_exists
 
     @staticmethod
-    def configure_ping_test(ping_test_name, app_name, ping_url, ping_token):
+    def configure_ping_test(ping_test_name: str, app_name: str, ping_url: str, ping_token: str):
         """
 
         :param ping_test_name:
@@ -334,29 +363,18 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         credentials = AzureCliAuthentication()
         client = ResourceManagementClient(credentials, project_configuration.get_value('subscription_id'))
         template_path = os.path.join(os.path.dirname(__file__), 'templates', 'webtest.json')
-        with open(template_path, 'r') as template_file_fd:
+        with open(template_path) as template_file_fd:
             template = json.load(template_file_fd)
 
-        parameters = {
-            'appName': app_name.split("components/")[1],
-            'pingURL': ping_url,
-            'pingToken': ping_token,
-            'location': project_configuration.get_value('workspace_region'),
-            'pingTestName': ping_test_name + "-" + project_configuration.get_value('workspace_region')
-        }
+        parameters = {'appName': app_name.split("components/")[1], 'pingURL': ping_url, 'pingToken': ping_token,
+                      'location': project_configuration.get_value('workspace_region'),
+                      'pingTestName': ping_test_name + "-" + project_configuration.get_value('workspace_region')}
         parameters = {k: {'value': v} for k, v in parameters.items()}
 
-        deployment_properties = {
-            'mode': DeploymentMode.incremental,
-            'template': template,
-            'parameters': parameters
-        }
+        deployment_properties = {'mode': DeploymentMode.incremental, 'template': template, 'parameters': parameters}
 
         deployment_async_operation = client.deployments.create_or_update(
-            project_configuration.get_value('resource_group'),
-            'add-web-test',
-            deployment_properties
-        )
+                project_configuration.get_value('resource_group'), 'add-web-test', deployment_properties)
         deployment_async_operation.wait()
 
 
@@ -403,7 +421,7 @@ class RealTimeScoreImageAndAKSContext(RealtimeScoreAKSContext):
         return aks_service
 
     @deprecated(version='0.3.81', reason="Switch to using Env, this will be removed in 0.4.0")
-    def get_inference_config(self, **kwargs):
+    def get_inference_config(self, kwargs: dict) -> ContainerImageConfig:
         """ Get or Create new Docker Image Configuration for Machine Learning Workspace
 
         Image Configuration for running LightGBM in Azure Machine Learning Workspace
@@ -423,7 +441,7 @@ class RealTimeScoreImageAndAKSContext(RealtimeScoreAKSContext):
                                                   tags=self.image_tags, enable_gpu=self.image_enable_gpu, **kwargs)
 
     @deprecated(version='0.3.81', reason="Switch to using Env, this will be removed in 0.4.0")
-    def get_or_create_image(self, image_config, models=None):
+    def get_or_create_image(self, image_config: ContainerImageConfig, models: list = None) -> Image:
         """Get or Create new Docker Image from Machine Learning Workspace
 
         :param image_config:
@@ -511,16 +529,8 @@ def run(body):
                 file.write(create_model_py)
 
         self.show_output = True
-        self.args = [
-            "--inputs",
-            os.path.abspath(directory + "/data_folder"),
-            "--outputs",
-            "outputs",
-            "--estimators",
-            self.num_estimators,
-            "--match",
-            "2",
-        ]
+        self.args = ["--inputs", os.path.abspath(directory + "/data_folder"), "--outputs", "outputs", "--estimators",
+                     self.num_estimators, "--match", "2", ]
         self.run_configuration = run_configuration
 
         self.test_size = 0.21
@@ -537,30 +547,22 @@ def run(body):
         self.image_enable_gpu = False
 
         self.conda_file = conda_file
-        self.conda_pack = [
-            "scikit-learn==0.19.1",
-            "pandas==0.23.3"
-        ]
-        self.requirements = [
-            "lightgbm==2.1.2",
-            "azureml-defaults==1.0.57",
-            "azureml-contrib-services",
-            "opencensus-ext-flask",
-            "Microsoft-AI-Azure-Utility-Samples"
-        ]
+        self.conda_pack = ["scikit-learn==0.19.1", "pandas==0.23.3"]
+        self.requirements = ["lightgbm==2.1.2", "azureml-defaults==1.0.57", "azureml-contrib-services",
+                             "opencensus-ext-flask", "Microsoft-AI-Azure-Utility-Samples"]
         self.conda_env = CondaDependencies.create(conda_packages=self.conda_pack, pip_packages=self.requirements)
 
-    def get_docker_file(self):
+    def get_docker_file(self) -> None:
         """
-
+        Create Docker File with GCC
         """
         self.dockerfile = "dockerfile"
         with open(self.dockerfile, "w") as file:
             file.write("RUN apt update -y && apt upgrade -y && apt install -y build-essential")
 
-    def prepare_data(self):
+    def prepare_data(self) -> None:
         """
-
+        Prepare the training data
         """
         outputs_path = directory + "/data_folder"
         dupes_test_path = os.path.join(outputs_path, "dupes_test.tsv")
@@ -575,8 +577,8 @@ def run(body):
 
             # Split dupes into train and test ensuring at least one of each label class is in test.
             balanced_pairs_test, balanced_pairs_train, dupes_test = split_duplicates(dupes, label_column, self.match,
-                                                                                     questions,
-                                                                                     self.show_output, self.test_size)
+                                                                                     questions, self.show_output,
+                                                                                     self.test_size)
 
             save_data(balanced_pairs_test, balanced_pairs_train, dupes_test, dupes_test_path, outputs_path, questions,
                       questions_path, self.show_output)
@@ -609,17 +611,9 @@ class DeepRealtimeScore(RealtimeScoreAKSContext, RealtimeScoreFunctionsContext, 
         # Conda Configuration
         self.conda_file = conda_file
         self.write_conda_env()
-        self.conda_pack = [
-            "tensorflow-gpu==1.14.0"
-        ]
-        self.requirements = [
-            "keras==2.2.0",
-            "Pillow==5.2.0",
-            "azureml-defaults",
-            "azureml-contrib-services",
-            "toolz==0.9.0",
-            "git+https://github.com/microsoft/AI-Utilities.git@deep_learning_2"
-        ]
+        self.conda_pack = ["tensorflow-gpu==1.14.0"]
+        self.requirements = ["keras==2.2.0", "Pillow==5.2.0", "azureml-defaults", "azureml-contrib-services",
+                             "toolz==0.9.0", "git+https://github.com/microsoft/AI-Utilities.git@deep_learning_2"]
         self.conda_env = CondaDependencies.create(conda_packages=self.conda_pack, pip_packages=self.requirements)
 
         # Env Configuration
@@ -637,4 +631,5 @@ class DeepRealtimeScore(RealtimeScoreAKSContext, RealtimeScoreFunctionsContext, 
 
 
 class MockRequest:
+    """Mock Request Class to create calls to test web service code"""
     method = 'GET'
