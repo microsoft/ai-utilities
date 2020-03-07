@@ -1,0 +1,27 @@
+<profile version="1.0">
+  <option name="myName" value="Default" />
+  <inspection_tool class="JupyterKernelInspection" enabled="false" level="WARNING" enabled_by_default="false" />
+  <inspection_tool class="PyIncorrectDocstringInspection" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="PyMissingOrEmptyDocstringInspection" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="PyMissingTypeHintsInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+  <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+    <option name="ignoredPackages">
+      <value>
+        <list size="2">
+          <item index="0" class="java.lang.String" itemvalue="azureml" />
+          <item index="1" class="java.lang.String" itemvalue="azure" />
+        </list>
+      </value>
+    </option>
+  </inspection_tool>
+  <inspection_tool class="PyPep8Inspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+    <option name="ignoredErrors">
+      <list>
+        <option value="E127" />
+        <option value="E122" />
+      </list>
+    </option>
+  </inspection_tool>
+  <inspection_tool class="PySingleQuotedDocstringInspection" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="RNamingConventionInspection" enabled="true" level="WARNING" enabled_by_default="true" />
+</profile>

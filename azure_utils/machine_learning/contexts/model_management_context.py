@@ -84,6 +84,7 @@ class LocalTrainingContext(ModelTrainingContext):
                  configuration_file: str = project_configuration_file, train_py=train_py_default):
         super().__init__(subscription_id, resource_group, workspace_name, run_configuration, configuration_file,
                          train_py)
+        self.args = None
 
     def submit_experiment_run(self, wait_for_completion=True) -> Run:
         """
@@ -93,7 +94,6 @@ class LocalTrainingContext(ModelTrainingContext):
         """
         assert self.source_directory
         assert self.train_py
-        assert self.args
         assert self.run_configuration
         assert self.experiment_name
 

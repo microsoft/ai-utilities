@@ -614,7 +614,8 @@ class DeepRealtimeScore(RealtimeScoreAKSContext, RealtimeScoreFunctionsContext, 
         self.model_tags = {"model": "dl", "framework": "resnet"}
         self.model_description = "resnet 152 model"
         self.model_path = "./outputs/model.pkl"
-
+        self.args = ["--outputs", "outputs", "--estimators",
+                     self.num_estimators, "--match", "2", ]
         # Conda Configuration
         self.conda_file = conda_file
         self.write_conda_env()
