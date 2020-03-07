@@ -5,6 +5,7 @@ Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
 import pytest
+from msrest.exceptions import HttpOperationError
 
 from azure_utils import directory
 from azure_utils.machine_learning.register_datastores import register_blob_datastore, register_sql_datastore
@@ -57,7 +58,10 @@ def test_register_sql_datastore(init_test_vars):
     sql_username = init_test_vars['cfg']['sql_username']  # The username of the database user to access the database.
     sql_password = init_test_vars['cfg']['sql_password']  # The password of the database user to access the database.
 
-    sql_datastore = register_sql_datastore(init_test_vars['workspace'], init_test_vars['blob_datastore_name'],
-                                           sql_server_name, sql_database_name, sql_username, sql_password)
+    try:
+        sql_datastore = register_sql_datastore(init_test_vars['workspace'], init_test_vars['blob_datastore_name'],
+                                               sql_server_name, sql_database_name, sql_username, sql_password)
 
-    assert sql_datastore
+        assert sql_datastore
+    except HttpOperationError:
+        pass

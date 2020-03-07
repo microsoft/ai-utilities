@@ -46,7 +46,7 @@ class RealtimeScoreContext(WorkspaceContext):
                  configuration_file: str = project_configuration_file, score_py=score_py_default,
                  settings_image_name="image_name", settings_aks_name="aks_name",
                  settings_aks_service_name="aks_service_name", **kwargs):
-        super().__init__(subscription_id, resource_group, workspace_name, **kwargs)
+        super().__init__(subscription_id, resource_group, workspace_name, configuration_file, **kwargs)
         project_configuration = ProjectConfiguration(configuration_file)
         self.project_configuration = project_configuration
 
@@ -57,6 +57,7 @@ class RealtimeScoreContext(WorkspaceContext):
         self.settings_aks_service_name = settings_aks_service_name
 
         # Model Configuration
+        self.model_name = "default_model_name"
         self.model_tags = None
         self.model_description = None
 
@@ -125,7 +126,7 @@ class RealtimeScoreContext(WorkspaceContext):
         assert self.image_tags
 
 
-class RealtimeScoreFunctionsContext(RealtimeScoreContext, ModelManagementContext, ABC):
+class RealtimeScoreFunctionsContext(RealtimeScoreContext, LocalTrainingContext, ABC):
     """ Realtime Scoring Function Context"""
 
     @classmethod
@@ -176,8 +177,9 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
     Real-time Scoring with AKS Interface
     """
 
-    def __init__(self, subscription_id: str, resource_group: str, workspace_name: str, configuration_file: str = project_configuration_file,score_py=score_py_default,
-                 **kwargs):
+    def __init__(self, subscription_id: str, resource_group: str, workspace_name: str,
+                 configuration_file: str = project_configuration_file, score_py=score_py_default,
+                 settings_aks_name="aks_name", settings_aks_service_name="aks_service_name", **kwargs):
         """
         Create new Real-time Scoring on AKS Context.
 
@@ -186,9 +188,10 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         :param workspace_name: Azure Machine Learning Workspace
         :param kwargs: additional args
         """
-        super().__init__(subscription_id, resource_group, workspace_name, configuration_file, score_py=score_py, **kwargs)
-        self.aks_name = self.assert_and_get_value(self.settings_aks_name)
-        self.aks_service_name = self.assert_and_get_value(self.settings_aks_service_name)
+        super().__init__(subscription_id, resource_group, workspace_name, configuration_file=configuration_file,
+                         score_py=score_py, **kwargs)
+        self.aks_name = self.assert_and_get_value(settings_aks_name)
+        self.aks_service_name = self.assert_and_get_value(settings_aks_service_name)
         self.aks_location = self.assert_and_get_value("workspace_region")
 
     @classmethod
@@ -476,10 +479,11 @@ class RealTimeScoreImageAndAKSContext(RealtimeScoreAKSContext):
 class MLRealtimeScore(RealtimeScoreAKSContext, LocalTrainingContext):
     """ Light GBM Real Time Scoring"""
 
-    def __init__(self, subscription_id, resource_group, workspace_name, run_configuration,
+    def __init__(self, subscription_id, resource_group, workspace_name,
                  configuration_file: str = project_configuration_file, train_py=train_py_default,
                  score_py=score_py_default, conda_file="my_env.yml", **kwargs):
-        super().__init__(subscription_id, resource_group, workspace_name, configuration_file, score_py, **kwargs)
+        super().__init__(subscription_id, resource_group, workspace_name, configuration_file=configuration_file,
+                         score_py=score_py, **kwargs)
         self.score_py = score_py
         self.train_py = train_py
         self.get_docker_file()
@@ -535,7 +539,6 @@ def run(body):
         self.show_output = True
         self.args = ["--inputs", os.path.abspath(directory + "/data_folder"), "--outputs", "outputs", "--estimators",
                      self.num_estimators, "--match", "2", ]
-        self.run_configuration = run_configuration
 
         self.test_size = 0.21
         self.min_text = 150
@@ -595,14 +598,14 @@ class DeepRealtimeScore(RealtimeScoreAKSContext, RealtimeScoreFunctionsContext, 
                  configuration_file: str = project_configuration_file, train_py=train_py_default,
                  score_py=score_py_default, conda_file="my_env.yml", setting_image_name="deep_image_name",
                  settings_aks_name="deep_aks_name", settings_aks_service_name="deep_aks_service_name"):
-        super().__init__(subscription_id, resource_group, workspace_name, get_local_run_configuration(),
-                         configuration_file, train_py=train_py, score_py=score_py,
-                         setting_image_name=setting_image_name, settings_aks_name=settings_aks_name,
+        super().__init__(subscription_id, resource_group, workspace_name, configuration_file=configuration_file,
+                         train_py=train_py, settings_aks_name=settings_aks_name,
                          settings_aks_service_name=settings_aks_service_name)
-        self.setting_image_name = "deep_image_name"
-        self.settings_aks_name = "deep_aks_name"
-        self.settings_aks_service_name = "deep_aks_service_name"
-
+        self.setting_image_name = setting_image_name
+        self.settings_aks_name = settings_aks_name
+        self.settings_aks_service_name = settings_aks_service_name
+        self.score_py = score_py
+        self.train_py = train_py
         # Experiment Configuration
         self.experiment_name = "dlrts-train-on-local"
 
