@@ -43,10 +43,11 @@ class RealtimeScoreContext(WorkspaceContext):
     """ Real-time Score Context """
 
     def __init__(self, subscription_id, resource_group, workspace_name,
-                 configuration_file: str = project_configuration_file, score_py="score.py",
+                 configuration_file: str = project_configuration_file, train_py="score.py", score_py="score.py",
                  settings_image_name="image_name", settings_aks_name="aks_name",
                  settings_aks_service_name="aks_service_name", **kwargs):
-        super().__init__(subscription_id, resource_group, workspace_name, **kwargs)
+        super().__init__(subscription_id, resource_group, workspace_name, train_py=train_py, score_py=score_py,
+                         **kwargs)
         project_configuration = ProjectConfiguration(configuration_file)
         self.project_configuration = project_configuration
 
@@ -127,6 +128,7 @@ class RealtimeScoreContext(WorkspaceContext):
 
 class RealtimeScoreFunctionsContext(RealtimeScoreContext, ModelManagementContext, ABC):
     """ Realtime Scoring Function Context"""
+
     @classmethod
     def get_or_or_create_function_endpoint(cls) -> Tuple[Workspace, Image]:
         """ Get or Create Real-time Endpoint """
@@ -258,7 +260,8 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
                                         "enable_app_insights": True, "collect_model_data": True}
         return AksWebservice.deploy_configuration(**aks_deployment_configuration)
 
-    def get_or_create_aks_service(self, model: Model, aks_target: AksCompute, inference_config: InferenceConfig) -> Webservice:
+    def get_or_create_aks_service(self, model: Model, aks_target: AksCompute,
+                                  inference_config: InferenceConfig) -> Webservice:
         """
 
         :param model:
