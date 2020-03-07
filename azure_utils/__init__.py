@@ -7,3 +7,4 @@ Licensed under the MIT License.
 import os
 
 directory = os.path.dirname(os.path.realpath(__file__))
+notebook_directory = directory.replace("azure_utils", "notebooks")

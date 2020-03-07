@@ -540,30 +540,17 @@ def _obtain_input_shape(input_shape,
     if input_shape:
         if data_format == 'channels_first':
             if input_shape is not None:
-                if len(input_shape) != 3:
-                    raise ValueError(
-                        '`input_shape` must be a tuple of three integers.')
+                assert_three_int_tuple(input_shape)
                 if input_shape[0] != 3 and weights == 'imagenet':
-                    raise ValueError('The input must have 3 channels; got '
-                                     '`input_shape=' + str(input_shape) + '`')
-                if ((input_shape[1] is not None and input_shape[1] < min_size) or
-                        (input_shape[2] is not None and input_shape[2] < min_size)):
-                    raise ValueError('Input size must be at least ' +
-                                     str(min_size) + 'x' + str(min_size) + '; got '
-                                                                           '`input_shape=' + str(input_shape) + '`')
+                    raise channel_error(input_shape)
+                assert_input_size(input_shape, min_size, 1, 2)
+
         else:
             if input_shape is not None:
-                if len(input_shape) != 3:
-                    raise ValueError(
-                        '`input_shape` must be a tuple of three integers.')
+                assert_three_int_tuple(input_shape)
                 if input_shape[-1] != 3 and weights == 'imagenet':
-                    raise ValueError('The input must have 3 channels; got '
-                                     '`input_shape=' + str(input_shape) + '`')
-                if ((input_shape[0] is not None and input_shape[0] < min_size) or
-                        (input_shape[1] is not None and input_shape[1] < min_size)):
-                    raise ValueError('Input size must be at least ' +
-                                     str(min_size) + 'x' + str(min_size) + '; got '
-                                                                           '`input_shape=' + str(input_shape) + '`')
+                    raise channel_error(input_shape)
+                assert_input_size(input_shape, min_size, 0, 1)
     else:
         if require_flatten:
             input_shape = default_shape
@@ -578,3 +565,26 @@ def _obtain_input_shape(input_shape,
                              'you should specify a static `input_shape`. '
                              'Got `input_shape=' + str(input_shape) + '`')
     return input_shape
+
+
+def channel_error(input_shape):
+    return ValueError('The input must have 3 channels; got '
+                      '`input_shape=' + str(input_shape) + '`')
+
+
+def assert_three_int_tuple(input_shape):
+    if len(input_shape) != 3:
+        raise ValueError(
+            '`input_shape` must be a tuple of three integers.')
+
+
+def assert_input_size(input_shape, min_size, first_index, second_index):
+    if (check_shape_by_index(first_index, input_shape, min_size) or
+            check_shape_by_index(second_index, input_shape, min_size)):
+        raise ValueError('Input size must be at least ' +
+                         str(min_size) + 'x' + str(min_size) + '; got '
+                                                               '`input_shape=' + str(input_shape) + '`')
+
+
+def check_shape_by_index(first_index, input_shape, min_size):
+    return input_shape[first_index] is not None and input_shape[first_index] < min_size

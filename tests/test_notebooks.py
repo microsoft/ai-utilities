@@ -8,7 +8,7 @@ Licensed under the MIT License.
 import pytest
 
 from azure_utils.dev_ops.testing_utilities import run_notebook
-from notebooks import notebook_directory
+from azure_utils import notebook_directory
 
 
 @pytest.mark.parametrize(

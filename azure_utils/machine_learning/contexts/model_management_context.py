@@ -18,19 +18,10 @@ class ModelManagementContext(WorkspaceContext):
 
     """
 
-    def __init__(self, subscription_id, resource_group, workspace_name,
-                 configuration_file: str = project_configuration_file,
-                 train_py=train_py_default, score_py=score_py_default,
-                 run_configuration=get_local_run_configuration()):
-        super().__init__(subscription_id, resource_group, workspace_name)
+    def __init__(self, subscription_id, resource_group, workspace_name, run_configuration,
+                 configuration_file: str = project_configuration_file, train_py=train_py_default):
+        super().__init__(subscription_id, resource_group, workspace_name, train_py=train_py)
         self.configuration_file = configuration_file
-        self.image_tags = None
-        self.args = None
-        self.train_py = train_py
-        self.score_py = score_py
-        self.show_output = True
-        self.source_directory = "./script"
-        self.experiment_name = None
         self.run_configuration = run_configuration
         self.model_name = None
         self.wait_for_completion = True
@@ -80,23 +71,6 @@ class ModelTrainingContext(ModelManagementContext):
 
     """
 
-    def __init__(self, subscription_id, resource_group, workspace_name, run_configuration,
-                 configuration_file: str = project_configuration_file,
-                 train_py=train_py_default, score_py=score_py_default):
-        super().__init__(subscription_id, resource_group, workspace_name)
-        self.configuration_file = configuration_file
-        self.image_tags = None
-        self.args = None
-        self.train_py = train_py
-        self.score_py = score_py
-        self.show_output = True
-        self.source_directory = "./script"
-        self.experiment_name = None
-        self.run_configuration = run_configuration
-        self.model_name = None
-        self.wait_for_completion = True
-        self.model_path = None
-
     def submit_experiment_run(self, wait_for_completion=True):
         """
 
@@ -109,13 +83,6 @@ class LocalTrainingContext(ModelTrainingContext):
     """
 
     """
-
-    def __init__(self, subscription_id, resource_group, workspace_name,
-                 configuration_file: str = project_configuration_file,
-                 train_py=train_py_default, score_py=score_py_default,
-                 run_configuration=get_local_run_configuration()):
-        super().__init__(subscription_id, resource_group, workspace_name, run_configuration, configuration_file,
-                         train_py=train_py, score_py=score_py)
 
     def submit_experiment_run(self, wait_for_completion=True):
         """

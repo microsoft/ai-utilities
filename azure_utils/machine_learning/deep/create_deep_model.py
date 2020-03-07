@@ -48,10 +48,7 @@ def get_or_create_resnet_image(configuration_file: str = project_configuration_f
     """
     image_config = create_resnet_image_config()
 
-    if not models:
-        models = []
-
-    return get_or_create_image(image_config, image_settings_name, models, show_output, configuration_file)
+    return get_or_create_image(image_config, image_settings_name, show_output, models, configuration_file)
 
 
 def create_resnet_image_config(conda_file="img_env.yml", execution_script="driver.py"):

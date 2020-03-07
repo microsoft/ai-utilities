@@ -17,21 +17,24 @@ def make_vbox(model_dict):
     for k in model_dict:
         if type(model_dict[k]) is not dict:
             string = str(model_dict[k])
-            labels.append(widgets.HBox([widgets.HTML(value="<b>" + k + ":</b>"), widgets.Label(string)]))
+            labels.append(make_setting_hbox(k, string))
         else:
             mini_labels = []
             mini_dic = model_dict[k]
             if mini_dic and mini_dic is not dict:
                 for mini_k in mini_dic:
                     string = str(mini_dic[mini_k])
-                    mini_labels.append(
-                        widgets.HBox([widgets.HTML(value="<b>" + mini_k + ":</b>"), widgets.Label(string)]))
+                    mini_labels.append(make_setting_hbox(mini_k, string))
                 mini_model_accordion = widgets.Accordion(children=[widgets.VBox(mini_labels)])
                 mini_model_accordion.set_title(0, k)
                 labels.append(mini_model_accordion)
 
     model_widget = widgets.VBox(labels)
     return widgets.VBox(children=[model_widget])
+
+
+def make_setting_hbox(mini_k, string):
+    return widgets.HBox([widgets.HTML(value="<b>" + mini_k + ":</b>"), widgets.Label(string)])
 
 
 def make_workspace_widget(model_dict, aks_dict):

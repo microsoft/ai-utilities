@@ -30,8 +30,23 @@ def list_subscriptions():
         run_az_cli_login()
         sub_client = get_client_from_cli_profile(SubscriptionClient)
 
-    return [{sub.display_name: sub.subscription_id for sub in sub_client.subscriptions.list()},
-            {sub.subscription_id: sub.display_name for sub in sub_client.subscriptions.list()}]
+    subs = sub_client.subscriptions.list()
+
+    return [sub_map(subs, False), sub_map(subs)]
+
+
+def sub_map(subs, id_or_name=True):
+    if id_or_name:
+        return {name2id(sub) for sub in subs}
+    return {id2name(sub) for sub in subs}
+
+
+def name2id(sub):
+    return {sub.display_name: sub.subscription_id}
+
+
+def id2name(sub):
+    return {sub.subscription_id: sub.display_name}
 
 
 def get_configuration_widget(config, with_existing=True):
@@ -174,4 +189,3 @@ def get_configuration_widget(config, with_existing=True):
         setting_boxs[box].observe(on_change)
 
     return widgets.VBox(my_list)
-

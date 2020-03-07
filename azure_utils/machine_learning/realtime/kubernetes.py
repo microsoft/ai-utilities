@@ -21,8 +21,7 @@ def test_aks(directory: str, aks_service: AksWebservice):
     """
     num_dupes_to_score = 4
 
-    dupes_test_path = directory + '/data_folder/dupes_test.tsv'
-    dupes_test = pd.read_csv(dupes_test_path, sep='\t', encoding='latin1')
+    dupes_test = get_dupes_test(directory)
     text_to_score = dupes_test.iloc[0, num_dupes_to_score]
 
     json_text = text_to_json(text_to_score)
@@ -44,3 +43,9 @@ def test_aks(directory: str, aks_service: AksWebservice):
     for text in text_data:
         r = requests.post(scoring_url, data=text, headers=headers)
         print(r)
+
+
+def get_dupes_test(directory):
+    dupes_test_path = directory + '/data_folder/dupes_test.tsv'
+    dupes_test = pd.read_csv(dupes_test_path, sep='\t', encoding='latin1')
+    return dupes_test

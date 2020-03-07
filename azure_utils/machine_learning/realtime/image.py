@@ -13,6 +13,7 @@ from azureml.core.image.container import ContainerImageConfig
 
 from azure_utils.configuration.notebook_config import project_configuration_file
 from azure_utils.configuration.project_configuration import ProjectConfiguration
+from azure_utils.machine_learning.realtime.kubernetes import get_dupes_test
 from azure_utils.machine_learning.utils import get_or_create_workspace_from_project
 from azure_utils.utilities import text_to_json
 
@@ -35,11 +36,10 @@ def get_or_create_lightgbm_image(configuration_file: str = project_configuration
     if not models:
         models = []
 
-    return get_or_create_image(image_config, image_settings_name, models, show_output,
-                               configuration_file)
+    return get_or_create_image(image_config, image_settings_name, show_output, models, configuration_file)
 
 
-def get_or_create_image(image_config, image_settings_name, models, show_output,
+def get_or_create_image(image_config, image_settings_name, show_output, models=None,
                         configuration_file: str = project_configuration_file):
     """
 
@@ -50,6 +50,9 @@ def get_or_create_image(image_config, image_settings_name, models, show_output,
     :param configuration_file:
     :return:
     """
+    if not models:
+        models = []
+
     project_configuration = ProjectConfiguration(configuration_file)
 
     assert project_configuration.has_value(image_settings_name)
@@ -66,12 +69,20 @@ def get_or_create_image(image_config, image_settings_name, models, show_output,
     image.wait_for_creation(show_output=show_output)
     assert image.creation_state != "Failed"
     if show_output:
-        deployment_time_secs = str(time.time() - image_create_start)
-        print("Deployed Image with name " + image_name + ". Took " + deployment_time_secs + " seconds.")
-        print(image.name)
-        print(image.version)
-        print(image.image_build_log_uri)
+        print_deployment_time(image_name, image_create_start, "Image")
+        print_image_deployment_info(image)
     return image
+
+def print_deployment_time(aks_service_name, deploy_aks_start, service_name):
+    deployment_time_secs = str(time.time() - deploy_aks_start)
+    print("Deployed " + service_name + " with name "
+          + aks_service_name + ". Took " + deployment_time_secs + " seconds.")
+
+def print_image_deployment_info(image, image_name, image_create_start):
+    print_deployment_time(image_name, image_create_start, "Image")
+    print(image.name)
+    print(image.version)
+    print(image.image_build_log_uri)
 
 
 def create_lightgbm_image_config(conda_file="lgbmenv.yml", execution_script="score.py",
@@ -143,8 +154,7 @@ def lightgbm_test_image_locally(image, directory):
     :param image: Machine Learning Image to test.
     :param directory: root directory that contains data directory.
     """
-    dupes_test_path = directory + '/data_folder/dupes_test.tsv'
-    dupes_test = pd.read_csv(dupes_test_path, sep='\t', encoding='latin1')
+    dupes_test = get_dupes_test(directory)
     text_to_score = dupes_test.iloc[0, 4]
     json_text = text_to_json(text_to_score)
     image.run(input_data=json_text)

@@ -165,13 +165,17 @@ class ProjectConfiguration:
         return_value = None
 
         if isinstance(self.configuration[ProjectConfiguration.settings_key], list):
-            setting = [x for x in self.configuration[ProjectConfiguration.settings_key] if setting_name in x.keys()]
+            setting = self.get_settings_from_config(setting_name)
             if len(setting) == 1:
-                value = [x for x in setting[0][setting_name] if ProjectConfiguration.setting_value in x.keys()]
+                value = self.get_value_from_config(setting, setting_name)
                 if len(value) == 1:
                     return_value = value[0][ProjectConfiguration.setting_value]
 
         return return_value
+
+    def get_settings_from_config(self, setting_name):
+        setting = [x for x in self.configuration[ProjectConfiguration.settings_key] if setting_name in x.keys()]
+        return setting
 
     def set_value(self, setting_name: str, value: str):
         """
@@ -184,14 +188,17 @@ class ProjectConfiguration:
         self._validate_configuration(ProjectConfiguration.settings_key)
 
         if isinstance(self.configuration[ProjectConfiguration.settings_key], list):
-            setting = [x for x in self.configuration[ProjectConfiguration.settings_key] if setting_name in x.keys()]
+            setting = self.get_settings_from_config(setting_name)
             if len(setting) == 1:
-                current_value = [x for x in setting[0][setting_name] if ProjectConfiguration.setting_value in x.keys()]
+                current_value = self.get_value_from_config(setting, setting_name)
                 if len(current_value) == 1:
                     current_value[0][ProjectConfiguration.setting_value] = value
                 else:
                     value_setting = {ProjectConfiguration.setting_value: value}
                     setting[0][setting_name].append(value_setting)
+
+    def get_value_from_config(self, setting, setting_name):
+        return [x for x in setting[0][setting_name] if ProjectConfiguration.setting_value in x.keys()]
 
     def save_configuration(self):
         """ Save the configuration file """

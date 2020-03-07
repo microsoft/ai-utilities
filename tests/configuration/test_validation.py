@@ -17,23 +17,24 @@ v = Validation()
 def test_subscription_validation_success():
     if check_login():
         r = v.validate_input("subscription_id", cfg['subscription_id'])
-        Validation.dump_validation_result(r)
-        assert r.status is ValidationResult.success
+        assert_validation_result(r, ValidationResult.success)
 
 
 def test_subscription_validation_failure():
     r = v.validate_input("subscription_id", "<>>")
-    Validation.dump_validation_result(r)
-    assert r.status is ValidationResult.failure
+    assert_validation_result(r, ValidationResult.failure)
 
 
 def test_validation_warning():
     r = v.validate_input("foo", "asbas;klj;ijer;kasdf")
-    Validation.dump_validation_result(r)
-    assert r.status is ValidationResult.warning
+    assert_validation_result(r, ValidationResult.warning)
 
 
 def test_workspace_validation_failure():
     r = v.validate_input("workspace_name", "<mygroup>")
+    assert_validation_result(r, ValidationResult.failure)
+
+
+def assert_validation_result(r, result):
     Validation.dump_validation_result(r)
-    assert r.status is ValidationResult.failure
+    assert r.status is result

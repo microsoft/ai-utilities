@@ -29,7 +29,8 @@ from azure_utils.machine_learning.contexts.workspace_contexts import WorkspaceCo
 from azure_utils.machine_learning.datasets.stack_overflow_data import download_datasets, clean_data, split_duplicates, \
     save_data
 from azure_utils.machine_learning.deep.create_deep_model import get_or_create_resnet_image
-from azure_utils.machine_learning.realtime.image import get_or_create_lightgbm_image
+from azure_utils.machine_learning.realtime.image import get_or_create_lightgbm_image, print_image_deployment_info, \
+    print_deployment_time
 from azure_utils.machine_learning.train_local import get_local_run_configuration
 from azure_utils.notebook_widgets.workspace_widget import make_workspace_widget
 
@@ -39,16 +40,17 @@ class RealtimeScoreContext(WorkspaceContext):
 
     def __init__(self, subscription_id, resource_group, workspace_name,
                  configuration_file: str = project_configuration_file,
-                 score_py="score.py", **kwargs):
+                 score_py="score.py", settings_image_name="image_name", settings_aks_name="aks_name",
+                 settings_aks_service_name="aks_service_name", **kwargs):
         super().__init__(subscription_id, resource_group, workspace_name, **kwargs)
         project_configuration = ProjectConfiguration(configuration_file)
         self.project_configuration = project_configuration
 
         self.score_py = score_py
 
-        self.settings_image_name = "image_name"
-        self.settings_aks_name = "aks_name"
-        self.settings_aks_service_name = "aks_service_name"
+        self.settings_image_name = settings_image_name
+        self.settings_aks_name = settings_aks_name
+        self.settings_aks_service_name = settings_aks_service_name
 
         # Model Configuration
         self.model_tags = None
@@ -109,6 +111,12 @@ class RealtimeScoreContext(WorkspaceContext):
         with open(self.conda_file, "w") as file:
             file.write(self.conda_env.serialize_to_string())
 
+    def assert_image_params(self):
+        assert self.score_py
+        assert self.conda_file
+        assert self.image_description
+        assert self.image_tags
+
 
 class RealtimeScoreFunctionsContext(RealtimeScoreContext):
     @classmethod
@@ -123,16 +131,11 @@ class RealtimeScoreFunctionsContext(RealtimeScoreContext):
     def get_or_create_function_image_configuration(self):
         """ Get or Create new Docker Image Configuration for Machine Learning Workspace
 
-        """
-        """
         Image Configuration for running LightGBM in Azure Machine Learning Workspace
 
         :return: new image configuration for Machine Learning Workspace
         """
-        assert self.score_py
-        assert self.conda_file
-        assert self.image_description
-        assert self.image_tags
+        self.assert_image_params()
 
         from azureml.core.environment import Environment
         from azureml.core.conda_dependencies import CondaDependencies
@@ -159,23 +162,34 @@ class RealtimeScoreFunctionsContext(RealtimeScoreContext):
 
 
 class RealtimeScoreAKSContext(RealtimeScoreContext):
+
+    def __init__(self, subscription_id, resource_group, workspace_name, **kwargs):
+        super().__init__(subscription_id, resource_group, workspace_name, **kwargs)
+        self.aks_name = self.assert_and_get_value(self.settings_aks_name)
+        self.aks_service_name = self.assert_and_get_value(self.settings_aks_service_name)
+        self.aks_location = self.assert_and_get_value("workspace_region")
+
     @classmethod
     def get_or_or_create(cls, configuration_file: str = project_configuration_file,
                          train_py=train_py_default, score_py=score_py_default):
-        """ Get or Create Real-time Endpoint
+        """ Get or Create Real-time Endpoint on AKS
 
         :param configuration_file:
         :param train_py:
         :param score_py:
         """
-        workspace = cls.get_or_create_workspace(configuration_file, train_py=train_py, score_py=score_py)
-
-        model = workspace.get_or_create_model()
+        model, workspace = cls._get_workspace_and_model(configuration_file, score_py, train_py)
         inference_config = workspace.get_inference_config()
         aks_target = workspace.get_or_create_aks()
         web_service = workspace.get_or_create_aks_service(model, aks_target, inference_config)
 
         return workspace, web_service
+
+    @classmethod
+    def _get_workspace_and_model(cls, configuration_file, score_py, train_py):
+        workspace = cls.get_or_create_workspace(configuration_file, train_py=train_py, score_py=score_py)
+        model = workspace.get_or_create_model()
+        return model, workspace
 
     def get_or_create_aks(self):
         """
@@ -183,31 +197,24 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
 
         :return: AKS Compute from Workspace
         """
-        assert self.project_configuration.has_value(self.settings_aks_name)
-        assert self.project_configuration.has_value(self.settings_aks_service_name)
         assert "_" not in self.project_configuration.get_value(
             self.settings_aks_service_name), self.settings_aks_service_name + " can not contain _"
         assert self.project_configuration.has_value("workspace_region")
 
-        aks_name = self.project_configuration.get_value(self.settings_aks_name)
-        aks_service_name = self.project_configuration.get_value(self.settings_aks_service_name)
-        aks_location = self.project_configuration.get_value("workspace_region")
-
         workspace_compute = self.compute_targets
-        if aks_name in workspace_compute:
-            return workspace_compute[aks_name]
+        if self.aks_name in workspace_compute:
+            return workspace_compute[self.aks_name]
 
         prov_config = AksCompute.provisioning_configuration(agent_count=self.node_count, vm_size=self.aks_vm_size,
-                                                            location=aks_location)
+                                                            location=self.aks_location)
 
         deploy_aks_start = time.time()
-        aks_target = ComputeTarget.create(workspace=self, name=aks_name, provisioning_configuration=prov_config)
+        aks_target = ComputeTarget.create(workspace=self, name=self.aks_name, provisioning_configuration=prov_config)
 
         aks_target.wait_for_completion(show_output=True)
         if self.show_output:
-            deployment_time_secs = str(time.time() - deploy_aks_start)
-            print("Deployed AKS with name "
-                  + aks_service_name + ". Took " + deployment_time_secs + " seconds.")
+            service_name = "AKS"
+            print_deployment_time(self.aks_service_name, deploy_aks_start, service_name)
             print(aks_target.provisioning_state)
             print(aks_target.provisioning_errors)
         aks_status = aks_target.get_status()
@@ -235,33 +242,35 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         :param inference_config:
         :return:
         """
-        assert self.project_configuration.has_value(self.settings_aks_service_name)
-        aks_service_name = self.project_configuration.get_value(self.settings_aks_service_name)
-
+        self.get_or_create_image(inference_config, models=[model])
         model_dict = model.serialize()
 
-        if self.has_web_service(aks_service_name) and self.get_web_service_state(aks_service_name) != "Failed":
-            aks_service = self.get_web_service(aks_service_name)
-            aks_dict = aks_service.serialize()
-            self.workspace_widget = make_workspace_widget(model_dict, aks_dict)
-            self.create_kube_config(aks_target)
+        if self._aks_exists():
+            aks_service = self.get_web_service(self.aks_service_name)
+            self._post_process_aks_deployment(aks_service, aks_target, model_dict)
             return aks_service
 
-        aks_service = Model.deploy(self, aks_service_name, models=[model], inference_config=inference_config,
+        aks_service = Model.deploy(self, self.aks_service_name, models=[model], inference_config=inference_config,
                                    deployment_target=aks_target, overwrite=True)
-        aks_dict = aks_service.serialize()
-        self.workspace_widget = make_workspace_widget(model_dict, aks_dict)
-        self.create_kube_config(aks_target)
+        self._post_process_aks_deployment(aks_service, aks_target, model_dict)
 
         try:
             if self.wait_for_completion:
-                aks_service.wait_for_deployment(show_output=self.show_output)
-                self.configure_ping_test("ping-test-" + aks_service_name, self.get_details()['applicationInsights'],
-                                         aks_service.scoring_uri, aks_service.get_keys()[0])
+                self.wait_then_configure_ping_test(aks_service, self.aks_service_name)
         finally:
             if self.show_output:
                 print(aks_service.get_logs())
         return aks_service
+
+    def _post_process_aks_deployment(self, aks_service, aks_target, model_dict):
+        aks_dict = aks_service.serialize()
+        self.workspace_widget = make_workspace_widget(model_dict, aks_dict)
+        self.create_kube_config(aks_target)
+
+    def wait_then_configure_ping_test(self, aks_service: AksWebservice, aks_service_name):
+        aks_service.wait_for_deployment(show_output=self.show_output)
+        self.configure_ping_test("ping-test-" + aks_service_name, self.get_details()['applicationInsights'],
+                                 aks_service.scoring_uri, aks_service.get_keys()[0])
 
     def has_web_service(self, service_name):
         """
@@ -298,135 +307,18 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
 
         :param aks_target:
         """
-        os.makedirs(os.path.join(os.path.expanduser('~'), '.kube'), exist_ok=True)
-        config_path = os.path.join(os.path.expanduser('~'), '.kube/config')
+        user_path = os.path.expanduser('~')
+        kub_dir = os.path.join(user_path, '.kube')
+        config_path = os.path.join(kub_dir, 'config')
+
+        os.makedirs(kub_dir, exist_ok=True)
         with open(config_path, 'a') as f:
             f.write(aks_target.get_credentials()['userKubeConfig'])
 
-    @classmethod
-    @deprecated(version='0.3.81', reason="Switch to using Env, this will be removed in 0.4.0")
-    def get_or_or_create_with_image(cls, configuration_file: str = project_configuration_file,
-                                    train_py=train_py_default, score_py=score_py_default):
-        """ Get or Create Real-time Endpoint
-
-        :param configuration_file:
-        :param train_py:
-        :param score_py:
-        """
-        workspace = cls.get_or_create_workspace(configuration_file, train_py=train_py, score_py=score_py)
-        model = workspace.get_or_create_model()
-        config = workspace.get_or_create_image_configuration()
-        workspace.get_or_create_image(config, models=[model])
-        aks_target = workspace.get_or_create_aks()
-        web_service = workspace.get_or_create_aks_service_with_image(aks_target)
-        return workspace, web_service
-
-    @deprecated(version='0.3.81', reason="Switch to using Env, this will be removed in 0.4.0")
-    def get_or_create_aks_service_with_image(self, aks_target) -> AksWebservice:
-        """
-        Get or Create AKS Service with new or existing Kubernetes Compute
-
-        :param aks_target:
-        :return: New or Existing Kubernetes Web Service
-        """
-        assert self.aks_vm_size
-
-        assert self.project_configuration.has_value(self.settings_aks_service_name)
-        assert self.project_configuration.has_value(self.settings_image_name)
-
-        aks_service_name = self.project_configuration.get_value(self.settings_aks_service_name)
-        image_name = self.project_configuration.get_value(self.settings_image_name)
-
-        if self.has_web_service(aks_service_name) and self.get_web_service_state(aks_service_name) != "Failed":
-            self.create_kube_config(aks_target)
-            return self.get_web_service(aks_service_name)
-
-        aks_config = self.get_aks_deployment_config()
-
-        if image_name not in self.images:
-            self.get_image()
-        image = self.images[image_name]
-
-        deploy_from_image_start = time.time()
-
-        aks_service = Webservice.deploy_from_image(workspace=self, name=aks_service_name, image=image,
-                                                   deployment_config=aks_config, deployment_target=aks_target,
-                                                   overwrite=True)
-        try:
-            aks_service.wait_for_deployment(show_output=self.show_output)
-
-            self.configure_ping_test("ping-test-" + aks_service_name, self.get_details()['applicationInsights'],
-                                     aks_service.scoring_uri, aks_service.get_keys()[0])
-        except WebserviceException:
-            print(aks_service.get_logs())
-            raise
-        if self.show_output:
-            deployment_time_secs = str(time.time() - deploy_from_image_start)
-            print("Deployed Image with name "
-                  + aks_service_name + ". Took " + deployment_time_secs + " seconds.")
-            print(aks_service.state)
-            print(aks_service.get_logs())
-
-        return aks_service
-
-    @deprecated(version='0.3.81', reason="Switch to using Env, this will be removed in 0.4.0")
-    def get_or_create_image_configuration(self, **kwargs):
-        """ Get or Create new Docker Image Configuration for Machine Learning Workspace
-
-        :param kwargs: keyword args
-        """
-        """
-        Image Configuration for running LightGBM in Azure Machine Learning Workspace
-
-        :return: new image configuration for Machine Learning Workspace
-        """
-        assert self.score_py
-        assert self.conda_file
-        assert self.image_description
-        assert self.image_tags
-
-        self.write_conda_env()
-        assert os.path.isfile(self.conda_file)
-
-        self.image_tags['score_py_hash'] = self._get_file_md5(self.score_py)
-        return ContainerImage.image_configuration(execution_script=self.score_py, runtime="python",
-                                                  conda_file=self.conda_file, description=self.image_description,
-                                                  dependencies=self.image_dependencies, docker_file=self.dockerfile,
-                                                  tags=self.image_tags, enable_gpu=self.image_enable_gpu, **kwargs)
-
-    @deprecated(version='0.3.81', reason="Switch to using Env, this will be removed in 0.4.0")
-    def get_or_create_image(self, image_config, models=None):
-        """Get or Create new Docker Image from Machine Learning Workspace
-
-        :param image_config:
-        :param models:
-        """
-        if not models:
-            models = []
-
-        assert self.project_configuration.has_value(self.settings_image_name)
-        image_name = self.project_configuration.get_value(self.settings_image_name)
-
-        if image_name in self.images and self.images[image_name].creation_state != "Failed":
-            # hasher = hashlib.md5()
-            # with open(self.score_py, 'rb') as afile:
-            #     buf = afile.read()
-            #     hasher.update(buf)
-            # if "hash" in Image(workspace, image_name).tags \
-            #         and hasher.hexdigest() == Image(workspace, image_name).tags['hash']:
-            return self.images[image_name]
-
-        image_create_start = time.time()
-        image = ContainerImage.create(name=image_name, models=models, image_config=image_config, workspace=self)
-        image.wait_for_creation(show_output=self.show_output)
-        assert image.creation_state != "Failed"
-        if self.show_output:
-            deployment_time_secs = str(time.time() - image_create_start)
-            print("Deployed Image with name " + image_name + ". Took " + deployment_time_secs + " seconds.")
-            print(image.name)
-            print(image.version)
-            print(image.image_build_log_uri)
-        return image
+    def _aks_exists(self):
+        aks_exists = self.has_web_service(self.aks_service_name) and self.get_web_service_state(
+            self.aks_service_name) != "Failed"
+        return aks_exists
 
     @staticmethod
     def configure_ping_test(ping_test_name, app_name, ping_url, ping_token):
@@ -468,14 +360,110 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         deployment_async_operation.wait()
 
 
+@deprecated(version='0.3.81', reason="Switch to using Env, this will be removed in 0.4.0")
+class RealTimeScoreImageAndAKSContext(RealtimeScoreAKSContext):
+    """ Old way to deploy AKS with Docker Image, use RealtimeScoreAKSContext instead"""
+
+    @deprecated(version='0.3.81', reason="Switch to using Env, this will be removed in 0.4.0")
+    def get_or_create_aks(self, aks_target) -> AksWebservice:
+        """
+        Get or Create AKS Service with new or existing Kubernetes Compute
+
+        :param aks_target:
+        :return: New or Existing Kubernetes Web Service
+        """
+        image_name = self.assert_and_get_value(self.settings_image_name)
+        assert self.aks_vm_size
+
+        if self._aks_exists():
+            self.create_kube_config(aks_target)
+            return self.get_web_service(self.aks_service_name)
+
+        aks_config = self.get_aks_deployment_config()
+
+        if image_name not in self.images:
+            self.get_image()
+        image = self.images[image_name]
+
+        deploy_from_image_start = time.time()
+
+        aks_service = Webservice.deploy_from_image(workspace=self, name=self.aks_service_name, image=image,
+                                                   deployment_config=aks_config, deployment_target=aks_target,
+                                                   overwrite=True)
+        try:
+            self.wait_then_configure_ping_test(aks_service, self.aks_service_name)
+        except WebserviceException:
+            print(aks_service.get_logs())
+            raise
+        if self.show_output:
+            print_deployment_time(self.aks_service_name, deploy_from_image_start, "AKS")
+            print(aks_service.state)
+            print(aks_service.get_logs())
+
+        return aks_service
+
+    @deprecated(version='0.3.81', reason="Switch to using Env, this will be removed in 0.4.0")
+    def get_inference_config(self, **kwargs):
+        """ Get or Create new Docker Image Configuration for Machine Learning Workspace
+
+        Image Configuration for running LightGBM in Azure Machine Learning Workspace
+
+        :param kwargs: keyword args
+        :return: new image configuration for Machine Learning Workspace
+        """
+        self.assert_image_params()
+
+        self.write_conda_env()
+        assert os.path.isfile(self.conda_file)
+
+        self.image_tags['score_py_hash'] = self._get_file_md5(self.score_py)
+        return ContainerImage.image_configuration(execution_script=self.score_py, runtime="python",
+                                                  conda_file=self.conda_file, description=self.image_description,
+                                                  dependencies=self.image_dependencies, docker_file=self.dockerfile,
+                                                  tags=self.image_tags, enable_gpu=self.image_enable_gpu, **kwargs)
+
+    @deprecated(version='0.3.81', reason="Switch to using Env, this will be removed in 0.4.0")
+    def get_or_create_image(self, image_config, models=None):
+        """Get or Create new Docker Image from Machine Learning Workspace
+
+        :param image_config:
+        :param models:
+        """
+        if not models:
+            models = []
+
+        image_name = self.assert_and_get_value(self.settings_image_name)
+
+        if image_name in self.images and self.images[image_name].creation_state != "Failed":
+            # hasher = hashlib.md5()
+            # with open(self.score_py, 'rb') as afile:
+            #     buf = afile.read()
+            #     hasher.update(buf)
+            # if "hash" in Image(workspace, image_name).tags \
+            #         and hasher.hexdigest() == Image(workspace, image_name).tags['hash']:
+            return self.images[image_name]
+
+        image_create_start = time.time()
+        image = ContainerImage.create(name=image_name, models=models, image_config=image_config, workspace=self)
+        image.wait_for_creation(show_output=self.show_output)
+        assert image.creation_state != "Failed"
+        if self.show_output:
+            print_image_deployment_info(image, image_name, image_create_start)
+        return image
+
+
 class MLRealtimeScore(RealtimeScoreAKSContext, RealtimeScoreFunctionsContext, LocalTrainingContext):
     """ Light GBM Real Time Scoring"""
 
-    def __init__(self, subscription_id, resource_group, workspace_name,
-                 configuration_file: str = project_configuration_file, conda_file="img_ml_env.yml",
-                 run_configuration=get_local_run_configuration(), **kwargs):
-        super().__init__(subscription_id, resource_group, workspace_name, configuration_file, **kwargs)
+    def __init__(self, subscription_id, resource_group, workspace_name, run_configuration,
+                 configuration_file: str = project_configuration_file, train_py=train_py_default,
+                 score_py=score_py_default, conda_file="my_env.yml"):
+        super().__init__(subscription_id, resource_group, workspace_name, get_local_run_configuration(),
+                         configuration_file, train_py=train_py, score_py=score_py)
         self.get_docker_file()
+        self.setting_image_name = "image_name"
+        self.settings_aks_name = "aks_name"
+        self.settings_aks_service_name = "aks_service_name"
 
         self.execution_script = "score.py"
         with open(self.execution_script, 'w') as file:
@@ -598,15 +586,16 @@ class DeepRealtimeScore(RealtimeScoreAKSContext, RealtimeScoreFunctionsContext, 
     """ Resnet Real-time Scoring"""
 
     def __init__(self, subscription_id, resource_group, workspace_name,
-                 configuration_file: str = project_configuration_file,
-                 train_py="create_deep_model.py", score_py="driver.py", conda_file="img_env.yml",
-                 setting_image_name="deep_image_name", settings_aks_name="deep_aks_name",
-                 settings_aks_service_name="deep_aks_service_name", **kwargs):
-        super().__init__(subscription_id, resource_group, workspace_name, configuration_file,
-                         score_py=score_py, train_py=train_py, **kwargs)
-        self.setting_image_name = setting_image_name
-        self.settings_aks_name = settings_aks_name
-        self.settings_aks_service_name = settings_aks_service_name
+                 configuration_file: str = project_configuration_file, train_py=train_py_default,
+                 score_py=score_py_default, conda_file="my_env.yml", setting_image_name="deep_image_name",
+                 settings_aks_name="deep_aks_name", settings_aks_service_name="deep_aks_service_name"):
+        super().__init__(subscription_id, resource_group, workspace_name, get_local_run_configuration(),
+                         configuration_file, train_py=train_py, score_py=score_py,
+                         setting_image_name=setting_image_name, settings_aks_name=settings_aks_name,
+                         settings_aks_service_name=settings_aks_service_name)
+        self.setting_image_name = "deep_image_name"
+        self.settings_aks_name = "deep_aks_name"
+        self.settings_aks_service_name = "deep_aks_service_name"
 
         # Experiment Configuration
         self.experiment_name = "dlrts-train-on-local"

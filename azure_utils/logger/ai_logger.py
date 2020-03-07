@@ -160,9 +160,7 @@ class StatisticsCollector:
 
         :param connection_string:
         """
-        connection_object = StorageConnection(connection_string)
-        storage_account = BlobStorageAccount(connection_object)
-        containers = storage_account.getContainers()
+        containers, storage_account = StatisticsCollector._get_containers(connection_string)
         if StatisticsCollector.__statscontainer__ not in containers:
             storage_account.create_container(StatisticsCollector.__statscontainer__)
         storage_account.upload_blob(StatisticsCollector.__statscontainer__, StatisticsCollector.__statsblob__,
@@ -188,13 +186,18 @@ class StatisticsCollector:
         :return:
         """
         return_content = None
-        connection_object = StorageConnection(connection_string)
-        storage_account = BlobStorageAccount(connection_object)
-        containers = storage_account.getContainers()
+        containers, storage_account = StatisticsCollector._get_containers(connection_string)
         if StatisticsCollector.__statscontainer__ in containers:
             return_content = storage_account.download_blob(StatisticsCollector.__statscontainer__,
                                                            StatisticsCollector.__statsblob__)
         return return_content
+
+    @staticmethod
+    def _get_containers(connection_string):
+        connection_object = StorageConnection(connection_string)
+        storage_account = BlobStorageAccount(connection_object)
+        containers = storage_account.getContainers()
+        return containers, storage_account
 
     '''
         Retrieves the content in storage and hydrates the __metrics__ dictionary, dropping any existing information. 

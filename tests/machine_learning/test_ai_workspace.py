@@ -9,10 +9,11 @@ import pytest
 from azure_utils.machine_learning.contexts.realtime_score_context import DeepRealtimeScore, MLRealtimeScore
 from deprecated import deprecated
 
+
 class WorkspaceCreationTests:
     @pytest.fixture(scope="class")
     def workspace_type(self):
-        return DeepRealtimeScore
+        raise NotImplementedError
 
     @pytest.fixture(scope="class")
     def realtime_score_workspace(self, workspace_type):
@@ -31,15 +32,12 @@ class WorkspaceCreationTests:
     def test_get_webserices(self, realtime_score_workspace):
         assert realtime_score_workspace.webservices
 
-
-class TestDeployRTS(WorkspaceCreationTests):
     @pytest.fixture(scope="class")
-    def workspace_type(self):
-        return MLRealtimeScore
+    def test_files(self):
+        return {"train_py": "train.py", "score_py": "score.py"}
 
-    @pytest.fixture(scope="class")
-    def realtime_score_workspace(self, workspace_type):
-        return workspace_type.get_or_create_workspace(train_py="create_deep_model.py", score_py="driver.py")
+    def test_get_or_create_model(self, realtime_score_workspace):
+        assert realtime_score_workspace.get_or_create_model()
 
     def test_get_or_create_model(self, realtime_score_workspace):
         assert realtime_score_workspace.get_or_create_model()
@@ -48,9 +46,9 @@ class TestDeployRTS(WorkspaceCreationTests):
     def test_get_or_create_image(self, realtime_score_workspace):
         models = [realtime_score_workspace.get_or_create_model()]
         assert models
-        config = realtime_score_workspace.get_or_create_image_configuration()
+        config = realtime_score_workspace.get_inference_config()
         assert config
-        assert realtime_score_workspace.get_or_create_image(config, models)
+        assert realtime_score_workspace.get_or_create_image(config, models, )
 
     def test_get_or_create_aks(self, realtime_score_workspace):
         assert realtime_score_workspace.get_or_create_aks()
@@ -58,6 +56,13 @@ class TestDeployRTS(WorkspaceCreationTests):
     def test_get_or_create_service(self, realtime_score_workspace):
         aks = realtime_score_workspace.get_or_create_aks()
         assert realtime_score_workspace.get_or_create_aks_service_with_image(aks)
+
+
+class TestDeployRTS(WorkspaceCreationTests):
+
+    @pytest.fixture(scope="class")
+    def workspace_type(self):
+        return MLRealtimeScore
 
 
 class TestDeployDeepRTS(WorkspaceCreationTests):
@@ -66,31 +71,8 @@ class TestDeployDeepRTS(WorkspaceCreationTests):
         return DeepRealtimeScore
 
     @pytest.fixture(scope="class")
-    def realtime_score_workspace(self, workspace_type):
-        return workspace_type.get_or_create_workspace(train_py="create_deep_model.py", score_py="driver.py")
-
-    def test_get_or_create_model(self, realtime_score_workspace):
-        assert realtime_score_workspace.get_or_create_model()
-
-    def test_get_or_create_image(self, realtime_score_workspace):
-        model = realtime_score_workspace.get_or_create_model()
-        config = realtime_score_workspace.get_or_create_image_configuration()
-        assert config
-        assert realtime_score_workspace.get_or_create_image(config, [model])
-
-    def test_get_or_create_aks(self, realtime_score_workspace):
-        assert realtime_score_workspace.get_or_create_aks()
-
-    def dont_test_get_or_create_service_with_image(self, realtime_score_workspace):
-        aks = realtime_score_workspace.get_or_create_aks()
-        assert realtime_score_workspace.get_or_create_aks_service_with_image(aks)
-
-    def test_get_or_create_service(self, realtime_score_workspace):
-        model = realtime_score_workspace.get_or_create_model()
-        inference_config = realtime_score_workspace.get_inference_config()
-        aks_target = realtime_score_workspace.get_or_create_aks()
-
-        assert realtime_score_workspace.get_or_create_aks_service(model, aks_target, inference_config)
+    def test_files(self):
+        return {"train_py": "train_dl.py", "score_py": "score_dl.py"}
 
 
 class TestDeployDeepRTSLocally:

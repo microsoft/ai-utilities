@@ -79,12 +79,12 @@ def export_notebook(exporter, jupyter_output, output_notebook, add_nunit_attachm
     :param root:
     """
     (body, _) = exporter.from_notebook_node(jupyter_output)
-    with open(os.path.join(root, output_notebook.replace(notebook_output_ext, file_ext)), "w") as text_file:
+    path = os.path.join(root, output_notebook.replace(notebook_output_ext, file_ext))
+    with open(path, "w") as text_file:
         sys.stderr.write(body)
         text_file.write(body)
 
     if add_nunit_attachment is not None:
-        path = os.path.join(root, output_notebook.replace(notebook_output_ext, file_ext))
         add_nunit_attachment(path, output_notebook)
 
 
