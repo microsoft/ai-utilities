@@ -19,7 +19,7 @@ class WorkspaceContext(Workspace):
 
     def __init__(self, subscription_id: str, resource_group: str, workspace_name: str,
                  configuration_file: str = project_configuration_file, train_py: str = train_py_default,
-                 score_py: str = score_py_default):
+                 score_py: str = score_py_default, **kwargs):
         """
         Interface Constructor for Workspace Context
 
@@ -30,7 +30,7 @@ class WorkspaceContext(Workspace):
         :param train_py: python source file for training
         :param score_py: python source file for scoring
         """
-        super().__init__(subscription_id, resource_group, workspace_name)
+        super().__init__(subscription_id, resource_group, workspace_name, **kwargs)
         self.configuration_file = configuration_file
         self.project_configuration = ProjectConfiguration(configuration_file)
         self.image_tags = None

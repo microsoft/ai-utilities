@@ -241,9 +241,8 @@ class Validation:
         if not return_result and not self._validate_content(self.type_restrictions[validation_type], value):
             return_result = ResultsGenerator.create_content_failure(type_name, value, self.type_restrictions[
                 validation_type].invalid_charset)
-        if not return_result:
-            if self.type_restrictions[validation_type].custom_validator:
-                return_result = self.type_restrictions[validation_type].custom_validator(type_name, value)
+        if not return_result and self.type_restrictions[validation_type].custom_validator:
+            return_result = self.type_restrictions[validation_type].custom_validator(type_name, value)
         return return_result
 
     @staticmethod

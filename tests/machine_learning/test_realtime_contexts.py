@@ -9,10 +9,11 @@ from deprecated import deprecated
 
 from azure_utils.machine_learning.contexts.model_management_context import ModelManagementContext
 from azure_utils.machine_learning.contexts.realtime_score_context import DeepRealtimeScore, MLRealtimeScore, \
-    RealtimeScoreAKSContext, RealTimeScoreImageAndAKSContext
+    RealtimeScoreAKSContext, RealTimeScoreImageAndAKSContext, RealtimeScoreFunctionsContext
 from azure_utils.machine_learning.contexts.workspace_contexts import WorkspaceContext
 
 
+# noinspection PyMethodMayBeStatic
 class WorkspaceCreationTests:
     """Workspace Creation Test Suite"""
 
@@ -24,7 +25,7 @@ class WorkspaceCreationTests:
         raise NotImplementedError
 
     @pytest.fixture(scope="class")
-    def realtime_score_context(self, context_type: WorkspaceContext) -> WorkspaceContext:
+    def realtime_score_context(self, context_type: RealtimeScoreAKSContext) -> RealtimeScoreAKSContext:
         """
         Get or Create Context for Testing
         :param context_type: impl of WorkspaceContext
@@ -32,8 +33,7 @@ class WorkspaceCreationTests:
         """
         return context_type.get_or_create_workspace(train_py="create_deep_model.py", score_py="driver.py")
 
-    @staticmethod
-    def test_get_or_create(realtime_score_context: RealtimeScoreAKSContext, context_type: WorkspaceContext):
+    def test_get_or_create(self, realtime_score_context: RealtimeScoreAKSContext, context_type: WorkspaceContext):
         """
         Assert Context Type and Creation
 
@@ -43,8 +43,7 @@ class WorkspaceCreationTests:
         assert type(realtime_score_context) is context_type
         assert realtime_score_context
 
-    @staticmethod
-    def test_get_images(realtime_score_context: RealtimeScoreAKSContext):
+    def test_get_images(self, realtime_score_context: RealtimeScoreAKSContext):
         """
         Assert images have been created
 
@@ -52,16 +51,14 @@ class WorkspaceCreationTests:
         """
         assert realtime_score_context.images
 
-    @staticmethod
-    def test_get_compute_targets(realtime_score_context: RealtimeScoreAKSContext):
+    def test_get_compute_targets(self, realtime_score_context: RealtimeScoreAKSContext):
         """
 
         :param realtime_score_context: Testing Context
         """
         assert realtime_score_context.compute_targets
 
-    @staticmethod
-    def test_get_webserices(realtime_score_context: RealtimeScoreAKSContext):
+    def test_get_webserices(self, realtime_score_context: RealtimeScoreAKSContext):
         """
 
         :param realtime_score_context: Testing Context
@@ -76,43 +73,19 @@ class WorkspaceCreationTests:
         """
         return {"train_py": "train.py", "score_py": "score.py"}
 
-    @staticmethod
-    def test_get_or_create_model(realtime_score_context: ModelManagementContext):
+    def test_get_or_create_model(self, realtime_score_context: ModelManagementContext):
         """
 
         :param realtime_score_context: Testing Context
         """
         assert realtime_score_context.get_or_create_model()
 
-    @deprecated(version='0.3.81', reason="Switch to using Env, this will be removed in 0.4.0")
-    def test_get_or_create_image(self, realtime_score_context: RealtimeScoreAKSContext):
-        """
-
-        :param realtime_score_context: Testing Context
-        """
-
-        models = [RealTimeScoreImageAndAKSContext(realtime_score_context).get_or_create_model()]
-        assert models
-        config = RealTimeScoreImageAndAKSContext(realtime_score_context).get_inference_config()
-        assert config
-        assert RealTimeScoreImageAndAKSContext(realtime_score_context).get_or_create_image(config, models, )
-
-    @staticmethod
-    def test_get_or_create_aks(realtime_score_context: RealtimeScoreAKSContext):
+    def test_get_or_create_aks(self, realtime_score_context: RealtimeScoreAKSContext):
         """
 
         :param realtime_score_context: Testing Context
         """
         assert realtime_score_context.get_or_create_aks()
-
-    @staticmethod
-    def test_get_or_create_service(realtime_score_context: RealtimeScoreAKSContext):
-        """
-
-        :param realtime_score_context: Testing Context
-        """
-        aks = RealTimeScoreImageAndAKSContext(realtime_score_context).get_or_create_aks()
-        assert RealTimeScoreImageAndAKSContext(realtime_score_context).get_or_create_aks_service_with_image(aks)
 
 
 class TestDeployRTS(WorkspaceCreationTests):
@@ -125,6 +98,15 @@ class TestDeployRTS(WorkspaceCreationTests):
         """
         return MLRealtimeScore
 
+    @pytest.fixture(scope="class")
+    def realtime_score_context(self, context_type: MLRealtimeScore) -> MLRealtimeScore:
+        """
+        Get or Create Context for Testing
+        :param context_type: impl of WorkspaceContext
+        :return:
+        """
+        return context_type.get_or_create_workspace(train_py="create_deep_model.py", score_py="driver.py")
+
 
 class TestDeployDeepRTS(WorkspaceCreationTests):
     @pytest.fixture(scope="class")
@@ -134,6 +116,15 @@ class TestDeployDeepRTS(WorkspaceCreationTests):
         :return:
         """
         return DeepRealtimeScore
+
+    @pytest.fixture(scope="class")
+    def realtime_score_context(self, context_type: DeepRealtimeScore) -> DeepRealtimeScore:
+        """
+        Get or Create Context for Testing
+        :param context_type: impl of WorkspaceContext
+        :return:
+        """
+        return context_type.get_or_create_workspace(train_py="create_deep_model.py", score_py="driver.py")
 
     @pytest.fixture(scope="class")
     def test_files(self):
@@ -164,4 +155,4 @@ class MockRequest:
 
 def test_get_or_create_function_endpoint():
     """Test creation of Azure Function for ML Scoring"""
-    MLRealtimeScore.get_or_or_create_function_endpoint()
+    RealtimeScoreFunctionsContext.get_or_or_create_function_endpoint()

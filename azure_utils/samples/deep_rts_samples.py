@@ -506,11 +506,10 @@ def _obtain_input_shape(input_shape, default_size, min_size, data_format, requir
                 input_shape = (3, None, None)
             else:
                 input_shape = (None, None, 3)
-    if require_flatten:
-        if None in input_shape:
-            raise ValueError('If `include_top` is True, '
-                             'you should specify a static `input_shape`. '
-                             'Got `input_shape=' + str(input_shape) + '`')
+    if require_flatten and None in input_shape:
+        raise ValueError('If `include_top` is True, '
+                         'you should specify a static `input_shape`. '
+                         'Got `input_shape=' + str(input_shape) + '`')
     return input_shape
 
 

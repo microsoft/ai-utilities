@@ -11,6 +11,7 @@ from azureml.exceptions import ActivityFailedException
 
 from azure_utils.configuration.notebook_config import project_configuration_file, train_py_default
 from azure_utils.machine_learning.contexts.workspace_contexts import WorkspaceContext
+from azure_utils.machine_learning.train_local import get_local_run_configuration
 
 
 class ModelManagementContext(WorkspaceContext):
@@ -78,6 +79,11 @@ class LocalTrainingContext(ModelTrainingContext):
     """
     Model Training Context used to run training locally.
     """
+
+    def __init__(self, subscription_id, resource_group, workspace_name, run_configuration=get_local_run_configuration(),
+                 configuration_file: str = project_configuration_file, train_py=train_py_default):
+        super().__init__(subscription_id, resource_group, workspace_name, run_configuration, configuration_file,
+                         train_py)
 
     def submit_experiment_run(self, wait_for_completion=True) -> Run:
         """
