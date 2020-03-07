@@ -26,6 +26,14 @@ class WorkspaceCreationTests:
         raise NotImplementedError
 
     @pytest.fixture(scope="class")
+    def test_files(self):
+        """
+
+        :return:
+        """
+        return {"train_py": "train.py", "score_py": "score.py"}
+
+    @pytest.fixture(scope="class")
     def realtime_score_context(self, context_type: RealtimeScoreAKSContext) -> RealtimeScoreAKSContext:
         """
         Get or Create Context for Testing
@@ -65,14 +73,6 @@ class WorkspaceCreationTests:
         :param realtime_score_context: Testing Context
         """
         assert realtime_score_context.webservices
-
-    @pytest.fixture(scope="class")
-    def test_files(self):
-        """
-
-        :return:
-        """
-        return {"train_py": "train.py", "score_py": "score.py"}
 
     def test_get_or_create_model(self, realtime_score_context: ModelManagementContext):
         """
@@ -142,12 +142,12 @@ class TestDeployDeepRTSLocally:
 
         assert os.path.isfile("outputs/model.pkl")
 
-    def test_score_py(self):
-        if os.path.isfile("driver.py"):
-            from tests.machine_learning.driver import init, run
-            init()
-            response = run(MockRequest())
-            assert response
+    # def test_score_py(self):
+    #     if os.path.isfile("driver.py"):
+    #         from tests.machine_learning.driver import init, run
+    #         init()
+    #         response = run(MockRequest())
+    #         assert response
 
 
 class MockRequest:
