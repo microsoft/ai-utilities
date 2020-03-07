@@ -8,12 +8,12 @@ import json
 import os
 import time
 from abc import ABC
-from typing import Tuple, Any
+from typing import Any, Tuple
 
 from azure.mgmt.deploymentmanager.models import DeploymentMode
 from azure.mgmt.resource import ResourceManagementClient
 from azureml.contrib.functions import HTTP_TRIGGER, package
-from azureml.core import ComputeTarget, Environment, Model, Webservice, Workspace, Image
+from azureml.core import ComputeTarget, Environment, Image, Model, Webservice, Workspace
 from azureml.core.authentication import AzureCliAuthentication
 from azureml.core.compute import AksCompute
 from azureml.core.conda_dependencies import CondaDependencies
@@ -28,14 +28,13 @@ from deprecated import deprecated
 from azure_utils import directory
 from azure_utils.configuration.notebook_config import project_configuration_file, score_py_default, train_py_default
 from azure_utils.configuration.project_configuration import ProjectConfiguration
-from azure_utils.machine_learning.contexts.model_management_context import LocalTrainingContext, ModelManagementContext
+from azure_utils.machine_learning.contexts.model_management_context import LocalTrainingContext
 from azure_utils.machine_learning.contexts.workspace_contexts import WorkspaceContext
 from azure_utils.machine_learning.datasets.stack_overflow_data import clean_data, download_datasets, save_data, \
     split_duplicates
 from azure_utils.machine_learning.deep.create_deep_model import get_or_create_resnet_image
 from azure_utils.machine_learning.realtime.image import get_or_create_lightgbm_image, print_deployment_time, \
     print_image_deployment_info
-from azure_utils.machine_learning.train_local import get_local_run_configuration
 from azure_utils.notebook_widgets.workspace_widget import make_workspace_widget
 
 
