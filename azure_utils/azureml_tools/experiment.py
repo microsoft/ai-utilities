@@ -95,17 +95,16 @@ def _check_subscription_id(config):
     return True, f"Selected subscription id is {config.SUBSCRIPTION_ID}"
 
 
-_CHECK_FUNCTIONS = (_check_subscription_id,)
+CHECK_FUNCTIONS_ = (_check_subscription_id,)
 
 
 class ConfigError(Exception):
     """Raise this Error when checking configuration fails."""
-    pass
 
 
 def _check_config(config):
     logger = logging.getLogger(__name__)
-    check_gen = (f(config) for f in _CHECK_FUNCTIONS)
+    check_gen = (f(config) for f in CHECK_FUNCTIONS_)
     check_results = list(filter(lambda state_msg: not state_msg[0], check_gen))
     if len(check_results) > 0:
         error_msgs = "\n".join([msg for state, msg in check_results])

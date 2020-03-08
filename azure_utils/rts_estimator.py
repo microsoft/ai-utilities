@@ -8,7 +8,10 @@
 Adaptation of code from flyyufelix, mvoelk, BigMoyan, fchollet at https://github.com/adamcasson/resnet152
 
 """
+from typing import Any
+
 from azureml.contrib.services.aml_response import AMLResponse
+from azureml.core import Model
 
 
 class RTSEstimator:
@@ -39,7 +42,9 @@ class RTSEstimator:
         """
         raise NotImplementedError
 
-    def create_model(self, **kwargs):
+    def create_model(self, include_top: bool = True, weights: str = None, input_tensor: Any = None,
+                     input_shape: Any = None, large_input: bool = False, pooling: Any = None, classes: int = 1000,
+                     save_model: bool = False, model_path: str = None) -> Model:
         """
         Abstract Method for Create Model
 

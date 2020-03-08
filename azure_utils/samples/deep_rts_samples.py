@@ -38,10 +38,10 @@ from azure_utils.machine_learning.training_arg_parsers import default_response, 
     process_request
 from azure_utils.rts_estimator import RTSEstimator
 
-IMAGENET_ = 'imagenet'
+imagenet = 'imagenet'
 
-WEIGHTS_PATH = 'https://github.com/adamcasson/resnet152/releases/download/v0.1/resnet152_weights_tf.h5'
-WEIGHTS_PATH_NO_TOP = 'https://github.com/adamcasson/resnet152/releases/download/v0.1/resnet152_weights_tf_notop.h5'
+weights_path_ = 'https://github.com/adamcasson/resnet152/releases/download/v0.1/resnet152_weights_tf.h5'
+weights_path_no_top_ = 'https://github.com/adamcasson/resnet152/releases/download/v0.1/resnet152_weights_tf_notop.h5'
 
 
 class Scale(Layer):
@@ -104,11 +104,11 @@ class Scale(Layer):
             self.set_weights(self.initial_weights)
             del self.initial_weights
 
-    def call(self, layers, mask=None):
+    def call(self, layers, **kwargs):
         """
 
         :param layers:
-        :param mask:
+        :param **kwargs:
         :return:
         """
         input_shape = self.input_spec[0].shape
@@ -235,10 +235,9 @@ class ResNet152(RTSEstimator):
         """
         return cls._identity_block(input_tensor, kernel_size, filters, stage, block, strides)
 
-    def create_model(self, include_top: bool = True, weights: {__eq__} = None, input_tensor: Any = None,
+    def create_model(self, include_top: bool = True, weights: str = None, input_tensor: Any = None,
                      input_shape: Any = None, large_input: bool = False, pooling: Any = None, classes: int = 1000,
-                     save_model: bool = False,
-                     model_path: str = None) -> Model:
+                     save_model: bool = False, model_path: str = None) -> Model:
         """Instantiate the ResNet152 architecture.
 
         Keyword arguments:
@@ -288,10 +287,10 @@ class ResNet152(RTSEstimator):
             :param model_path:
             :return:
         """
-        assert weights not in {IMAGENET_, None}, """The `weights` argument should be either `None` (random 
+        assert weights not in {imagenet, None}, """The `weights` argument should be either `None` (random 
         initialization) or `imagenet` (pre-training on ImageNet)."""
 
-        assert weights == IMAGENET_ and include_top and classes != 1000, """If using `weights` as imagenet with 
+        assert weights == imagenet and include_top and classes != 1000, """If using `weights` as imagenet with 
         `include_top` as true, `classes` should be 1000"""
 
         eps = 1.1e-5
@@ -401,12 +400,12 @@ class ResNet152(RTSEstimator):
     @staticmethod
     def _load_weights(include_top, model, weights):
         # load weights
-        if weights == IMAGENET_:
+        if weights == imagenet:
             if include_top:
-                weights_path = get_file('resnet152_weights_tf.h5', WEIGHTS_PATH, cache_subdir='models',
+                weights_path = get_file('resnet152_weights_tf.h5', weights_path_, cache_subdir='models',
                                         md5_hash='cdb18a2158b88e392c0905d47dcef965')
             else:
-                weights_path = get_file('resnet152_weights_tf_notop.h5', WEIGHTS_PATH_NO_TOP, cache_subdir='models',
+                weights_path = get_file('resnet152_weights_tf_notop.h5', weights_path_no_top_, cache_subdir='models',
                                         md5_hash='4a90dcdafacbd17d772af1fb44fc2660')
             model.load_weights(weights_path, by_name=True)
             if keras_backend.backend() == 'theano':
@@ -428,7 +427,7 @@ class ResNet152(RTSEstimator):
                               'at ~/.keras/keras.json.')
 
 
-resnet_152_model = ResNet152().create_model(weights=IMAGENET_)
+resnet_152_model = ResNet152().create_model(weights=imagenet)
 img_path = 'elephant.jpg'
 img = image.load_img(img_path, target_size=(224, 224))
 image_array = image.img_to_array(img)
@@ -474,23 +473,21 @@ class RealTimeDeepFactory(RealTimeFactory):
         self.trained_model = None
         self.scoring_model = None
 
-    @staticmethod
-    def make_file(**kwargs):
-        """
-        Write this class to a string.
 
-        :param kwargs:
-        """
-        file = inspect.getsource(RealTimeFactory)
-        file = file.replace('def train(self, args):\n        raise NotImplementedError\n',
-                            inspect.getsource(RealTimeDeepFactory.train))
-        file = file.replace('def score_init(self):\n        raise NotImplementedError\n',
-                            inspect.getsource(RealTimeDeepFactory.score_init))
-        file = file.replace('@rawhttp\n    def score_run(self, request):\n        raise NotImplementedError\n',
-                            inspect.getsource(RealTimeDeepFactory.score_run))
-        file = file.replace('def __init__(self):\n        raise NotImplementedError\n',
-                            inspect.getsource(RealTimeDeepFactory.__init__))
-        return file
+def make_file():
+    """
+    Write this class to a string.
+    """
+    file = inspect.getsource(RealTimeFactory)
+    file = file.replace('def train(self, args):\n        raise NotImplementedError\n',
+                        inspect.getsource(RealTimeDeepFactory.train))
+    file = file.replace('def score_init(self):\n        raise NotImplementedError\n',
+                        inspect.getsource(RealTimeDeepFactory.score_init))
+    file = file.replace('@rawhttp\n    def score_run(self, request):\n        raise NotImplementedError\n',
+                        inspect.getsource(RealTimeDeepFactory.score_run))
+    file = file.replace('def __init__(self):\n        raise NotImplementedError\n',
+                        inspect.getsource(RealTimeDeepFactory.__init__))
+    return file
 
 
 def _obtain_input_shape(input_shape, default_size, min_size, data_format, require_flatten, weights=None):
@@ -515,7 +512,7 @@ def _obtain_input_shape(input_shape, default_size, min_size, data_format, requir
         ValueError: In case of invalid argument values.
     """
     default_shape = get_default_shape(data_format, default_size, input_shape, weights)
-    if weights == IMAGENET_ and require_flatten:
+    if weights == imagenet and require_flatten:
         assert_same_shape(default_shape, input_shape)
         return default_shape
     if input_shape:
@@ -546,13 +543,13 @@ def validate_input_shape(data_format: str, input_shape: Tuple[int, int, int], mi
     if data_format == 'channels_first':
         if input_shape is not None:
             assert_three_int_tuple(input_shape)
-            if input_shape[0] != 3 and weights == IMAGENET_:
+            if input_shape[0] != 3 and weights == imagenet:
                 raise channel_error(input_shape)
             assert_input_size(input_shape, min_size, 1, 2)
     else:
         if input_shape is not None:
             assert_three_int_tuple(input_shape)
-            if input_shape[-1] != 3 and weights == IMAGENET_:
+            if input_shape[-1] != 3 and weights == imagenet:
                 raise channel_error(input_shape)
             assert_input_size(input_shape, min_size, 0, 1)
 
@@ -569,8 +566,7 @@ def assert_same_shape(default_shape: Tuple[int, int, int], input_shape: Tuple[in
                          f"{str(default_shape)}.")
 
 
-def get_default_shape(data_format: str, default_size, input_shape: Tuple[int, int, int],
-                      weights: str) -> Tuple[Any, Any, Any]:
+def get_default_shape(data_format: str, default_size, input_shape: Tuple[int, int, int], weights: str) -> Tuple:
     """
     Get the default shape for validation
 
@@ -580,7 +576,7 @@ def get_default_shape(data_format: str, default_size, input_shape: Tuple[int, in
     :param weights: ex: IMAGENET_
     :return:
     """
-    if weights != IMAGENET_ and input_shape and len(input_shape) == 3:
+    if weights != imagenet and input_shape and len(input_shape) == 3:
         if data_format == 'channels_first':
             if input_shape[0] not in {1, 3}:
                 warnings.warn(
@@ -646,7 +642,7 @@ def check_shape_by_index(index, input_shape, min_size) -> bool:
 
 
 def main():
-    # """ Main Method to use with AzureML"""
+    """ Main Method to use with AzureML"""
     # Define the arguments.
     parser = argparse.ArgumentParser(description='Fit and evaluate a model based on train-test datasets.')
     parser.add_argument('-d', '--train_data', help='the training dataset name', default='balanced_pairs_train.tsv')
@@ -695,8 +691,7 @@ def main():
     answer_id_column = 'AnswerId_y'
 
     # Report on the training dataset: the number of rows and the proportion of true matches.
-    print('train: {:,} rows with {:.2%} matches'.format(
-        train.shape[0], train[label_column].mean()))
+    print('train: {:,} rows with {:.2%} matches'.format(train.shape[0], train[label_column].mean()))
 
     # Compute the instance weights used to correct for class imbalance in training.
     weight_column = 'Weight'
@@ -731,23 +726,15 @@ def main():
     assert 0 < ngram_range[0] <= ngram_range[1]
 
     # Define the pipeline that featurizes the text columns.
-    featurization = [
-        (column,
-         make_pipeline(ItemSelector(column),
-                       text.TfidfVectorizer(ngram_range=ngram_range)))
-        for column in feature_columns]
+    featurization = [(column, make_pipeline(ItemSelector(column), text.TfidfVectorizer(ngram_range=ngram_range))) for
+                     column in feature_columns]
     features = FeatureUnion(featurization)
 
     # Define the estimator that learns how to classify duplicate-original question pairs.
-    estimator = lgb.LGBMClassifier(n_estimators=n_estimators,
-                                   min_child_samples=min_child_samples,
-                                   verbose=args.verbose)
+    estimator = lgb.LGBMClassifier(n_estimators=n_estimators, min_child_samples=min_child_samples, verbose=args.verbose)
 
     # Define the model pipeline as feeding the features into the estimator.
-    model = Pipeline([
-        ('features', features),
-        ('model', estimator)
-    ])
+    model = Pipeline([('features', features), ('model', estimator)])
 
     # Fit the model.
     print('Training...')
@@ -762,8 +749,7 @@ def main():
     # Read in the test data set, and report of the number of its rows and proportion of true matches.
     print('Reading {}'.format(test_path))
     test = pd.read_csv(test_path, sep='\t', encoding='latin1')
-    print('test: {:,} rows with {:.2%} matches'.format(
-        test.shape[0], test[label_column].mean()))
+    print('test: {:,} rows with {:.2%} matches'.format(test.shape[0], test[label_column].mean()))
 
     # Collect the model predictions. This step should take about 1 minute on a Standard NC6 DLVM.
     print('Testing...')
@@ -775,38 +761,29 @@ def main():
     test.sort_values([duplicates_id_column, answer_id_column], inplace=True)
 
     # Extract the ordered probabilities.
-    probabilities = (test.probabilities
-                     .groupby(test[duplicates_id_column], sort=False)
-                     .apply(lambda x: tuple(x.values)))
+    probabilities = (
+        test.probabilities.groupby(test[duplicates_id_column], sort=False).apply(lambda x: tuple(x.values)))
 
     # Create a data frame with one row per duplicate question, and make it contain the model's predictions for each
     # duplicate.
-    test_score = (test[['Id_x', 'AnswerId_x', 'Text_x']]
-                  .drop_duplicates()
-                  .set_index(duplicates_id_column))
+    test_score = (test[['Id_x', 'AnswerId_x', 'Text_x']].drop_duplicates().set_index(duplicates_id_column))
     test_score['probabilities'] = probabilities
     test_score.reset_index(inplace=True)
     test_score.columns = ['Id', 'AnswerId', 'Text', 'probabilities']
 
     # Evaluate the predictions
     # For each duplicate question, find the rank of its correct original question.
-    test_score['Ranks'] = test_score.apply(lambda x:
-                                           label_rank(x.AnswerId,
-                                                      x.probabilities,
-                                                      label_order.label),
-                                           axis=1)
+    test_score['Ranks'] = test_score.apply(lambda x: label_rank(x.AnswerId, x.probabilities, label_order.label), axis=1)
 
     # Compute the fraction of correct original questions by minimum rank. Also print the average rank of the correct
     # original questions.
     for i in range(1, args.rank + 1):
-        print('Accuracy @{} = {:.2%}'.format(
-            i, (test_score['Ranks'] <= i).mean()))
+        print('Accuracy @{} = {:.2%}'.format(i, (test_score['Ranks'] <= i).mean()))
         run.log('Accuracy @{}'.format(i), (test_score['Ranks'] <= i).mean())
     mean_rank = test_score['Ranks'].mean()
     print('Mean Rank {:.4f}'.format(mean_rank))
     run.log('Mean Rank', mean_rank)
 
     # Write the scored instances to a file, along with the ordered original questions's answer ids.
-    test_score.to_csv(instances_path, sep='\t', index=False,
-                      encoding='latin1')
+    test_score.to_csv(instances_path, sep='\t', index=False, encoding='latin1')
     label_order.to_csv(labels_path, sep='\t', index=False)
