@@ -17,33 +17,33 @@ from azure_utils.machine_learning.utils import get_or_create_workspace, get_or_c
 filepath = directory
 
 
-def test_load_configuration():
-    """Test Loading Configuration to check sample file contents"""
+# def test_load_configuration():
+#     """Test Loading Configuration to check sample file contents"""
+#
+#     cfg = load_configuration(filepath + "/../sample_workspace_conf.yml")
+#     assert cfg
+#
+#     assert cfg['subscription_id'] == '<>'
+#     assert cfg['resource_group'] == '<>'
+#     assert cfg['workspace_name'] == '<>'
+#     assert cfg['workspace_region'] == '<>'
+#     assert cfg['image_name'] == '<>'
+#
+#     assert cfg['sql_server_name'] == '<>'
+#     assert cfg['sql_database_name'] == '<>'
+#     assert cfg['sql_username'] == '<>'
+#     assert cfg['sql_password'] == '<>'
+#
+#     assert cfg['datastore_rg'] == '<>'
+#     assert cfg['container_name'] == '<>'
+#     assert cfg['account_name'] == '<>'
+#     assert cfg['account_key'] == '<>'
 
-    cfg = load_configuration(filepath + "/../sample_workspace_conf.yml")
-    assert cfg
 
-    assert cfg['subscription_id'] == '<>'
-    assert cfg['resource_group'] == '<>'
-    assert cfg['workspace_name'] == '<>'
-    assert cfg['workspace_region'] == '<>'
-    assert cfg['image_name'] == '<>'
-
-    assert cfg['sql_server_name'] == '<>'
-    assert cfg['sql_database_name'] == '<>'
-    assert cfg['sql_username'] == '<>'
-    assert cfg['sql_password'] == '<>'
-
-    assert cfg['datastore_rg'] == '<>'
-    assert cfg['container_name'] == '<>'
-    assert cfg['account_name'] == '<>'
-    assert cfg['account_key'] == '<>'
-
-
-def test_get_or_create_workspace(workspace):
-    """Test Get or Create Workspace Method"""
-    assert isinstance(workspace, Workspace)
-    assert os.path.isfile('./.azureml/config.json')
+# def test_get_or_create_workspace(workspace):
+#     """Test Get or Create Workspace Method"""
+#     assert isinstance(workspace, Workspace)
+#     assert os.path.isfile('./.azureml/config.json')
 
 
 def test_get_workspace_from_config():
@@ -62,14 +62,14 @@ def test_get_workspace_from_project_config():
     assert isinstance(workspace, Workspace)
 
 
-@pytest.fixture
-def cfg():
-    """
-
-    :return:
-    """
-    cfg = load_configuration(filepath + "/../workspace_conf.yml")
-    return cfg
+# @pytest.fixture
+# def cfg():
+#     """
+#
+#     :return:
+#     """
+#     cfg = load_configuration(filepath + "/../workspace_conf.yml")
+#     return cfg
 
 
 @pytest.fixture
