@@ -21,8 +21,6 @@ ImportError: You need to install 'azure-cli-core' to load CLI active Cloud
 from azure.common.client_factory import get_client_from_cli_profile
 from azure.mgmt.storage import StorageManagementClient
 
-__version__ = "0.1"
-
 
 class StorageConnection:
     """

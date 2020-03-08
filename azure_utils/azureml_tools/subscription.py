@@ -8,6 +8,7 @@ import logging
 import subprocess
 import sys
 
+# noinspection PyProtectedMember
 from azure.cli.core._profile import Profile
 from azure.common.credentials import get_cli_profile
 from azure.mgmt.resource import SubscriptionClient
@@ -72,7 +73,7 @@ def _prompt_sub_id_selection(profile: Profile) -> str:
     return selected_sub["id"]
 
 
-def select_subscription(profile: Profile=None, sub_name_or_id: str = None) -> Profile:
+def select_subscription(profile: Profile = None, sub_name_or_id: str = None) -> Profile:
     """Sets active subscription
 
     If you don't supply a profile it will try to get the profile from your Azure CLI login

@@ -31,16 +31,7 @@ class WorkspaceCreationTests:
 
         :return:
         """
-        return {"train_py": "train.py", "score_py": "score.py"}
-
-    @pytest.fixture(scope="class")
-    def realtime_score_context(self, context_type: RealtimeScoreAKSContext) -> RealtimeScoreAKSContext:
-        """
-        Get or Create Context for Testing
-        :param context_type: impl of WorkspaceContext
-        :return:
-        """
-        return context_type.get_or_create_workspace(train_py="create_deep_model.py", score_py="driver.py")
+        raise NotImplementedError
 
     def test_get_or_create(self, realtime_score_context: RealtimeScoreAKSContext, context_type: WorkspaceContext):
         """
@@ -90,6 +81,16 @@ class WorkspaceCreationTests:
 
 
 class TestDeployRTS(WorkspaceCreationTests):
+    @pytest.fixture(scope="class")
+    def realtime_score_context(self, context_type: MLRealtimeScore,
+                               test_files: dict) -> MLRealtimeScore:
+        """
+        Get or Create Context for Testing
+        :param context_type: impl of WorkspaceContext
+        :param test_files: Dict of input Files
+        :return:
+        """
+        return context_type.get_or_create_workspace(train_py=test_files['train_py'], score_py=test_files['score_py'])
 
     @pytest.fixture(scope="class")
     def context_type(self):
@@ -100,13 +101,8 @@ class TestDeployRTS(WorkspaceCreationTests):
         return MLRealtimeScore
 
     @pytest.fixture(scope="class")
-    def realtime_score_context(self, context_type: MLRealtimeScore) -> MLRealtimeScore:
-        """
-        Get or Create Context for Testing
-        :param context_type: impl of WorkspaceContext
-        :return:
-        """
-        return context_type.get_or_create_workspace(train_py="create_deep_model.py", score_py="driver.py")
+    def test_files(self):
+        return {"train_py": "create_model.py", "score_py": "driver.py"}
 
 
 class TestDeployDeepRTS(WorkspaceCreationTests):
@@ -119,28 +115,30 @@ class TestDeployDeepRTS(WorkspaceCreationTests):
         return DeepRealtimeScore
 
     @pytest.fixture(scope="class")
-    def realtime_score_context(self, context_type: DeepRealtimeScore) -> DeepRealtimeScore:
+    def realtime_score_context(self, context_type: DeepRealtimeScore,
+                               test_files: dict) -> DeepRealtimeScore:
         """
         Get or Create Context for Testing
         :param context_type: impl of WorkspaceContext
+        :param test_files: Dict of input Files
         :return:
         """
-        return context_type.get_or_create_workspace(train_py="create_deep_model.py", score_py="driver.py")
+        return context_type.get_or_create_workspace(train_py=test_files['train_py'], score_py=test_files['score_py'])
 
     @pytest.fixture(scope="class")
     def test_files(self):
-        return {"train_py": "train_dl.py", "score_py": "score_dl.py"}
+        return {"train_py": "create_deep_model.py", "score_py": "score_dl.py"}
 
 
 # noinspection PyUnresolvedReferences,PyUnresolvedReferences,PyUnresolvedReferences
 class TestDeployDeepRTSLocally:
     def test_train_py(self):
-
         if not os.path.isdir("outputs"):
             os.mkdir("outputs")
-        os.system("python create_deep_model_new.py")
+        if os.path.isfile("create_deep_model_new.py"):
+            os.system("python create_deep_model_new.py")
 
-        assert os.path.isfile("outputs/model.pkl")
+            assert os.path.isfile("outputs/model.pkl")
 
     # def test_score_py(self):
     #     if os.path.isfile("driver.py"):
@@ -148,11 +146,6 @@ class TestDeployDeepRTSLocally:
     #         init()
     #         response = run(MockRequest())
     #         assert response
-
-
-class MockRequest:
-    """ MOCK request to test calling scoring service"""
-    method = 'GET'
 
 
 def dont_test_get_or_create_function_endpoint():

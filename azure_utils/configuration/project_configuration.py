@@ -38,11 +38,9 @@ class ProjectConfiguration:
 
         :param configuration_file: File path to configuration file
         """
-        self.configuration = {}
+        self.configuration: dict = {}
         found, file_dir = find_file(configuration_file)
-        self.configuration_file = configuration_file
-        if os.path.isfile(configuration_file):
-            found = True
+        self.configuration_file = file_dir + "/" + configuration_file
         if not found:
             self.set_project_name("project_name")
             self.add_setting("subscription_id", "Your Azure Subscription", "<>")
@@ -85,7 +83,7 @@ class ProjectConfiguration:
         it will be called from the constructor, which will create a default file for the user.
         """
         with open(self.configuration_file) as ymlfile:
-            self.configuration = yaml.load(ymlfile, Loader=yaml.BaseLoader)
+            self.configuration = yaml.safe_load(ymlfile)
 
         assert self.configuration
 

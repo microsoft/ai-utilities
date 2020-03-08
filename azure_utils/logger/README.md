@@ -5,16 +5,16 @@ When running Python projects through Azure Dev Ops (https://dev.azure.com) there
 such as deployment time, or to pass out information related to a deployment as the agent the build runs on will be torn
 down once the build os complete.
 
-Of course, there are several optiosn for doing so and this repository contains one option.
+Of course, there are several option for doing so and this repository contains one option.
 
 The code in this repository enables saving these data to an Azure Storage account for consumption at a later time.
 
-Descriptions of the class and how it performs can be found in the MetricsUtils/hpStatisitcsColleciton.py file. 
+Descriptions of the class and how it performs can be found in the MetricsUtils/hpStatisticsCollection.py file. 
 
 An example on how to use the code for various tasks can be found in the statsCollectionTest.py file. 
 
 ## Pre-requisites
-To use this example, you must pip install the folllowing into your environment:
+To use this example, you must pip install the following into your environment:
     - azure-cli-core
     - azure-storage-blob
 

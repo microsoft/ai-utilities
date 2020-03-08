@@ -15,12 +15,10 @@ from datetime import datetime, timedelta
 
 from azure.storage.blob import BlobPermissions, BlockBlobService, PublicAccess
 
-__version__ = "0.1"
-
 
 class BlobStorageAccount:
     """
-        Constructor that recieves a logger.storagutils.storageConnection instance
+        Constructor that receives a logger.storageutils.storageConnection instance
     """
 
     def __init__(self, storage_connection):

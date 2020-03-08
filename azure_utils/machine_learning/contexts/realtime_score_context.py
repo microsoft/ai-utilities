@@ -98,7 +98,7 @@ class RealtimeScoreContext(WorkspaceContext):
 
     def get_inference_config(self) -> InferenceConfig:
         """
-        Get Infernce Configuration
+        Get Inference Configuration
         :return:
         """
         environment = Environment("conda-env")
@@ -514,7 +514,7 @@ def init():
     logger.info("init")
 
 
-def run(body):
+def run():
     logger = logging.getLogger("scoring_script")
     logger.info("run")
     return json.dumps({'call': True})
@@ -552,7 +552,7 @@ def run(body):
                              "opencensus-ext-flask", "Microsoft-AI-Azure-Utility-Samples"]
         self.conda_env = CondaDependencies.create(conda_packages=self.conda_pack, pip_packages=self.requirements)
 
-    def create_model_script_file(self):
+    def create_model_script_file(self) -> None:
         if not os.path.isfile(self.source_directory + "/" + self.script):
             os.makedirs("script", exist_ok=True)
 

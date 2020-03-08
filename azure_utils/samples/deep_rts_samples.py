@@ -76,7 +76,8 @@ class Scale(Layer):
 
     """
 
-    def __init__(self, weights=None, axis=-1, momentum=0.9, beta_init='zero', gamma_init='one', **kwargs):
+    def __init__(self, weights: Any = None, axis: int = -1, momentum: float = 0.9, beta_init: str = 'zero',
+                 gamma_init: str = 'one', **kwargs):
         self.momentum = momentum
         self.axis = axis
         self.beta_init = initializers.get(beta_init)
@@ -197,14 +198,14 @@ class ResNet152(RTSEstimator):
         scale_name_base = 'scale' + str(stage) + block + '_branch'
 
         stacked_layers = Conv2D(nb_filter1, (1, 1), strides=strides, name=conv_name_base + '2a', use_bias=False)(
-                input_tensor)
+            input_tensor)
         stacked_layers = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2a')(stacked_layers)
         stacked_layers = Scale(axis=bn_axis, name=scale_name_base + '2a')(stacked_layers)
         stacked_layers = Activation('relu', name=conv_name_base + '2a_relu')(stacked_layers)
 
         stacked_layers = ZeroPadding2D((1, 1), name=conv_name_base + '2b_zeropadding')(stacked_layers)
         stacked_layers = Conv2D(nb_filter2, (kernel_size, kernel_size), name=conv_name_base + '2b', use_bias=False)(
-                stacked_layers)
+            stacked_layers)
         stacked_layers = BatchNormalization(epsilon=eps, axis=bn_axis, name=bn_name_base + '2b')(stacked_layers)
         stacked_layers = Scale(axis=bn_axis, name=scale_name_base + '2b')(stacked_layers)
         stacked_layers = Activation('relu', name=conv_name_base + '2b_relu')(stacked_layers)
@@ -556,8 +557,8 @@ def assert_same_shape(default_shape: Tuple[int, int, int], input_shape: Tuple[in
                          f"{str(default_shape)}.")
 
 
-def get_default_shape(data_format: str, default_size, input_shape: Tuple[int, int, int], weights: str) -> Tuple[
-    Any, Any, Any]:
+def get_default_shape(data_format: str, default_size, input_shape: Tuple[int, int, int],
+                      weights: str) -> Tuple[Any, Any, Any]:
     """
     Get the default shape for validation
 
@@ -571,14 +572,14 @@ def get_default_shape(data_format: str, default_size, input_shape: Tuple[int, in
         if data_format == 'channels_first':
             if input_shape[0] not in {1, 3}:
                 warnings.warn(
-                        f'This model usually expects 1 or 3 input channels. However, it was passed an input_shape '
-                        f'with {str(input_shape[0])} input channels.')
+                    f'This model usually expects 1 or 3 input channels. However, it was passed an input_shape '
+                    f'with {str(input_shape[0])} input channels.')
             default_shape = (input_shape[0], default_size, default_size)
         else:
             if input_shape[-1] not in {1, 3}:
                 warnings.warn(
-                        f"This model usually expects 1 or 3 input channels. However, it was passed an input_shape "
-                        f"with {str(input_shape[-1])} input channels.")
+                    f"This model usually expects 1 or 3 input channels. However, it was passed an input_shape "
+                    f"with {str(input_shape[-1])} input channels.")
             default_shape = (default_size, default_size, input_shape[-1])
     else:
         if data_format == 'channels_first':
@@ -617,7 +618,7 @@ def assert_input_size(input_shape: Tuple[int, int, int], min_size: int, first_in
     if (check_shape_by_index(first_index, input_shape, min_size) or check_shape_by_index(second_index, input_shape,
                                                                                          min_size)):
         raise ValueError(
-                f"Input size must be at least {str(min_size)}x{str(min_size)}; got `input_shape={str(input_shape)}`")
+            f"Input size must be at least {str(min_size)}x{str(min_size)}; got `input_shape={str(input_shape)}`")
 
 
 def check_shape_by_index(index, input_shape, min_size) -> bool:

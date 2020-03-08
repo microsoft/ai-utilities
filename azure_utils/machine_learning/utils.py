@@ -37,7 +37,7 @@ def load_configuration(configuration_file: str):
         configuration_file = directory + "/../sample_workspace_conf.yml"
 
     with open(configuration_file) as ymlfile:
-        cfg = yaml.load(ymlfile)
+        cfg = yaml.safe_load(ymlfile)
 
     return cfg
 

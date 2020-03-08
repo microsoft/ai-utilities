@@ -1,3 +1,9 @@
+"""
+AI-Utilities - create_deep_model.py
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the MIT License.
+"""
 import os
 
 from azure_utils.machine_learning.training_arg_parsers import get_training_parser

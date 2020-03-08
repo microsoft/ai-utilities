@@ -98,29 +98,6 @@ def text_to_json(text):
     """
     return json.dumps({'input': '{0}'.format(text)})
 
-
-def write_json_to_file(json_dict, filename, mode='w'):
-    """
-
-    :param json_dict:
-    :param filename:
-    :param mode:
-    """
-    with open(filename, mode) as outfile:
-        json.dump(json_dict, outfile, indent=4, sort_keys=True)
-        outfile.write('\n\n')
-
-
-def read_questions(path, question_id, answerid):
-    """Read in a questions file with at least Id and AnswerId columns."""
-    questions = pd.read_csv(path, sep='\t', encoding='latin1')
-    questions[question_id] = questions[question_id].astype(str)
-    questions[answerid] = questions[answerid].astype(str)
-    questions = questions.set_index(id, drop=False)
-    questions.sort_index(inplace=True)
-    return questions
-
-
 def get_auth(env_path: str) -> AbstractAuthentication:
     """
 

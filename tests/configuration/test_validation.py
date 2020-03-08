@@ -37,9 +37,9 @@ def test_workspace_validation_failure():
 
 def assert_validation_result(r, result):
     """
-
-    :param r:
-    :param result:
+    Args:
+        r:
+        result:
     """
     Validation.dump_validation_result(r)
     assert r.status is result

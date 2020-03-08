@@ -21,16 +21,12 @@ from enum import Enum
 from azure_utils.logger.blob_storage import BlobStorageAccount
 from azure_utils.logger.storageutils import StorageConnection
 
-__version__ = "0.1"
-
 
 class CollectionEntry(Enum):
     """ Deploy Steps Enums"""
     AKS_CLUSTER_CREATION = "akscreate"
     AML_COMPUTE_CREATION = "amlcompute"
     AML_WORKSPACE_CREATION = "amlworkspace"
-    AKS_REALTIME_ENDPOINT = "aksendpoint"
-    AKS_REALTIME_KEY = "akskey"
 
 
 # Class used for keeping track of tasks during the execution of a path. Data can be archived and retrieved to/from

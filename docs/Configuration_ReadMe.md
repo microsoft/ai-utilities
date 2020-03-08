@@ -1,5 +1,5 @@
 # Configuration
-Obtaining user information is crticial to any project you will produce. At a miniumum it is required to get an Azure Subscription but often it is important to collect many settings for a project to be succesful. 
+Obtaining user information is critical to any project you will produce. At a minimum it is required to get an Azure Subscription but often it is important to collect many settings for a project to be successful. 
 
 In the past we have used a combination of dotenv and cookiecutter. While these can be extremely useful, this configuration code provides a user interface for the user to provide information in a yml file. 
 

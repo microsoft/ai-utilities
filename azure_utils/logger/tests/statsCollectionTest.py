@@ -10,14 +10,9 @@ from azure_utils.logger.ai_logger import CollectionEntry, StatisticsCollector
 from azure_utils.logger.key_vault import KeyVaultInstance
 from azure_utils.logger.storageutils import StorageConnection
 
-__version__ = "0.1"
 DATA_IN_STORAGE_ = "Current data in storage ->"
 
 kvInst = KeyVaultInstance()
-
-cl = kvInst.get_client()
-names = kvInst.get_vault_names()
-kvc = kvInst.get_key_vlt_client()
 
 sct = kvInst.get_vault_secrets("dangtestvault")
 print(sct)
