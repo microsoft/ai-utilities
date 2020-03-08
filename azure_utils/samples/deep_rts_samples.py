@@ -235,8 +235,10 @@ class ResNet152(RTSEstimator):
         """
         return cls._identity_block(input_tensor, kernel_size, filters, stage, block, strides)
 
-    def create_model(self, include_top=True, weights=None, input_tensor=None, input_shape=None, large_input=False,
-                     pooling=None, classes=1000, save_model=False, model_path=None):
+    def create_model(self, include_top: bool = True, weights: {__eq__} = None, input_tensor: Any = None,
+                     input_shape: Any = None, large_input: bool = False, pooling: Any = None, classes: int = 1000,
+                     save_model: bool = False,
+                     model_path: str = None) -> Model:
         """Instantiate the ResNet152 architecture.
 
         Keyword arguments:
@@ -275,6 +277,16 @@ class ResNet152(RTSEstimator):
         Raises:
         ValueError: in case of invalid argument for `weights`,
             or invalid input shape.
+            :param include_top:
+            :param weights:
+            :param input_tensor:
+            :param input_shape:
+            :param large_input:
+            :param pooling:
+            :param classes:
+            :param save_model:
+            :param model_path:
+            :return:
         """
         assert weights not in {IMAGENET_, None}, """The `weights` argument should be either `None` (random 
         initialization) or `imagenet` (pre-training on ImageNet)."""

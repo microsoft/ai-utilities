@@ -230,7 +230,7 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         :return: AKS Compute from Workspace
         """
         assert "_" not in self.project_configuration.get_value(
-                self.settings_aks_service_name), self.settings_aks_service_name + " can not contain _"
+            self.settings_aks_service_name), self.settings_aks_service_name + " can not contain _"
         assert self.project_configuration.has_value("workspace_region")
 
         workspace_compute = self.compute_targets
@@ -258,8 +258,9 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
 
         :return:
         """
-        aks_deployment_configuration = {"num_replicas": self.num_replicas, "cpu_cores": self.cpu_cores,
-                                        "enable_app_insights": True, "collect_model_data": True}
+        aks_deployment_configuration = {
+            "num_replicas": self.num_replicas, "cpu_cores": self.cpu_cores, "enable_app_insights": True,
+            "collect_model_data": True}
         return AksWebservice.deploy_configuration(**aks_deployment_configuration)
 
     def get_or_create_aks_service(self, model: Model, aks_target: AksCompute,
@@ -351,7 +352,7 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
     def _aks_exists(self) -> bool:
         """Check if Kubernetes Cluster Exists or has Failed"""
         aks_exists = self.has_web_service(self.aks_service_name) and self.get_web_service_state(
-                self.aks_service_name) != "Failed"
+            self.aks_service_name) != "Failed"
         return aks_exists
 
     @staticmethod
@@ -371,15 +372,16 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         with open(template_path) as template_file_fd:
             template = json.load(template_file_fd)
 
-        parameters = {'appName': app_name.split("components/")[1], 'pingURL': ping_url, 'pingToken': ping_token,
-                      'location': project_configuration.get_value('workspace_region'),
-                      'pingTestName': ping_test_name + "-" + project_configuration.get_value('workspace_region')}
+        parameters = {
+            'appName': app_name.split("components/")[1], 'pingURL': ping_url, 'pingToken': ping_token,
+            'location': project_configuration.get_value('workspace_region'),
+            'pingTestName': ping_test_name + "-" + project_configuration.get_value('workspace_region')}
         parameters = {k: {'value': v} for k, v in parameters.items()}
 
         deployment_properties = {'mode': DeploymentMode.incremental, 'template': template, 'parameters': parameters}
 
         deployment_async_operation = client.deployments.create_or_update(
-                project_configuration.get_value('resource_group'), 'add-web-test', deployment_properties)
+            project_configuration.get_value('resource_group'), 'add-web-test', deployment_properties)
         deployment_async_operation.wait()
 
 
@@ -621,8 +623,7 @@ class DeepRealtimeScore(RealtimeScoreAKSContext, RealtimeScoreFunctionsContext, 
         self.model_tags = {"model": "dl", "framework": "resnet"}
         self.model_description = "resnet 152 model"
         self.model_path = "./outputs/model.pkl"
-        self.args = ["--outputs", "outputs", "--estimators",
-                     self.num_estimators, "--match", "2", ]
+        self.args = ["--outputs", "outputs", "--estimators", self.num_estimators, "--match", "2", ]
         # Conda Configuration
         self.conda_file = conda_file
         self.write_conda_env()

@@ -135,8 +135,8 @@ class TestDeployDeepRTSLocally:
     def test_train_py(self):
         if not os.path.isdir("outputs"):
             os.mkdir("outputs")
-        if os.path.isfile("create_deep_model_new.py"):
-            os.system("python create_deep_model_new.py")
+        if os.path.isfile("script/create_deep_model_new.py"):
+            os.system("python script/create_deep_model_new.py")
 
             assert os.path.isfile("outputs/model.pkl")
 
