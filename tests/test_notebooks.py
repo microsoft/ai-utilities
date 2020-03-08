@@ -11,8 +11,9 @@ from azure_utils import notebook_directory
 from azure_utils.dev_ops.testing_utilities import run_notebook
 
 
+
 @pytest.mark.parametrize("notebook", [notebook_directory + "/exampleconfiguration.ipynb"])
-def dont_test_notebook(notebook: str, add_nunit_attachment: pytest.fixture):
+def notebook_dont_test(notebook: str, add_nunit_attachment: pytest.fixture):
     """
     Jupyter Notebook Test
     :param notebook: input notebook
