@@ -27,8 +27,10 @@ dependencies:
     - papermill
     - azureml-core==1.0.85
     - azureml-train==1.0.85
+    - azureml-contrib-services==1.0.85
+    - azureml-contrib-functions ==1.0.85
     - azure-cli==2.0.81
-    - azure-cli-ml
+    - azure-cli-ml==2.0.81
     - pylint-junit
     - pytest-nunit
     - nbconvert
@@ -46,10 +48,8 @@ dependencies:
     - tqdm==4.32.2
     - azure-core
     - keras==2.2.0
-    - azureml-contrib-services
     - locustio==0.11.0
     - prompt-toolkit==2.0.9
     - PyOpenSSL
     - nb-clean
-    - azureml-contrib-functions
     - git+https://github.com/microsoft/AI-Utilities.git

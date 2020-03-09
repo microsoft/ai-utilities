@@ -91,7 +91,7 @@ class WorkspaceCreationTests:
         assert realtime_score_context.get_or_create_aks()
 
 
-class TestDeployRTS(WorkspaceCreationTests):
+class DontTestDeployRTS(WorkspaceCreationTests):
     @pytest.fixture(scope="class")
     def realtime_score_context(self, context_type: MLRealtimeScore,
                                test_files: dict) -> MLRealtimeScore:
@@ -116,7 +116,7 @@ class TestDeployRTS(WorkspaceCreationTests):
         return {"train_py": "create_model.py", "score_py": "driver.py"}
 
 
-class TestDeployDeepRTS(WorkspaceCreationTests):
+class DontTestDeployDeepRTS(WorkspaceCreationTests):
     @pytest.fixture(scope="class")
     def context_type(self):
         """
@@ -142,7 +142,7 @@ class TestDeployDeepRTS(WorkspaceCreationTests):
 
 
 # noinspection PyUnresolvedReferences,PyUnresolvedReferences,PyUnresolvedReferences
-class TestDeployDeepRTSLocally:
+class DontTestDeployDeepRTSLocally:
     def dont_test_train_py(self):
         if not os.path.isdir("outputs"):
             os.mkdir("outputs")

@@ -1,8 +1,0 @@
-discovery:
-  exclusions:
-  # (example) do not search tests in 'ignored_folder' folder
-  - ignored_folder/
-  # do not search tests in 'test_ignored.py' file
-  - test_ignored.py
-engine:
-  runtime: pytest
