@@ -53,7 +53,7 @@ class Scale(Layer):
 
         out = in * gamma + beta,
 
-    where 'gamma' and 'beta' are the weights and biases larned.
+    where 'gamma' and 'beta' are the weights and biases learned.
 
     Keyword arguments:
     axis -- integer, axis along which to normalize in mode 0. For instance,
@@ -108,7 +108,7 @@ class Scale(Layer):
         """
 
         :param layers:
-        :param **kwargs:
+        :param kwargs:
         :return:
         """
         input_shape = self.input_spec[0].shape
@@ -179,7 +179,7 @@ class ResNet152(RTSEstimator):
 
         Keyword arguments
         input_tensor -- input tensor
-        kernel_size -- defualt 3, the kernel size of middle conv layer at main path
+        kernel_size -- default 3, the kernel size of middle conv layer at main path
         filters -- list of integers, the nb_filters of 3 conv layer at main path
         stage -- integer, current stage label, used for generating layer names
         block -- 'a','b'..., current block label, used for generating layer names

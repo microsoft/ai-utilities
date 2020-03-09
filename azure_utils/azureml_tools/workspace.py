@@ -24,9 +24,9 @@ def _get_auth() -> AbstractAuthentication:
     if os.environ.get("AML_SP_PASSWORD", None):
         logger.debug("Trying to authenticate with Service Principal")
         aml_sp_password = os.environ.get("AML_SP_PASSWORD")
-        aml_sp_tennant_id = os.environ.get("AML_SP_TENNANT_ID")
+        aml_sp_tenant_id = os.environ.get("AML_SP_TENNANT_ID")
         aml_sp_username = os.environ.get("AML_SP_USERNAME")
-        auth = ServicePrincipalAuthentication(aml_sp_tennant_id, aml_sp_username, aml_sp_password)
+        auth = ServicePrincipalAuthentication(aml_sp_tenant_id, aml_sp_username, aml_sp_password)
     else:
         logger.debug("Trying to authenticate with CLI Authentication")
         try:

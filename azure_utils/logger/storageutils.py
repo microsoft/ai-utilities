@@ -59,7 +59,7 @@ class StorageConnection:
     # storage account
     # name.
     #
-    # Method expects that the environment has been logged into Azue and the subscription has been set to match the
+    # Method expects that the environment has been logged into Azure and the subscription has been set to match the
     # incoming
     # resource group and storage account.
 

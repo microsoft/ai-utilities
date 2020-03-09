@@ -48,6 +48,14 @@ class RTSEstimator:
         """
         Abstract Method for Create Model
 
-        :param kwargs: dict of arguments
+        :param include_top:
+        :param weights:
+        :param input_tensor:
+        :param input_shape:
+        :param large_input:
+        :param pooling:
+        :param classes:
+        :param save_model:
+        :param model_path:
         """
         raise NotImplementedError
