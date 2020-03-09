@@ -4,6 +4,7 @@ AI-Utilities - model_management_context.py
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
+import os
 from abc import ABC
 
 from azureml.core import Experiment, Model, ScriptRunConfig, Run
@@ -21,7 +22,8 @@ class ModelManagementContext(WorkspaceContext):
 
     def __init__(self, subscription_id, resource_group, workspace_name, run_configuration,
                  configuration_file: str = project_configuration_file, train_py=train_py_default):
-        super().__init__(subscription_id, resource_group, workspace_name, train_py=train_py)
+        super().__init__(subscription_id, resource_group, workspace_name, configuration_file=configuration_file,
+                         train_py=train_py)
         self.configuration_file = configuration_file
         self.run_configuration = run_configuration
         self.model_name = None
@@ -82,8 +84,8 @@ class LocalTrainingContext(ModelTrainingContext):
 
     def __init__(self, subscription_id, resource_group, workspace_name, run_configuration=get_local_run_configuration(),
                  configuration_file: str = project_configuration_file, train_py=train_py_default):
-        super().__init__(subscription_id, resource_group, workspace_name, run_configuration, configuration_file,
-                         train_py)
+        super().__init__(subscription_id=subscription_id, resource_group=resource_group, workspace_name=workspace_name,
+                         run_configuration=run_configuration, configuration_file=configuration_file, train_py=train_py)
         self.args = None
 
     def submit_experiment_run(self, wait_for_completion=True) -> Run:
@@ -96,9 +98,12 @@ class LocalTrainingContext(ModelTrainingContext):
         assert self.train_py
         assert self.run_configuration
         assert self.experiment_name
+        assert os.path.isfile(
+            self.source_directory + "/" + self.train_py), f'The file {self.train_py} could not be found at ' \
+                                                          f'{self.source_directory}'
 
         src = ScriptRunConfig(source_directory=self.source_directory, script=self.train_py, arguments=self.args,
-                              run_config=self.run_configuration, )
+                              run_config=self.run_configuration)
         self.image_tags['train_py_hash'] = self._get_file_md5(self.source_directory + "/" + self.train_py)
         exp = Experiment(workspace=self, name=self.experiment_name)
         run = exp.submit(src)
