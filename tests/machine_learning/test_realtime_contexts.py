@@ -143,7 +143,7 @@ class TestDeployDeepRTS(WorkspaceCreationTests):
 
 # noinspection PyUnresolvedReferences,PyUnresolvedReferences,PyUnresolvedReferences
 class TestDeployDeepRTSLocally:
-    def test_train_py(self):
+    def dont_test_train_py(self):
         if not os.path.isdir("outputs"):
             os.mkdir("outputs")
         if os.path.isfile("script/create_deep_model_new.py"):
