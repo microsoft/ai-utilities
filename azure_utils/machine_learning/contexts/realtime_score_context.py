@@ -555,6 +555,7 @@ def run():
         self.conda_env = CondaDependencies.create(conda_packages=self.conda_pack, pip_packages=self.requirements)
 
     def create_model_script_file(self) -> None:
+        """ Adding Model Script"""
         if not os.path.isfile(self.source_directory + "/" + self.script):
             os.makedirs("script", exist_ok=True)
 
@@ -644,9 +645,10 @@ class DeepRealtimeScore(RealtimeScoreAKSContext, RealtimeScoreFunctionsContext, 
 
         # Kubernetes Configuration
         self.aks_vm_size = "Standard_NC6"
+        self.source_directory = "./script"
 
         if not os.path.isfile(self.source_directory + "/" + self.score_py):
-            os.makedirs("script", exist_ok=True)
+            os.makedirs(self.source_directory, exist_ok=True)
 
             create_model_py = """
 import os
