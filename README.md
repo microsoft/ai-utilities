@@ -1,4 +1,6 @@
 [![Azure Notebooks](https://notebooks.azure.com/launch.png)](https://notebooks.azure.com/import/gh/microsoft/AI-Utilities)
+<a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
+<a href="https://github.com/microsoft/ai-utilities/blob/master/LICENSE"><img alt="License: MIT" src="https://black.readthedocs.io/en/stable/_static/license.svg"></a>
 # AI Utilities Sample Project
 This project is a sample showcasing how to create a common repository for utilities that can be used by other AI projects. 
 
