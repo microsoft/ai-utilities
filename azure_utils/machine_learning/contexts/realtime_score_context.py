@@ -494,7 +494,7 @@ class MLRealtimeScore(RealtimeScoreAKSContext, LocalTrainingContext):
 
         self.execution_script = "score.py"
         with open(self.execution_script, 'w') as file:
-            file.write("""        
+            file.write("""
 import json
 import os
 import logging
@@ -563,7 +563,7 @@ def run():
 from azure_utils.samples import deep_rts_samples
 
 if __name__ == '__main__':
-    deep_rts_samples.main()            
+    deep_rts_samples.main()
 
 """
             with open(self.source_directory + "/" + self.script, "w") as file:
