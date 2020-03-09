@@ -808,7 +808,8 @@ class DeepRealtimeScore(
         conda_file="my_env.yml",
         setting_image_name="deep_image_name",
         settings_aks_name="deep_aks_name",
-        settings_aks_service_name="deep_aks_service_name", **kwargs
+        settings_aks_service_name="deep_aks_service_name",
+        **kwargs,
     ):
         super().__init__(
             subscription_id,
@@ -892,6 +893,42 @@ if __name__ == '__main__':
             f"The file {self.train_py} could not be found at "
             f"{self.source_directory}"
         )
+
+    @classmethod
+    def get_or_create_workspace(
+        cls,
+        configuration_file: str = project_configuration_file,
+        train_py=train_py_default,
+        score_py=score_py_default,
+        **kwargs,
+    ):
+        """ Get or create a workspace if it doesn't exist.
+
+        :param configuration_file: path to project configuration file. default: project.yml
+        """
+        project_configuration = ProjectConfiguration(configuration_file)
+        assert project_configuration.has_value("subscription_id")
+        assert project_configuration.has_value("resource_group")
+        assert project_configuration.has_value("workspace_name")
+        assert project_configuration.has_value("workspace_region")
+
+        DeepRealtimeScore.create(
+            subscription_id=project_configuration.get_value("subscription_id"),
+            resource_group=project_configuration.get_value("resource_group"),
+            name=project_configuration.get_value("workspace_name"),
+            location=project_configuration.get_value("workspace_region"),
+            exist_ok=True,
+        )
+
+        ws = DeepRealtimeScore(
+            project_configuration.get_value("subscription_id"),
+            project_configuration.get_value("resource_group"),
+            project_configuration.get_value("workspace_name"),
+            configuration_file,
+            train_py=train_py,
+            **kwargs,
+        )
+        return ws
 
 
 class MockRequest:

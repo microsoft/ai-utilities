@@ -62,7 +62,7 @@ class WorkspaceContext(Workspace):
         """ Get or create a workspace if it doesn't exist.
 
         :param configuration_file: path to project configuration file. default: project.yml
-"""
+        """
         project_configuration = ProjectConfiguration(configuration_file)
         assert project_configuration.has_value("subscription_id")
         assert project_configuration.has_value("resource_group")
