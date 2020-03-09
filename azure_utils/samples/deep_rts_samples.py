@@ -224,7 +224,7 @@ class ResNet152(RTSEstimator):
 
         Keyword arguments:
         input_tensor -- input tensor
-        kernel_size -- defualt 3, the kernel size of middle conv layer at main path
+        kernel_size -- default 3, the kernel size of middle conv layer at main path
         filters -- list of integers, the nb_filters of 3 conv layer at main path
         stage -- integer, current stage label, used for generating layer names
         block -- 'a','b'..., current block label, used for generating layer names

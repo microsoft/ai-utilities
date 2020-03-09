@@ -645,6 +645,24 @@ class DeepRealtimeScore(RealtimeScoreAKSContext, RealtimeScoreFunctionsContext, 
         # Kubernetes Configuration
         self.aks_vm_size = "Standard_NC6"
 
+        if not os.path.isfile(self.source_directory + "/" + self.score_py):
+            os.makedirs("script", exist_ok=True)
+
+            create_model_py = """
+import os
+
+from azure_utils.machine_learning.training_arg_parsers import get_training_parser
+from azure_utils.samples.deep_rts_samples import ResNet152
+
+if __name__ == '__main__':
+    args = get_training_parser()
+
+    ResNet152().create_model(weights="imagenet", save_model=True, model_path=os.path.join(args.outputs, args.model))
+
+"""
+            with open(self.source_directory + "/" + self.score_py, "w") as file:
+                file.write(create_model_py)
+
 
 class MockRequest:
     """Mock Request Class to create calls to test web service code"""

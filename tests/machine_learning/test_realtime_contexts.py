@@ -142,7 +142,7 @@ class TestDeployDeepRTS(WorkspaceCreationTests):
 
 
 # noinspection PyUnresolvedReferences,PyUnresolvedReferences,PyUnresolvedReferences
-class DontTestDeployDeepRTSLocally:
+class TestDeployDeepRTSLocally:
     def dont_test_train_py(self):
         if not os.path.isdir("outputs"):
             os.mkdir("outputs")
