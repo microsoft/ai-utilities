@@ -23,7 +23,9 @@ class BlobStorageAccount:
 
     def __init__(self, storage_connection):
         self.connection = storage_connection
-        self.service = BlockBlobService(self.connection.AccountName, self.connection.AccountKey)
+        self.service = BlockBlobService(
+            self.connection.AccountName, self.connection.AccountKey
+        )
 
     # Creates a new storage container in the Azure Storage account
 
@@ -34,7 +36,9 @@ class BlobStorageAccount:
         """
         if self.connection and self.service:
             self.service.create_container(container_name)
-            self.service.set_container_acl(container_name, public_access=PublicAccess.Blob)
+            self.service.set_container_acl(
+                container_name, public_access=PublicAccess.Blob
+            )
 
     # Retrieve a blob SAS token on a specific blob
 
@@ -48,9 +52,12 @@ class BlobStorageAccount:
         return_token = None
         if self.connection and self.service:
             # noinspection PyUnresolvedReferences,PyTypeChecker
-            return_token = self.service.generate_blob_shared_access_signature(container_name, blob_name,
-                                                                              BlobPermissions.READ,
-                                                                              datetime.utcnow() + timedelta(hours=1))
+            return_token = self.service.generate_blob_shared_access_signature(
+                container_name,
+                blob_name,
+                BlobPermissions.READ,
+                datetime.utcnow() + timedelta(hours=1),
+            )
 
         return return_token
 

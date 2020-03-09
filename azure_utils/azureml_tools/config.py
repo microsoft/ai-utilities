@@ -10,10 +10,19 @@ import logging
 
 from dotenv import dotenv_values, find_dotenv, set_key
 
-defaults = {"CLUSTER_NAME": "gpucluster24rv3", "CLUSTER_VM_SIZE": "Standard_NC24rs_v3", "CLUSTER_MIN_NODES": 0,
-            "CLUSTER_MAX_NODES": 2, "WORKSPACE": "workspace", "RESOURCE_GROUP": "amlccrg", "REGION": "eastus",
-            "DATASTORE_NAME": "datastore", "CONTAINER_NAME": "container", "ACCOUNT_NAME": "premiumstorage",
-            "SUBSCRIPTION_ID": None, }
+defaults = {
+    "CLUSTER_NAME": "gpucluster24rv3",
+    "CLUSTER_VM_SIZE": "Standard_NC24rs_v3",
+    "CLUSTER_MIN_NODES": 0,
+    "CLUSTER_MAX_NODES": 2,
+    "WORKSPACE": "workspace",
+    "RESOURCE_GROUP": "amlccrg",
+    "REGION": "eastus",
+    "DATASTORE_NAME": "datastore",
+    "CONTAINER_NAME": "container",
+    "ACCOUNT_NAME": "premiumstorage",
+    "SUBSCRIPTION_ID": None,
+}
 
 
 def load_config(dot_env_path: find_dotenv(raise_error_if_not_found=True)):

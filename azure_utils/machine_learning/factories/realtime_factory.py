@@ -61,9 +61,19 @@ class RealTimeFactory:
         """
         file = inspect.getsource(cls)
 
-        file = file.replace(inspect.getsource(RealTimeFactory.train), inspect.getsource(cls.train))
-        file = file.replace(inspect.getsource(RealTimeFactory.score_init), inspect.getsource(cls.score_init))
-        file = file.replace(inspect.getsource(RealTimeFactory.score_run), inspect.getsource(cls.score_run))
-        file = file.replace(inspect.getsource(RealTimeFactory.__init__), inspect.getsource(cls.__init__))
+        file = file.replace(
+            inspect.getsource(RealTimeFactory.train), inspect.getsource(cls.train)
+        )
+        file = file.replace(
+            inspect.getsource(RealTimeFactory.score_init),
+            inspect.getsource(cls.score_init),
+        )
+        file = file.replace(
+            inspect.getsource(RealTimeFactory.score_run),
+            inspect.getsource(cls.score_run),
+        )
+        file = file.replace(
+            inspect.getsource(RealTimeFactory.__init__), inspect.getsource(cls.__init__)
+        )
         file = file.replace("RealTimeFactory", "DeepRealTimeFactory(RealTimeFactory)")
         return file

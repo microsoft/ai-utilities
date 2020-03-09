@@ -8,7 +8,11 @@ import hashlib
 
 from azureml.core import Workspace
 
-from azure_utils.configuration.notebook_config import project_configuration_file, score_py_default, train_py_default
+from azure_utils.configuration.notebook_config import (
+    project_configuration_file,
+    score_py_default,
+    train_py_default,
+)
 from azure_utils.configuration.project_configuration import ProjectConfiguration
 
 
@@ -17,9 +21,16 @@ class WorkspaceContext(Workspace):
     AzureML Workspace Context - Base Framework Interface
     """
 
-    def __init__(self, subscription_id: str, resource_group: str, workspace_name: str,
-                 configuration_file: str = project_configuration_file, train_py: str = train_py_default,
-                 score_py: str = score_py_default, **kwargs):
+    def __init__(
+        self,
+        subscription_id: str,
+        resource_group: str,
+        workspace_name: str,
+        configuration_file: str = project_configuration_file,
+        train_py: str = train_py_default,
+        score_py: str = score_py_default,
+        **kwargs
+    ):
         """
         Interface Constructor for Workspace Context
 
@@ -45,30 +56,41 @@ class WorkspaceContext(Workspace):
         self.model_path = None
 
     @classmethod
-    def get_or_create_workspace(cls, configuration_file: str = project_configuration_file, **kwargs):
+    def get_or_create_workspace(
+        cls, configuration_file: str = project_configuration_file, **kwargs
+    ):
         """ Get or create a workspace if it doesn't exist.
 
         :param configuration_file: path to project configuration file. default: project.yml
 """
         project_configuration = ProjectConfiguration(configuration_file)
-        assert project_configuration.has_value('subscription_id')
-        assert project_configuration.has_value('resource_group')
-        assert project_configuration.has_value('workspace_name')
-        assert project_configuration.has_value('workspace_region')
+        assert project_configuration.has_value("subscription_id")
+        assert project_configuration.has_value("resource_group")
+        assert project_configuration.has_value("workspace_name")
+        assert project_configuration.has_value("workspace_region")
 
-        cls.create(subscription_id=project_configuration.get_value('subscription_id'),
-                   resource_group=project_configuration.get_value('resource_group'),
-                   name=project_configuration.get_value('workspace_name'),
-                   location=project_configuration.get_value('workspace_region'), exist_ok=True)
+        cls.create(
+            subscription_id=project_configuration.get_value("subscription_id"),
+            resource_group=project_configuration.get_value("resource_group"),
+            name=project_configuration.get_value("workspace_name"),
+            location=project_configuration.get_value("workspace_region"),
+            exist_ok=True,
+            **kwargs
+        )
 
-        ws = cls(project_configuration.get_value('subscription_id'), project_configuration.get_value('resource_group'),
-                 project_configuration.get_value('workspace_name'), configuration_file, **kwargs)
+        ws = cls(
+            project_configuration.get_value("subscription_id"),
+            project_configuration.get_value("resource_group"),
+            project_configuration.get_value("workspace_name"),
+            configuration_file,
+            **kwargs
+        )
         return ws
 
     @staticmethod
     def _get_file_md5(file_name: str) -> str:
         hasher = hashlib.md5()
-        with open(file_name, 'rb') as afile:
+        with open(file_name, "rb") as afile:
             buf = afile.read()
             hasher.update(buf)
         file_hash = hasher.hexdigest()

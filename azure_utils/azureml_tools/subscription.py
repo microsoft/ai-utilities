@@ -25,7 +25,9 @@ def run_az_cli_login() -> None:
     """
     Run az login in shell
     """
-    process = subprocess.Popen(["az", "login"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    process = subprocess.Popen(
+        ["az", "login"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
     for c in iter(lambda: process.stdout.read(1), b""):
         sys.stdout.write(_GREEN + _BOLD + c.decode(sys.stdout.encoding))
 
@@ -45,8 +47,10 @@ def list_subscriptions(profile: Profile = None) -> list:
         profile = subscription_profile()
     cred, _, _ = profile.get_login_credentials()
     sub_client = SubscriptionClient(cred)
-    return [{"Index": i, "Name": sub.display_name, "id": sub.subscription_id} for i, sub in
-            enumerate(sub_client.subscriptions.list())]
+    return [
+        {"Index": i, "Name": sub.display_name, "id": sub.subscription_id}
+        for i, sub in enumerate(sub_client.subscriptions.list())
+    ]
 
 
 def subscription_profile() -> Profile:
@@ -69,7 +73,9 @@ def _prompt_sub_id_selection(profile: Profile) -> str:
     pipe(sub_list, tabulate, print)
     prompt_result = prompt("Please type in index of subscription you want to use: ")
     selected_sub = sub_list[int(prompt_result)]
-    print(f"You selected index {prompt_result} sub id {selected_sub['id']} name {selected_sub['Name']}")
+    print(
+        f"You selected index {prompt_result} sub id {selected_sub['id']} name {selected_sub['Name']}"
+    )
     return selected_sub["id"]
 
 

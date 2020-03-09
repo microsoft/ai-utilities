@@ -27,8 +27,10 @@ def get_or_create_model_driver(train_py: str = "create_model.py"):
     if not os.path.isfile(f"script/{train_py}"):
         os.makedirs("script", exist_ok=True)
 
-        create_model_py = "from azure_utils.machine_learning import create_model\n\nif __name__ == '__main__':\n    " \
-                          "create_model.main() "
+        create_model_py = (
+            "from azure_utils.machine_learning import create_model\n\nif __name__ == '__main__':\n    "
+            "create_model.main() "
+        )
         with open(train_py, "w") as file:
             file.write(create_model_py)
 

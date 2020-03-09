@@ -28,11 +28,13 @@ def resource_group_exists(resource_group_name, resource_group_client=None):
 
 class ResourceGroupException(Exception):
     """Except when checking for Resource Group"""
+
     pass
 
 
-def create_resource_group(profile_credentials, subscription_id: str, location: str,
-                          resource_group_name: str) -> ResourceGroup:
+def create_resource_group(
+    profile_credentials, subscription_id: str, location: str, resource_group_name: str
+) -> ResourceGroup:
     """Creates resource group if it doesn't exist
 
     Args:
@@ -54,18 +56,24 @@ def create_resource_group(profile_credentials, subscription_id: str, location: s
     >>> rg = create_resource_group(cred, subscription_id, "eastus", "testrg2")
     """
     logger = logging.getLogger(__name__)
-    resource_group_client = _get_resource_group_client(profile_credentials, subscription_id)
-    if resource_group_exists(resource_group_name, resource_group_client=resource_group_client):
+    resource_group_client = _get_resource_group_client(
+        profile_credentials, subscription_id
+    )
+    if resource_group_exists(
+        resource_group_name, resource_group_client=resource_group_client
+    ):
         logger.debug(f"Found resource group {resource_group_name}")
         resource_group = resource_group_client.resource_groups.get(resource_group_name)
     else:
         logger.debug(f"Creating resource group {resource_group_name} in {location}")
         resource_group_params = {"location": location}
-        resource_group = resource_group_client.resource_groups.create_or_update(resource_group_name,
-                                                                                resource_group_params)
+        resource_group = resource_group_client.resource_groups.create_or_update(
+            resource_group_name, resource_group_params
+        )
 
     if "Succeeded" not in resource_group.properties.provisioning_state:
         raise ResourceGroupException(
-                f"Resource group not created successfully | State {resource_group.properties.provisioning_state}")
+            f"Resource group not created successfully | State {resource_group.properties.provisioning_state}"
+        )
 
     return resource_group

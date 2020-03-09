@@ -29,9 +29,16 @@ def test_aks(directory: str, aks_service: AksWebservice):
     scoring_url = aks_service.scoring_uri
     api_key = aks_service.get_keys()[0]
 
-    headers = {'content-type': 'application/json', 'Authorization': ('Bearer ' + api_key)}
-    requests.post(scoring_url, data=json_text, headers=headers)  # Run the request twice since the first time takes a
-    r = requests.post(scoring_url, data=json_text, headers=headers)  # little longer due to the loading of the model
+    headers = {
+        "content-type": "application/json",
+        "Authorization": ("Bearer " + api_key),
+    }
+    requests.post(
+        scoring_url, data=json_text, headers=headers
+    )  # Run the request twice since the first time takes a
+    r = requests.post(
+        scoring_url, data=json_text, headers=headers
+    )  # little longer due to the loading of the model
     print(r)
 
     dupes_to_score = dupes_test.iloc[:5, num_dupes_to_score]
@@ -49,6 +56,6 @@ def get_dupes_test(directory: str) -> pd.DataFrame:
     :param directory: root directory of data_folder
     :return: pd.DataFrame from the loaded csv
     """
-    dupes_test_path = directory + '/data_folder/dupes_test.tsv'
-    dupes_test = pd.read_csv(dupes_test_path, sep='\t', encoding='latin1')
+    dupes_test_path = directory + "/data_folder/dupes_test.tsv"
+    dupes_test = pd.read_csv(dupes_test_path, sep="\t", encoding="latin1")
     return dupes_test

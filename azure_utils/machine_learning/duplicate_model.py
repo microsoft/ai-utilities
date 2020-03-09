@@ -10,19 +10,20 @@ from sklearn.externals import joblib
 
 class DuplicateModel:
     """ Create Copy of Model """
-    questions_cols = ['Id', 'AnswerId', 'Text']
-    dup_col = 'Text_x'
-    id_col = 'Id_y'
-    answer_id_col = 'AnswerId_y'
-    orig_col = 'Text_y'
+
+    questions_cols = ["Id", "AnswerId", "Text"]
+    dup_col = "Text_x"
+    id_col = "Id_y"
+    answer_id_col = "AnswerId_y"
+    orig_col = "Text_y"
     feature_cols = [dup_col, orig_col]
-    probabilities_col = 'probabilities'
+    probabilities_col = "probabilities"
 
     def __init__(self, model_path, questions_path):
         self.model_path = model_path
         self.questions_path = questions_path
         self.model = joblib.load(model_path)
-        self.questions = pd.read_csv(questions_path, sep='\t', encoding='latin1')
+        self.questions = pd.read_csv(questions_path, sep="\t", encoding="latin1")
         self.questions = self.questions[self.questions_cols]
         self.questions.columns = [self.id_col, self.answer_id_col, self.orig_col]
 

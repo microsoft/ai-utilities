@@ -25,11 +25,12 @@ class ProjectConfiguration:
             - value: <>
         etc....
     """
+
     configuration: Dict[str, Optional[str]]
     project_key = "project_name"
     settings_key = "settings"
-    setting_value = 'value'
-    setting_description = 'description'
+    setting_value = "value"
+    setting_description = "description"
 
     def __init__(self, configuration_file: str):
         """
@@ -141,13 +142,19 @@ class ProjectConfiguration:
         """
         # self._validate_configuration(ProjectConfiguration.settings_key)
 
-        if ProjectConfiguration.settings_key not in self.configuration or not isinstance(
-                self.configuration[ProjectConfiguration.settings_key], list):
+        if (
+            ProjectConfiguration.settings_key not in self.configuration
+            or not isinstance(
+                self.configuration[ProjectConfiguration.settings_key], list
+            )
+        ):
             # noinspection PyTypeChecker
             self.configuration[ProjectConfiguration.settings_key] = []
 
         new_setting = {setting_name: []}
-        new_setting[setting_name].append({ProjectConfiguration.setting_description: description})
+        new_setting[setting_name].append(
+            {ProjectConfiguration.setting_description: description}
+        )
         new_setting[setting_name].append({ProjectConfiguration.setting_value: value})
         self.configuration[ProjectConfiguration.settings_key].append(new_setting)
 
@@ -179,7 +186,11 @@ class ProjectConfiguration:
         :param setting_name: Name of settings key in YAML file
         :return: list of project settings
         """
-        setting = [x for x in self.configuration[ProjectConfiguration.settings_key] if setting_name in x.keys()]
+        setting = [
+            x
+            for x in self.configuration[ProjectConfiguration.settings_key]
+            if setting_name in x.keys()
+        ]
         return setting
 
     def set_value(self, setting_name: str, value: str):
@@ -212,11 +223,15 @@ class ProjectConfiguration:
         :param setting_name: name of setting to return
         :return: settings of given name
         """
-        return [x for x in setting[0][setting_name] if ProjectConfiguration.setting_value in x.keys()]
+        return [
+            x
+            for x in setting[0][setting_name]
+            if ProjectConfiguration.setting_value in x.keys()
+        ]
 
     def save_configuration(self) -> None:
         """ Save the configuration file """
-        with open(self.configuration_file, 'w') as ymlfile:
+        with open(self.configuration_file, "w") as ymlfile:
             yaml.dump(self.configuration, ymlfile)
 
 

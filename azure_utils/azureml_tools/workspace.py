@@ -10,9 +10,13 @@ import os
 from pathlib import Path
 
 import azureml
-from azureml.core.authentication import (AuthenticationException, AzureCliAuthentication,
-                                         InteractiveLoginAuthentication, ServicePrincipalAuthentication,
-                                         AbstractAuthentication)
+from azureml.core.authentication import (
+    AuthenticationException,
+    AzureCliAuthentication,
+    InteractiveLoginAuthentication,
+    ServicePrincipalAuthentication,
+    AbstractAuthentication,
+)
 from azureml.core import Workspace
 
 _DEFAULT_AML_PATH = "aml_config/azml_config.json"
@@ -26,7 +30,9 @@ def _get_auth() -> AbstractAuthentication:
         aml_sp_password = os.environ.get("AML_SP_PASSWORD")
         aml_sp_tenant_id = os.environ.get("AML_SP_TENNANT_ID")
         aml_sp_username = os.environ.get("AML_SP_USERNAME")
-        auth = ServicePrincipalAuthentication(aml_sp_tenant_id, aml_sp_username, aml_sp_password)
+        auth = ServicePrincipalAuthentication(
+            aml_sp_tenant_id, aml_sp_username, aml_sp_password
+        )
     else:
         logger.debug("Trying to authenticate with CLI Authentication")
         try:
@@ -39,16 +45,26 @@ def _get_auth() -> AbstractAuthentication:
     return auth
 
 
-def create_workspace(workspace_name: str, resource_group: str, subscription_id: str, workspace_region: str,
-                     filename: str = "azml_config.json", ) -> Workspace:
+def create_workspace(
+    workspace_name: str,
+    resource_group: str,
+    subscription_id: str,
+    workspace_region: str,
+    filename: str = "azml_config.json",
+) -> Workspace:
     """Creates Azure Machine Learning workspace."""
     logger = logging.getLogger(__name__)
     auth = _get_auth()
 
     # noinspection PyTypeChecker
-    ws = azureml.core.Workspace.create(name=workspace_name, subscription_id=subscription_id,
-                                       resource_group=resource_group, location=workspace_region, exist_ok=True,
-                                       auth=auth)
+    ws = azureml.core.Workspace.create(
+        name=workspace_name,
+        subscription_id=subscription_id,
+        resource_group=resource_group,
+        location=workspace_region,
+        exist_ok=True,
+        auth=auth,
+    )
 
     logger.info(ws.get_details())
     ws.write_config(file_name=filename)
@@ -61,19 +77,36 @@ def load_workspace(path: str) -> Workspace:
     # noinspection PyTypeChecker
     workspace = azureml.core.Workspace.from_config(auth=auth, path=path)
     logger = logging.getLogger(__name__)
-    logger.info("\n".join(["Workspace name: " + str(workspace.name), "Azure region: " + str(workspace.location),
-                           "Subscription id: " + str(workspace.subscription_id),
-                           "Resource group: " + str(workspace.resource_group), ]))
+    logger.info(
+        "\n".join(
+            [
+                "Workspace name: " + str(workspace.name),
+                "Azure region: " + str(workspace.location),
+                "Subscription id: " + str(workspace.subscription_id),
+                "Resource group: " + str(workspace.resource_group),
+            ]
+        )
+    )
     return workspace
 
 
-def workspace_for_user(workspace_name: str, resource_group: str, subscription_id: str, workspace_region: str,
-                       config_path: str = _DEFAULT_AML_PATH) -> Workspace:
+def workspace_for_user(
+    workspace_name: str,
+    resource_group: str,
+    subscription_id: str,
+    workspace_region: str,
+    config_path: str = _DEFAULT_AML_PATH,
+) -> Workspace:
     """Returns Azure Machine Learning workspace."""
     if os.path.isfile(config_path):
         return load_workspace(config_path)
 
     path_obj = Path(config_path)
     filename = path_obj.name
-    return create_workspace(workspace_name, resource_group, subscription_id=subscription_id,
-                            workspace_region=workspace_region, filename=filename, )
+    return create_workspace(
+        workspace_name,
+        resource_group,
+        subscription_id=subscription_id,
+        workspace_region=workspace_region,
+        filename=filename,
+    )

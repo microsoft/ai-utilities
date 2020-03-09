@@ -23,6 +23,7 @@ class ValidationType(Enum):
     Enumerator used to look up validation rules. User passes in name
     and enumerator is looked up.
     """
+
     subscription_id = "subscription_id"
     resource_group = "resource_group"
     workspace_name = "workspace_name"
@@ -41,6 +42,7 @@ class ValidationType(Enum):
 
 class ValidationResult(Enum):
     """ Enumerator used to Identify validation results """
+
     success = "PASSED"
     warning = "WARNING"
     failure = "FAILED"
@@ -52,11 +54,14 @@ class ValidationResult(Enum):
 # value - Value passed in
 # status - bool indicating success or failure
 # reason - Detailed explanation of what happened.
-validation_result = collections.namedtuple('validation_result', 'type value status reason')
+validation_result = collections.namedtuple(
+    "validation_result", "type value status reason"
+)
 
 
 class ResultsGenerator:
     """ Collection of results for configurations """
+
     NAMES_LINK = "https://docs.microsoft.com/azure/azure-resource-manager/management/resource-name-rules"
 
     @staticmethod
@@ -70,9 +75,14 @@ class ResultsGenerator:
         :param length: Length to validate
         :return: Returns a VALIDATION_RESULT failure object
         """
-        return validation_result(type_name, value, ValidationResult.failure,
-                                 "Field failed length validation: {} \n    See: {}".format(length,
-                                                                                           ResultsGenerator.NAMES_LINK))
+        return validation_result(
+            type_name,
+            value,
+            ValidationResult.failure,
+            "Field failed length validation: {} \n    See: {}".format(
+                length, ResultsGenerator.NAMES_LINK
+            ),
+        )
 
     @staticmethod
     def create_content_failure(type_name, value, content) -> validation_result:
@@ -85,9 +95,13 @@ class ResultsGenerator:
         :param content: Content to validate against
         :return: Returns a VALIDATION_RESULT failure object
         """
-        return validation_result(type_name, value, ValidationResult.failure,
-                                 "Field failed content validation by containing one or more of the following : {} \n  "
-                                 "  See: {}".format(content, ResultsGenerator.NAMES_LINK))
+        return validation_result(
+            type_name,
+            value,
+            ValidationResult.failure,
+            "Field failed content validation by containing one or more of the following : {} \n  "
+            "  See: {}".format(content, ResultsGenerator.NAMES_LINK),
+        )
 
     @staticmethod
     def create_success(type_name, value, content) -> validation_result:
@@ -138,8 +152,12 @@ class ResultsGenerator:
         :param value: Value to validate.
         :return: Returns a generic VALIDATION_RESULT failure object
         """
-        return validation_result(type_name, value, ValidationResult.failure,
-                                 "See: {}".format(ResultsGenerator.NAMES_LINK))
+        return validation_result(
+            type_name,
+            value,
+            ValidationResult.failure,
+            "See: {}".format(ResultsGenerator.NAMES_LINK),
+        )
 
 
 class Validation:
@@ -158,7 +176,7 @@ class Validation:
 
     FIELD_NOT_RECOGNIZED = "Field not recognized/validated."
 
-    def __init__(self, default_field_value: str = '<>'):
+    def __init__(self, default_field_value: str = "<>"):
         """
         Set up restrictions based on supported types. To add a new type field to validate:
         1. Extend the enum class ValidationType
@@ -166,15 +184,24 @@ class Validation:
 
         :param default_field_value: The default value for a field, default = <>
         """
-        validation_restrictions = collections.namedtuple('validation_restrictions',
-                                                         ['length', 'regex_pattern', 'invalid_charset',
-                                                          'custom_validator'])
+        validation_restrictions = collections.namedtuple(
+            "validation_restrictions",
+            ["length", "regex_pattern", "invalid_charset", "custom_validator"],
+        )
         self.type_restrictions = {
-            ValidationType.subscription_id: validation_restrictions(None, False, "<>", self._validate_subscription),
-            ValidationType.resource_group: validation_restrictions([1, 90], True, r"^[-\w\._\(\)]+$",
-                                                                   self._validate_resource_group),
-            ValidationType.workspace_name: validation_restrictions([1, 260], False, r"<>*%&:?+/\\", None),
-            ValidationType.storage_account: validation_restrictions([1, 260], True, r"^[a-zA-Z0-9_\-]+$", None)}
+            ValidationType.subscription_id: validation_restrictions(
+                None, False, "<>", self._validate_subscription
+            ),
+            ValidationType.resource_group: validation_restrictions(
+                [1, 90], True, r"^[-\w\._\(\)]+$", self._validate_resource_group
+            ),
+            ValidationType.workspace_name: validation_restrictions(
+                [1, 260], False, r"<>*%&:?+/\\", None
+            ),
+            ValidationType.storage_account: validation_restrictions(
+                [1, 260], True, r"^[a-zA-Z0-9_\-]+$", None
+            ),
+        }
 
         # Get names of fields validated for checks by user.
         self.default_field_value = default_field_value
@@ -206,13 +233,18 @@ class Validation:
 
         validation_type = self._get_validation_type(type_name)
         if validation_type:
-            return_result = self.check_valid_type(return_result, type_name, validation_type, value)
+            return_result = self.check_valid_type(
+                return_result, type_name, validation_type, value
+            )
         else:
             if value == self.default_field_value:
-                return_result = ResultsGenerator.create_warning(type_name, value,
-                                                                "Default value in field may cause problems.")
+                return_result = ResultsGenerator.create_warning(
+                    type_name, value, "Default value in field may cause problems."
+                )
             else:
-                return_result = ResultsGenerator.create_warning(type_name, value, Validation.FIELD_NOT_RECOGNIZED)
+                return_result = ResultsGenerator.create_warning(
+                    type_name, value, Validation.FIELD_NOT_RECOGNIZED
+                )
 
         # If passed through to here with no return_result, all tests passed.
 
@@ -236,13 +268,24 @@ class Validation:
         # 2. Validate content against invalid characters, if provided
         # 3. Custom validation, if provided
         if not self._validate_length(self.type_restrictions[validation_type], value):
-            return_result = ResultsGenerator.create_length_failure(type_name, value,
-                                                                   self.type_restrictions[validation_type].length)
-        if not return_result and not self._validate_content(self.type_restrictions[validation_type], value):
-            return_result = ResultsGenerator.create_content_failure(type_name, value, self.type_restrictions[
-                validation_type].invalid_charset)
-        if not return_result and self.type_restrictions[validation_type].custom_validator:
-            return_result = self.type_restrictions[validation_type].custom_validator(type_name, value)
+            return_result = ResultsGenerator.create_length_failure(
+                type_name, value, self.type_restrictions[validation_type].length
+            )
+        if not return_result and not self._validate_content(
+            self.type_restrictions[validation_type], value
+        ):
+            return_result = ResultsGenerator.create_content_failure(
+                type_name,
+                value,
+                self.type_restrictions[validation_type].invalid_charset,
+            )
+        if (
+            not return_result
+            and self.type_restrictions[validation_type].custom_validator
+        ):
+            return_result = self.type_restrictions[validation_type].custom_validator(
+                type_name, value
+            )
         return return_result
 
     @staticmethod
@@ -274,7 +317,8 @@ class Validation:
         return_value = True
         if validation_restriction.length:
             return_value = (len(value) >= validation_restriction.length[0]) and (
-                    len(value) <= validation_restriction.length[1])
+                len(value) <= validation_restriction.length[1]
+            )
         return return_value
 
     @staticmethod
@@ -297,7 +341,7 @@ class Validation:
         if validation_restriction.invalid_charset:
             if validation_restriction.regex_pattern:
                 requirement = re.compile(validation_restriction.invalid_charset)
-                return_value = (requirement.match(value) is not None)
+                return_value = requirement.match(value) is not None
             else:
                 for char in validation_restriction.invalid_charset:
                     if char in value:
@@ -346,7 +390,7 @@ class Validation:
             raise Exception("Try and run `az login`")
 
         if result:
-            self.current_subscription = result['id']
+            self.current_subscription = result["id"]
         return self.current_subscription
 
     def _validate_subscription(self, type_name, sub_id) -> validation_result:
@@ -358,16 +402,23 @@ class Validation:
         :param sub_id: Azure Subscription ID
         :return: Validation Results
         """
-        return_result = ResultsGenerator.create_success(type_name, sub_id, azure_with_az_login)
+        return_result = ResultsGenerator.create_success(
+            type_name, sub_id, azure_with_az_login
+        )
 
         current_sub = self._get_current_subscription()
         if not current_sub:
-            return_result = ResultsGenerator.create_failure(type_name, sub_id, azure_with_az_login)
+            return_result = ResultsGenerator.create_failure(
+                type_name, sub_id, azure_with_az_login
+            )
 
         if not return_result and sub_id != current_sub:
-            return_result = ResultsGenerator.create_warning(type_name, sub_id,
-                                                            "Subscription {} is not your current sub {}. Use 'az "
-                                                            "account set -s <subid>'".format(sub_id, current_sub))
+            return_result = ResultsGenerator.create_warning(
+                type_name,
+                sub_id,
+                "Subscription {} is not your current sub {}. Use 'az "
+                "account set -s <subid>'".format(sub_id, current_sub),
+            )
         return return_result
 
     def _validate_resource_group(self, type_name, group_name) -> validation_result:
@@ -379,21 +430,31 @@ class Validation:
         :param group_name: Resource Group to check.
         :return: Validation Results
         """
-        return_result = ResultsGenerator.create_success(type_name, group_name, azure_with_az_login)
+        return_result = ResultsGenerator.create_success(
+            type_name, group_name, azure_with_az_login
+        )
 
         try:
             current_sub = self._get_current_subscription()
             if not current_sub:
-                return_result = ResultsGenerator.create_failure(type_name, group_name, azure_with_az_login)
+                return_result = ResultsGenerator.create_failure(
+                    type_name, group_name, azure_with_az_login
+                )
         except OSError:
-            return_result = ResultsGenerator.create_failure(type_name, group_name, azure_with_az_login)
+            return_result = ResultsGenerator.create_failure(
+                type_name, group_name, azure_with_az_login
+            )
         if not return_result:
             rmc_client = get_client_from_cli_profile(ResourceManagementClient)
             try:
                 res = rmc_client.resource_groups.check_existence(group_name)
                 if res:
-                    return_result = ResultsGenerator.create_warning(type_name, group_name, "Resource Group Exists")
+                    return_result = ResultsGenerator.create_warning(
+                        type_name, group_name, "Resource Group Exists"
+                    )
             except CloudError:
-                return_result = ResultsGenerator.create_generic_format_failure(type_name, group_name)
+                return_result = ResultsGenerator.create_generic_format_failure(
+                    type_name, group_name
+                )
 
         return return_result

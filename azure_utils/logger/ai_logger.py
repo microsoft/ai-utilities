@@ -24,6 +24,7 @@ from azure_utils.logger.storageutils import StorageConnection
 
 class CollectionEntry(Enum):
     """ Deploy Steps Enums"""
+
     AKS_CLUSTER_CREATION = "akscreate"
     AML_COMPUTE_CREATION = "amlcompute"
     AML_WORKSPACE_CREATION = "amlworkspace"
@@ -51,6 +52,7 @@ class CollectionEntry(Enum):
 
 class StatisticsCollector:
     """ Statistics Collector """
+
     __metrics__ = {}
     __running_tasks__ = {}
     __statscontainer__ = "pathmetrics"
@@ -69,7 +71,9 @@ class StatisticsCollector:
 
         :param collection_entry: an instance of a CollectionEntry enum
         """
-        StatisticsCollector.__running_tasks__[collection_entry.value] = datetime.utcnow()
+        StatisticsCollector.__running_tasks__[
+            collection_entry.value
+        ] = datetime.utcnow()
 
     @staticmethod
     def end_task(collection_entry):
@@ -81,7 +85,10 @@ class StatisticsCollector:
         :param collection_entry: an instance of a CollectionEntry enum
         """
         if collection_entry.value in StatisticsCollector.__running_tasks__.keys():
-            time_diff = datetime.utcnow() - StatisticsCollector.__running_tasks__[collection_entry.value]
+            time_diff = (
+                datetime.utcnow()
+                - StatisticsCollector.__running_tasks__[collection_entry.value]
+            )
             ms_delta = time_diff.total_seconds() * 1000
             StatisticsCollector.__metrics__[collection_entry.value] = ms_delta
 
@@ -99,7 +106,7 @@ class StatisticsCollector:
         """
         StatisticsCollector.__metrics__[collection_entry.value] = data_point
 
-    '''
+    """
         Retrieve an entry in the internal collection. 
 
         Parameters:
@@ -107,7 +114,7 @@ class StatisticsCollector:
 
         Returns:
             The data in the collection or None if the entry is not present.        
-    '''
+    """
 
     @staticmethod
     def get_entry(collection_entry):
@@ -121,7 +128,7 @@ class StatisticsCollector:
             return_data_point = StatisticsCollector.__metrics__[collection_entry.value]
         return return_data_point
 
-    '''
+    """
         Returns the __metrics__ collection as a JSON string.
 
         Parameters:
@@ -129,7 +136,7 @@ class StatisticsCollector:
 
         Returns:
             String representation of the collection in JSON
-    '''
+    """
 
     @staticmethod
     def get_collection():
@@ -139,7 +146,7 @@ class StatisticsCollector:
         """
         return json.dumps(StatisticsCollector.__metrics__)
 
-    '''
+    """
         Uploads the JSON string representation of the __metrics__ collection to the specified
         storage account. 
 
@@ -148,7 +155,7 @@ class StatisticsCollector:
 
         Returns:
             Nothing
-    '''
+    """
 
     @staticmethod
     def upload_content(connection_string):
@@ -156,13 +163,18 @@ class StatisticsCollector:
 
         :param connection_string:
         """
-        containers, storage_account = StatisticsCollector._get_containers(connection_string)
+        containers, storage_account = StatisticsCollector._get_containers(
+            connection_string
+        )
         if StatisticsCollector.__statscontainer__ not in containers:
             storage_account.create_container(StatisticsCollector.__statscontainer__)
-        storage_account.upload_blob(StatisticsCollector.__statscontainer__, StatisticsCollector.__statsblob__,
-                                    StatisticsCollector.get_collection())
+        storage_account.upload_blob(
+            StatisticsCollector.__statscontainer__,
+            StatisticsCollector.__statsblob__,
+            StatisticsCollector.get_collection(),
+        )
 
-    '''
+    """
         Download the content from blob storage as a string representation of the JSON. This can be used for collecting
         and pushing downstream to whomever is interested. This call does not affect the internal collection.
 
@@ -172,7 +184,7 @@ class StatisticsCollector:
         Returns:
             The uploaded collection that was pushed to storage or None if not present.
         
-    '''
+    """
 
     @staticmethod
     def retrieve_content(connection_string):
@@ -182,10 +194,14 @@ class StatisticsCollector:
         :return:
         """
         return_content = None
-        containers, storage_account = StatisticsCollector._get_containers(connection_string)
+        containers, storage_account = StatisticsCollector._get_containers(
+            connection_string
+        )
         if StatisticsCollector.__statscontainer__ in containers:
-            return_content = storage_account.download_blob(StatisticsCollector.__statscontainer__,
-                                                           StatisticsCollector.__statsblob__)
+            return_content = storage_account.download_blob(
+                StatisticsCollector.__statscontainer__,
+                StatisticsCollector.__statsblob__,
+            )
         return return_content
 
     @staticmethod
@@ -196,7 +212,7 @@ class StatisticsCollector:
         containers = storage_account.getContainers()
         return containers, storage_account
 
-    '''
+    """
         Retrieves the content in storage and hydrates the __metrics__ dictionary, dropping any existing information. 
 
         Useful between IPYNB runs/stages in DevOps.
@@ -206,7 +222,7 @@ class StatisticsCollector:
 
         Returns:
             Nothing
-    '''
+    """
 
     @staticmethod
     def hydrate_from_storage(connection_string):

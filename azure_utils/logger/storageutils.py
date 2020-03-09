@@ -36,20 +36,20 @@ class StorageConnection:
         for key, value in parsed_connection_string.items():
             self.__setattr__(key, value)
 
-    '''
+    """
         Expects the full connection string from the Azure site and spits it into four components.
 
         EX:
         DefaultEndpointsProtocol=https;AccountName=STGACCT_NAME;AccountKey=STGACCT_KEY;EndpointSuffix=core.windows.net
-    '''
+    """
 
     @staticmethod
     def _parse_connection_string(connection_string):
         return_value = {}
         if connection_string:
-            segments = connection_string.split(';')
+            segments = connection_string.split(";")
             for segment in segments:
-                split_index = segment.index('=')
+                split_index = segment.index("=")
                 second_part = (len(segment) - split_index - 1) * -1
                 return_value[segment[:split_index]] = segment[second_part:]
 
@@ -64,25 +64,33 @@ class StorageConnection:
     # resource group and storage account.
 
     @staticmethod
-    def get_connection_string_with_az_credentials(resource_group_name, storage_account_name):
+    def get_connection_string_with_az_credentials(
+        resource_group_name, storage_account_name
+    ):
         """
 
         :param resource_group_name:
         :param storage_account_name:
         :return:
         """
-        connection_string_template = "DefaultEndpointsProtocol=https;AccountName={};AccountKey={" \
-                                     "};EndpointSuffix=core.windows.net"
+        connection_string_template = (
+            "DefaultEndpointsProtocol=https;AccountName={};AccountKey={"
+            "};EndpointSuffix=core.windows.net"
+        )
         return_value = None
 
         client = get_client_from_cli_profile(StorageManagementClient)
-        keys = client.storage_accounts.list_keys(resource_group_name, storage_account_name)
+        keys = client.storage_accounts.list_keys(
+            resource_group_name, storage_account_name
+        )
         key_value = None
         for key in keys.keys:
             key_value = key.value
             break
 
         if key_value is not None:
-            return_value = connection_string_template.format(storage_account_name, key_value)
+            return_value = connection_string_template.format(
+                storage_account_name, key_value
+            )
 
         return return_value

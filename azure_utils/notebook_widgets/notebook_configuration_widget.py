@@ -17,7 +17,9 @@ from knack.util import CLIError
 
 from azure_utils.azureml_tools.subscription import run_az_cli_login
 from azure_utils.configuration.project_configuration import ProjectConfiguration
-from azure_utils.machine_learning.contexts.realtime_score_context import RealtimeScoreContext
+from azure_utils.machine_learning.contexts.realtime_score_context import (
+    RealtimeScoreContext,
+)
 
 
 def list_subscriptions() -> List[set]:
@@ -58,12 +60,14 @@ def save_project_configuration(proj_config: ProjectConfiguration):
     """
     Thread-safe - Save project configuration
     """
-    with open(proj_config.configuration_file, 'w') as f:
+    with open(proj_config.configuration_file, "w") as f:
         f.write(yaml.safe_dump(proj_config.configuration))
         f.close()
 
 
-def update_and_save_configuration(proj_config: ProjectConfiguration, setting_boxes: dict, name2id: dict):
+def update_and_save_configuration(
+    proj_config: ProjectConfiguration, setting_boxes: dict, name2id: dict
+):
     """
     Update project configuration with widget values and save
 
@@ -73,7 +77,9 @@ def update_and_save_configuration(proj_config: ProjectConfiguration, setting_box
     """
     for boxes in setting_boxes:
         proj_config.set_value(boxes, setting_boxes[boxes].value)
-    proj_config.set_value("subscription_id", name2id[setting_boxes['subscription_id'].value])
+    proj_config.set_value(
+        "subscription_id", name2id[setting_boxes["subscription_id"].value]
+    )
     save_project_configuration(proj_config)
 
 
@@ -89,15 +95,15 @@ def get_configuration_widget(config: str, with_existing: bool = True) -> VBox:
     proj_config.save_configuration()
     out = widgets.Output()
 
-    uploader = widgets.FileUpload(accept='.yml', multiple=False)
+    uploader = widgets.FileUpload(accept=".yml", multiple=False)
 
     name2id, id2name = list_subscriptions()
 
     getpass.getuser()
 
     default_sub = list(name2id.keys())[0]
-    if proj_config.get_value('subscription_id') in id2name:
-        default_sub = id2name[proj_config.get_value('subscription_id')]
+    if proj_config.get_value("subscription_id") in id2name:
+        default_sub = id2name[proj_config.get_value("subscription_id")]
 
     setting_boxes = create_settings_boxes(default_sub, name2id, proj_config)
 
@@ -110,30 +116,50 @@ def get_configuration_widget(config: str, with_existing: bool = True) -> VBox:
         """
         if key in setting_boxes:
             setting_boxes[key] = widgets.Dropdown(
-                    options=['eastus', 'eastus2', 'canadacentral', 'centralus', 'northcentralus', 'southcentralus',
-                             'westcentralus', 'westus', 'westus2'],
-                    value=proj_config.get_value(key).replace("<>", "eastus"), description=key, disabled=False)
+                options=[
+                    "eastus",
+                    "eastus2",
+                    "canadacentral",
+                    "centralus",
+                    "northcentralus",
+                    "southcentralus",
+                    "westcentralus",
+                    "westus",
+                    "westus2",
+                ],
+                value=proj_config.get_value(key).replace("<>", "eastus"),
+                description=key,
+                disabled=False,
+            )
 
-    convert_to_region('workspace_region')
-    convert_to_region('aks_location')
-    convert_to_region('deep_aks_location')
+    convert_to_region("workspace_region")
+    convert_to_region("aks_location")
+    convert_to_region("deep_aks_location")
 
-    dropdown_keys = ["aks_service_name", "aks_name", "image_name", "deep_aks_service_name", "deep_aks_name",
-                     "deep_image_name"]
+    dropdown_keys = [
+        "aks_service_name",
+        "aks_name",
+        "image_name",
+        "deep_aks_service_name",
+        "deep_aks_name",
+        "deep_image_name",
+    ]
 
     ws = RealtimeScoreContext.get_or_create_workspace(config)
 
-    my_list = get_widgets_list(dropdown_keys, out, setting_boxes, uploader, with_existing, ws)
+    my_list = get_widgets_list(
+        dropdown_keys, out, setting_boxes, uploader, with_existing, ws
+    )
 
     def upload_on_change(change: dict):
         """
 
         :param change:
         """
-        if change['type'] == 'change' and change['name'] == 'value':
+        if change["type"] == "change" and change["name"] == "value":
             for file in uploader.value:
-                with open(config, 'wb') as f:
-                    f.write(uploader.value[file]['content'])
+                with open(config, "wb") as f:
+                    f.write(uploader.value[file]["content"])
                     f.close()
                 new_proj_config = ProjectConfiguration(config)
 
@@ -146,7 +172,7 @@ def get_configuration_widget(config: str, with_existing: bool = True) -> VBox:
 
         :param change:
         """
-        if change['type'] == 'change' and change['name'] == 'value':
+        if change["type"] == "change" and change["name"] == "value":
             update_and_save_configuration(proj_config, setting_boxes, name2id)
 
     for box in setting_boxes:
@@ -155,8 +181,14 @@ def get_configuration_widget(config: str, with_existing: bool = True) -> VBox:
     return widgets.VBox(my_list)
 
 
-def get_widgets_list(dropdown_keys: list, out: widgets.Output, setting_boxes: dict, uploader: widgets.FileUpload,
-                     with_existing: bool, ws: Workspace) -> list:
+def get_widgets_list(
+    dropdown_keys: list,
+    out: widgets.Output,
+    setting_boxes: dict,
+    uploader: widgets.FileUpload,
+    with_existing: bool,
+    ws: Workspace,
+) -> list:
     """
     Get Widgets in a List
 
@@ -171,17 +203,28 @@ def get_widgets_list(dropdown_keys: list, out: widgets.Output, setting_boxes: di
     my_list = [out, uploader]
     for setting_key in setting_boxes:
         text_box = setting_boxes[setting_key]
-        is_valid = check_if_valid(dropdown_keys, setting_key, text_box, with_existing, ws)
+        is_valid = check_if_valid(
+            dropdown_keys, setting_key, text_box, with_existing, ws
+        )
         if is_valid:
-            dropdown = widgets.Dropdown(options=get_list(ws, setting_key), value=get_list(ws, setting_key)[0],
-                                        description='existing', disabled=False)
+            dropdown = widgets.Dropdown(
+                options=get_list(ws, setting_key),
+                value=get_list(ws, setting_key)[0],
+                description="existing",
+                disabled=False,
+            )
             text_box = widgets.HBox([text_box, dropdown])
         my_list.append(text_box)
     return my_list
 
 
-def check_if_valid(dropdown_keys: list, setting_key: str, text_box: widgets.Widget, with_existing: bool,
-                   ws: Workspace) -> bool:
+def check_if_valid(
+    dropdown_keys: list,
+    setting_key: str,
+    text_box: widgets.Widget,
+    with_existing: bool,
+    ws: Workspace,
+) -> bool:
     """
     Check if dropdown key list is valid.
 
@@ -192,11 +235,17 @@ def check_if_valid(dropdown_keys: list, setting_key: str, text_box: widgets.Widg
     :param ws: AzureML Workspace
     :return: `bool` result of check
     """
-    return with_existing and setting_key in dropdown_keys and type(text_box) is widgets.Text and \
-           get_list(ws, setting_key)[0]
+    return (
+        with_existing
+        and setting_key in dropdown_keys
+        and type(text_box) is widgets.Text
+        and get_list(ws, setting_key)[0]
+    )
 
 
-def create_settings_boxes(default_sub: str, name2id: dict, proj_config: ProjectConfiguration) -> dict:
+def create_settings_boxes(
+    default_sub: str, name2id: dict, proj_config: ProjectConfiguration
+) -> dict:
     """
     Create Settings Boxes
 
@@ -209,19 +258,28 @@ def create_settings_boxes(default_sub: str, name2id: dict, proj_config: ProjectC
     user_id = getpass.getuser()
     for setting in proj_config.get_settings():
         for setting_key in setting:
-            setting_with_id = proj_config.get_value(setting_key).replace("$(User)", user_id)
+            setting_with_id = proj_config.get_value(setting_key).replace(
+                "$(User)", user_id
+            )
             proj_config.set_value(setting_key, setting_with_id)
 
             setting = setting[setting_key][0]
-            description = setting['description']
+            description = setting["description"]
 
-            if setting_key == 'subscription_id':
-                setting_boxs['subscription_id'] = widgets.Dropdown(options=list(name2id.keys()), value=default_sub,
-                                                                   description='subscription_id', disabled=False)
+            if setting_key == "subscription_id":
+                setting_boxs["subscription_id"] = widgets.Dropdown(
+                    options=list(name2id.keys()),
+                    value=default_sub,
+                    description="subscription_id",
+                    disabled=False,
+                )
             else:
-                setting_boxs[setting_key] = widgets.Text(value=setting_with_id.replace("<>", ""),
-                                                         placeholder=description, description=setting_key,
-                                                         disabled=False)
+                setting_boxs[setting_key] = widgets.Text(
+                    value=setting_with_id.replace("<>", ""),
+                    placeholder=description,
+                    description=setting_key,
+                    disabled=False,
+                )
     return setting_boxs
 
 
@@ -241,7 +299,9 @@ def get_list(ws: Workspace, key: str) -> list:
         return list(ws.webservices.keys())
 
 
-def update_setting_boxes(new_proj_config: ProjectConfiguration, setting_boxes: dict, id2name: dict):
+def update_setting_boxes(
+    new_proj_config: ProjectConfiguration, setting_boxes: dict, id2name: dict
+):
     """
     Update Settings with new Project Configuration
 
@@ -252,8 +312,12 @@ def update_setting_boxes(new_proj_config: ProjectConfiguration, setting_boxes: d
     for setting_box_key in setting_boxes:
         if new_proj_config.has_value(setting_box_key):
             if setting_box_key == "subscription_id":
-                setting_boxes[setting_box_key].value = id2name[new_proj_config.get_value(setting_box_key)]
+                setting_boxes[setting_box_key].value = id2name[
+                    new_proj_config.get_value(setting_box_key)
+                ]
             else:
-                setting_boxes[setting_box_key].value = new_proj_config.get_value(setting_box_key)
+                setting_boxes[setting_box_key].value = new_proj_config.get_value(
+                    setting_box_key
+                )
         else:
             warnings.warn("Reload Widget to display new properties")

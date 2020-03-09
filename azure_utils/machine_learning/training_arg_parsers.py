@@ -22,9 +22,11 @@ def get_training_parser() -> Namespace:
 
     :return: parsed args
     """
-    parser = argparse.ArgumentParser(description='Fit and evaluate a model based on train-test datasets.')
-    parser.add_argument('--outputs', help='the outputs directory', default='outputs')
-    parser.add_argument('--model', help='the model file', default='model.pkl')
+    parser = argparse.ArgumentParser(
+        description="Fit and evaluate a model based on train-test datasets."
+    )
+    parser.add_argument("--outputs", help="the outputs directory", default="outputs")
+    parser.add_argument("--model", help="the model file", default="model.pkl")
     return parser.parse_args()
 
 
@@ -39,8 +41,8 @@ def get_model_path(model_pkl: str = "model.pkl"):
     :return: Model Directory
     """
     model_dir = "."
-    if os.getenv('AZUREML_MODEL_DIR'):
-        model_dir = os.getenv('AZUREML_MODEL_DIR')
+    if os.getenv("AZUREML_MODEL_DIR"):
+        model_dir = os.getenv("AZUREML_MODEL_DIR")
     assert os.path.isfile(model_dir + model_pkl)
     return model_dir + "/" + model_pkl
 
@@ -68,7 +70,7 @@ def default_response(request) -> AMLResponse:
     :param request:
     :return:
     """
-    if request.method == 'GET':
+    if request.method == "GET":
         return AMLResponse({"azEnvironment": "Azure"}, 201)
     return AMLResponse("bad request", 500)
 
@@ -91,6 +93,8 @@ def process_request(request):
     :return:
     """
     transform_input = compose(pil_to_numpy, image_ref_to_pil_image)
-    transformed_dict = {key: transform_input(img_ref) for key, img_ref in request.files.items()}
+    transformed_dict = {
+        key: transform_input(img_ref) for key, img_ref in request.files.items()
+    }
     img_array = preprocess_input(np.stack(list(transformed_dict.values())))
     return img_array, transformed_dict

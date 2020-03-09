@@ -60,9 +60,9 @@ class KeyVaultInstance:
         vault_address = "https://{}.vault.azure.net/".format(vault_name)
         if self._vault_client is not None:
             for sc in self._vault_client.get_secrets(vault_address):
-                scname = sc.id.split('/')[-1]
+                scname = sc.id.split("/")[-1]
                 scbundle = self._vault_client.get_secret(vault_address, scname, "")
-                scversion = scbundle.id.split('/')[-1]
+                scversion = scbundle.id.split("/")[-1]
                 scvalue = scbundle.value
                 return_secrets.append((scname, scversion, scvalue))
 

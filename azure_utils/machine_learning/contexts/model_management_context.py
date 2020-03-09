@@ -10,7 +10,10 @@ from abc import ABC
 from azureml.core import Experiment, Model, ScriptRunConfig, Run
 from azureml.exceptions import ActivityFailedException
 
-from azure_utils.configuration.notebook_config import project_configuration_file, train_py_default
+from azure_utils.configuration.notebook_config import (
+    project_configuration_file,
+    train_py_default,
+)
 from azure_utils.machine_learning.contexts.workspace_contexts import WorkspaceContext
 from azure_utils.machine_learning.train_local import get_local_run_configuration
 
@@ -20,10 +23,22 @@ class ModelManagementContext(WorkspaceContext):
     Interface for Contexts that require Model Management
     """
 
-    def __init__(self, subscription_id, resource_group, workspace_name, run_configuration,
-                 configuration_file: str = project_configuration_file, train_py=train_py_default):
-        super().__init__(subscription_id, resource_group, workspace_name, configuration_file=configuration_file,
-                         train_py=train_py)
+    def __init__(
+        self,
+        subscription_id,
+        resource_group,
+        workspace_name,
+        run_configuration,
+        configuration_file: str = project_configuration_file,
+        train_py=train_py_default,
+    ):
+        super().__init__(
+            subscription_id,
+            resource_group,
+            workspace_name,
+            configuration_file=configuration_file,
+            train_py=train_py,
+        )
         self.configuration_file = configuration_file
         self.run_configuration = run_configuration
         self.model_name = None
@@ -59,7 +74,9 @@ class ModelManagementContext(WorkspaceContext):
         :return: registered model from Experiment run.
         """
         run = self.submit_experiment_run(wait_for_completion=self.wait_for_completion)
-        model = run.register_model(model_name=self.model_name, model_path=self.model_path)
+        model = run.register_model(
+            model_name=self.model_name, model_path=self.model_path
+        )
         return model
 
     def submit_experiment_run(self, wait_for_completion: bool = True):
@@ -82,10 +99,23 @@ class LocalTrainingContext(ModelTrainingContext):
     Model Training Context used to run training locally.
     """
 
-    def __init__(self, subscription_id, resource_group, workspace_name, run_configuration=get_local_run_configuration(),
-                 configuration_file: str = project_configuration_file, train_py=train_py_default):
-        super().__init__(subscription_id=subscription_id, resource_group=resource_group, workspace_name=workspace_name,
-                         run_configuration=run_configuration, configuration_file=configuration_file, train_py=train_py)
+    def __init__(
+        self,
+        subscription_id,
+        resource_group,
+        workspace_name,
+        run_configuration=get_local_run_configuration(),
+        configuration_file: str = project_configuration_file,
+        train_py=train_py_default,
+    ):
+        super().__init__(
+            subscription_id=subscription_id,
+            resource_group=resource_group,
+            workspace_name=workspace_name,
+            run_configuration=run_configuration,
+            configuration_file=configuration_file,
+            train_py=train_py,
+        )
         self.args = None
 
     def submit_experiment_run(self, wait_for_completion=True) -> Run:
@@ -98,13 +128,20 @@ class LocalTrainingContext(ModelTrainingContext):
         assert self.train_py
         assert self.run_configuration
         assert self.experiment_name
-        assert os.path.isfile(
-            self.source_directory + "/" + self.train_py), f'The file {self.train_py} could not be found at ' \
-                                                          f'{self.source_directory}'
+        assert os.path.isfile(self.source_directory + "/" + self.train_py), (
+            f"The file {self.train_py} could not be found at "
+            f"{self.source_directory}"
+        )
 
-        src = ScriptRunConfig(source_directory=self.source_directory, script=self.train_py, arguments=self.args,
-                              run_config=self.run_configuration)
-        self.image_tags['train_py_hash'] = self._get_file_md5(self.source_directory + "/" + self.train_py)
+        src = ScriptRunConfig(
+            source_directory=self.source_directory,
+            script=self.train_py,
+            arguments=self.args,
+            run_config=self.run_configuration,
+        )
+        self.image_tags["train_py_hash"] = self._get_file_md5(
+            self.source_directory + "/" + self.train_py
+        )
         exp = Experiment(workspace=self, name=self.experiment_name)
         run = exp.submit(src)
         if wait_for_completion:
