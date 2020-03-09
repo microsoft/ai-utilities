@@ -74,8 +74,7 @@ class WorkspaceContext(Workspace):
             resource_group=project_configuration.get_value("resource_group"),
             name=project_configuration.get_value("workspace_name"),
             location=project_configuration.get_value("workspace_region"),
-            exist_ok=True,
-            **kwargs
+            exist_ok=True
         )
 
         ws = cls(

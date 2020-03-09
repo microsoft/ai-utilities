@@ -808,7 +808,7 @@ class DeepRealtimeScore(
         conda_file="my_env.yml",
         setting_image_name="deep_image_name",
         settings_aks_name="deep_aks_name",
-        settings_aks_service_name="deep_aks_service_name",
+        settings_aks_service_name="deep_aks_service_name", **kwargs
     ):
         super().__init__(
             subscription_id,
