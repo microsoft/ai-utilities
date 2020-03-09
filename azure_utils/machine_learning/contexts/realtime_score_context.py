@@ -647,7 +647,7 @@ class DeepRealtimeScore(RealtimeScoreAKSContext, RealtimeScoreFunctionsContext, 
         self.aks_vm_size = "Standard_NC6"
         self.source_directory = "./script"
 
-        if not os.path.isfile(self.source_directory + "/" + self.score_py):
+        if not os.path.isfile(self.source_directory + "/" + self.train_py):
             os.makedirs(self.source_directory, exist_ok=True)
 
             create_model_py = """
