@@ -662,8 +662,12 @@ if __name__ == '__main__':
     ResNet152().create_model(weights="imagenet", save_model=True, model_path=os.path.join(args.outputs, args.model))
 
 """
-            with open(self.source_directory + "/" + self.score_py, "w") as file:
+            with open(self.source_directory + "/" + self.train_py, "w") as file:
                 file.write(create_model_py)
+
+        assert os.path.isfile(
+            self.source_directory + "/" + self.train_py), f'The file {self.train_py} could not be found at ' \
+                                                          f'{self.source_directory}'
 
 
 class MockRequest:

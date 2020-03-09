@@ -126,6 +126,10 @@ class TestDeployDeepRTS(WorkspaceCreationTests):
         return DeepRealtimeScore
 
     @pytest.fixture(scope="class")
+    def test_files(self):
+        return {"train_py": "create_deep_model.py", "score_py": "score_dl.py"}
+
+    @pytest.fixture(scope="class")
     def realtime_score_context(self, context_type: DeepRealtimeScore,
                                test_files: dict) -> DeepRealtimeScore:
         """
@@ -136,9 +140,6 @@ class TestDeployDeepRTS(WorkspaceCreationTests):
         """
         return context_type.get_or_create_workspace(train_py=test_files['train_py'], score_py=test_files['score_py'])
 
-    @pytest.fixture(scope="class")
-    def test_files(self):
-        return {"train_py": "create_deep_model.py", "score_py": "score_dl.py"}
 
 
 # noinspection PyUnresolvedReferences,PyUnresolvedReferences,PyUnresolvedReferences
