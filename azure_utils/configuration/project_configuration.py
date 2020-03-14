@@ -214,6 +214,18 @@ class ProjectConfiguration:
                     # noinspection PyTypeChecker
                     setting[0][setting_name].append(value_setting)
 
+
+    def append_value(self, setting_name: str, value: str):
+        """
+        Append the value of a specific setting. However, if this is just created there is no setting to set
+        and the request is silently ignored.
+
+        :param setting_name: Key of setting to set
+        :param value: Value of setting to set
+        """
+        original_value = self.get_value(setting_name=setting_name)
+        self.set_value(setting_name=setting_name, value=original_value + value)
+
     @staticmethod
     def get_value_from_config(setting: list, setting_name: str) -> list:
         """

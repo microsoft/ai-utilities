@@ -21,6 +21,7 @@ from azure_utils.machine_learning.contexts.workspace_contexts import WorkspaceCo
 
 
 # noinspection PyMethodMayBeStatic
+@pytest.mark.smoke
 class WorkspaceCreationTests:
     """Workspace Creation Test Suite"""
 
@@ -159,16 +160,23 @@ class TestDeployDeepRTS(WorkspaceCreationTests):
             score_py=files_for_testing["score_py"],
         )
 
+    def test_get_or_create_model(self, realtime_score_context: ModelManagementContext):
+        """
+
+        :param realtime_score_context: Testing Context
+        """
+        assert realtime_score_context.get_or_create_model()
+
 
 # noinspection PyUnresolvedReferences,PyUnresolvedReferences,PyUnresolvedReferences
 class TestDeployDeepRTSLocally:
     def dont_test_train_py(self):
         if not os.path.isdir("outputs"):
-            os.mkdir("outputs")
+            os.mkdir("../outputs")
         if os.path.isfile("script/create_deep_model_new.py"):
             os.system("python script/create_deep_model_new.py")
 
-            assert os.path.isfile("outputs/model.pkl")
+            assert os.path.isfile("../outputs/model.pkl")
 
     # def test_score_py(self):
     #     if os.path.isfile("driver.py"):

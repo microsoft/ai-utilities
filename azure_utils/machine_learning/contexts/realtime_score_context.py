@@ -1379,9 +1379,11 @@ if __name__ == "__main__":
         import tensorflow as tf
 
         tf.logging.set_verbosity(tf.logging.ERROR)
+        import os
+        os.makedirs("outputs", exist_ok=True)
 
         model = ResNet152(include_top=False, input_shape=(200, 200, 3), pooling="avg", weights="imagenet")
-        model.save_weights("deep_model.pkl")
+        model.save_weights("outputs/model.pkl")
 
 """
             with open(self.source_directory + "/" + self.train_py, "w") as file:

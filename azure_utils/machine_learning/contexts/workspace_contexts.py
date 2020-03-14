@@ -5,8 +5,11 @@ Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
 import hashlib
+import warnings
 
+from azureml._base_sdk_common.common import check_valid_resource_name
 from azureml.core import Workspace
+from azureml.exceptions import UserErrorException
 
 from azure_utils.configuration.notebook_config import (
     project_configuration_file,
@@ -57,31 +60,44 @@ class WorkspaceContext(Workspace):
 
     @classmethod
     def get_or_create_workspace(
-        cls, configuration_file: str = project_configuration_file, **kwargs
+        cls,
+        configuration_file: str = project_configuration_file,
+        project_configuration: ProjectConfiguration = None,
+        **kwargs
     ):
         """ Get or create a workspace if it doesn't exist.
 
-        :param configuration_file: path to project configuration file. default: project.yml
+        :param configuration_file:
+        :param project_configuration: ProjectConfiguration
         """
-        project_configuration = ProjectConfiguration(configuration_file)
+        if not project_configuration:
+            project_configuration = ProjectConfiguration(configuration_file)
         assert project_configuration.has_value("subscription_id")
         assert project_configuration.has_value("resource_group")
         assert project_configuration.has_value("workspace_name")
         assert project_configuration.has_value("workspace_region")
+
+        try:
+            check_valid_resource_name(
+                project_configuration.get_value("workspace_name"), "Workspace"
+            )
+        except UserErrorException:
+            print(project_configuration.get_value("workspace_name"))
+            raise
 
         cls.create(
             subscription_id=project_configuration.get_value("subscription_id"),
             resource_group=project_configuration.get_value("resource_group"),
             name=project_configuration.get_value("workspace_name"),
             location=project_configuration.get_value("workspace_region"),
-            exist_ok=True
+            exist_ok=True,
         )
 
         ws = cls(
             project_configuration.get_value("subscription_id"),
             project_configuration.get_value("resource_group"),
             project_configuration.get_value("workspace_name"),
-            configuration_file,
+            project_configuration.configuration_file,
             **kwargs
         )
         return ws

@@ -44,7 +44,7 @@ class MockWorkspaceCreationTests:
         """
         raise NotImplementedError
 
-    def test_get_or_create(
+    def test_mock_get_or_create(
         self,
         realtime_score_context: RealtimeScoreAKSContext,
         context_type: WorkspaceContext,
@@ -63,7 +63,7 @@ class MockWorkspaceCreationTests:
         assert hasattr(realtime_score_context, "score_py")
         assert hasattr(realtime_score_context, "train_py")
 
-    def test_get_or_create_model(
+    def test_mock_get_or_create_model(
         self, monkeypatch, realtime_score_context: MLRealtimeScore
     ):
         """
@@ -102,19 +102,23 @@ class MockWorkspaceCreationTests:
         monkeypatch.setattr(Model, "_get", mockreturn_2)
         monkeypatch.setattr(Model, "_get_model_path_remote", mock_get_model_path_remote)
         monkeypatch.setattr(Model, "_initialize", mock_initialize)
-        realtime_score_context.prepare_data(".")
+        realtime_score_context.prepare_data("..")
         assert realtime_score_context.get_or_create_model()
 
         assert os.path.isfile("model.pkl")
 
-    def test_get_compute_targets(self, realtime_score_context: RealtimeScoreAKSContext):
+    def test_mock_get_compute_targets(
+        self, realtime_score_context: RealtimeScoreAKSContext
+    ):
         """
 
         :param realtime_score_context: Testing Context
         """
         assert realtime_score_context.compute_targets
 
-    def test_get_webservices(self, realtime_score_context: RealtimeScoreAKSContext):
+    def test_mock_get_webservices(
+        self, realtime_score_context: RealtimeScoreAKSContext
+    ):
         """
 
         :param realtime_score_context: Testing Context
@@ -228,7 +232,7 @@ class TestMockDeployDeepRTS(MockWorkspaceCreationTests):
             score_py=files_for_testing["score_py"],
         )
 
-    def test_get_or_create_model(
+    def test_mock_get_or_create_model(
         self, monkeypatch, realtime_score_context: DeepRealtimeScore
     ):
         """
@@ -269,4 +273,4 @@ class TestMockDeployDeepRTS(MockWorkspaceCreationTests):
         monkeypatch.setattr(Model, "_initialize", mock_initialize)
         assert realtime_score_context.get_or_create_model()
 
-        assert os.path.isfile("deep_model.pkl")
+        assert os.path.isfile("../outputs/model.pkl")
