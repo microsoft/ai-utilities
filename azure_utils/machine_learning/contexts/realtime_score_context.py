@@ -996,19 +996,10 @@ class DeepRealtimeScore(
             os.makedirs(self.source_directory, exist_ok=True)
 
             create_model_py = """
-import os
-
-from azure_utils.machine_learning.training_arg_parsers import get_training_parser
-
-import sys
-import warnings
 
 import keras.backend as K
-import numpy as np
 from keras import initializers
 from keras.applications.imagenet_utils import _obtain_input_shape
-from keras.applications.imagenet_utils import decode_predictions
-from keras.applications.imagenet_utils import preprocess_input
 from keras.engine import Layer, InputSpec
 from keras.engine.topology import get_source_inputs
 from keras.layers import Activation
@@ -1024,11 +1015,8 @@ from keras.layers import MaxPooling2D
 from keras.layers import ZeroPadding2D
 from keras.layers import add
 from keras.models import Model
-from keras.preprocessing import image
 from keras.utils import layer_utils
 from keras.utils.data_utils import get_file
-
-# sys.setrecursionlimit(3000)
 
 WEIGHTS_PATH = "https://github.com/adamcasson/resnet152/releases/download/v0.1/resnet152_weights_tf.h5"
 WEIGHTS_PATH_NO_TOP = "https://github.com/adamcasson/resnet152/releases/download/v0.1/resnet152_weights_tf_notop.h5"
@@ -1316,9 +1304,6 @@ if __name__ == "__main__":
         import tensorflow as tf
 
         tf.logging.set_verbosity(tf.logging.ERROR)
-        from tensorflow import keras
-
-        args = get_training_parser()
 
         model = ResNet152(include_top=False, input_shape=(200, 200, 3), pooling="avg", weights="imagenet")
         model.save_weights("deep_model.pkl")
