@@ -25,9 +25,9 @@ from azureml.core.authentication import AbstractAuthentication
 from azureml.exceptions import ActivityFailedException
 from msrest.exceptions import HttpOperationError
 
-from configuration.notebook_config import project_configuration_file
-from configuration.project_configuration import ProjectConfiguration
-from machine_learning.contexts.realtime_score_context import MLRealtimeScore
+from azure_utils.configuration.notebook_config import project_configuration_file
+from azure_utils.configuration.project_configuration import ProjectConfiguration
+from azure_utils.machine_learning.contexts.realtime_score_context import MLRealtimeScore
 
 
 class MockMLRealtimeScore(MLRealtimeScore):

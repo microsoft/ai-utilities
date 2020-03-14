@@ -1,20 +1,13 @@
+import os
+
 import pytest
 from azureml.core import Model
 
-from azure_utils.configuration.project_configuration import ProjectConfiguration
-
 from azure_utils.configuration.notebook_config import project_configuration_file
-from machine_learning.contexts.model_management_context import ModelManagementContext
-
-from machine_learning.contexts.realtime_score_context import (
-    RealtimeScoreAKSContext,
-    MLRealtimeScore,
-)
-from machine_learning.contexts.workspace_contexts import WorkspaceContext
-
-
-# noinspection PyMethodMayBeStatic
-from mocks.azureml.azureml_mocks import MockMLRealtimeScore
+from azure_utils.configuration.project_configuration import ProjectConfiguration
+from azure_utils.machine_learning.contexts.realtime_score_context import (RealtimeScoreAKSContext, MLRealtimeScore, )
+from azure_utils.machine_learning.contexts.workspace_contexts import WorkspaceContext
+from tests.mocks.azureml.azureml_mocks import MockMLRealtimeScore
 
 
 class MockWorkspaceCreationTests:
@@ -110,6 +103,8 @@ class MockWorkspaceCreationTests:
         monkeypatch.setattr(Model, "_initialize", mock_initialize)
         realtime_score_context.prepare_data()
         assert realtime_score_context.get_or_create_model()
+
+        assert os.path.isfile("model.pkl")
 
 
 
