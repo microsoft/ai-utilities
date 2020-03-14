@@ -66,6 +66,7 @@ class RealtimeScoreContext(WorkspaceContext):
         settings_image_name="image_name",
         settings_aks_name="aks_name",
         settings_aks_service_name="aks_service_name",
+        wait_for_completion=True,
         **kwargs,
     ):
         super().__init__(
@@ -116,6 +117,7 @@ class RealtimeScoreContext(WorkspaceContext):
         self.cpu_cores: int = 1
 
         self.workspace_widget = None
+        self.wait_for_completion = wait_for_completion
 
     def test_service_local(self) -> None:
         """

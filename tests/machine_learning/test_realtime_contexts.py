@@ -8,9 +8,15 @@ import os
 import os.path
 import pytest
 
-from azure_utils.machine_learning.contexts.model_management_context import ModelManagementContext
-from azure_utils.machine_learning.contexts.realtime_score_context import DeepRealtimeScore, MLRealtimeScore, \
-    RealtimeScoreAKSContext, RealtimeScoreFunctionsContext
+from azure_utils.machine_learning.contexts.model_management_context import (
+    ModelManagementContext,
+)
+from azure_utils.machine_learning.contexts.realtime_score_context import (
+    DeepRealtimeScore,
+    MLRealtimeScore,
+    RealtimeScoreAKSContext,
+    RealtimeScoreFunctionsContext,
+)
 from azure_utils.machine_learning.contexts.workspace_contexts import WorkspaceContext
 
 
@@ -26,7 +32,7 @@ class WorkspaceCreationTests:
         raise NotImplementedError
 
     @pytest.fixture(scope="class")
-    def test_files(self):
+    def files_for_testing(self):
         """
 
         :return:
@@ -34,8 +40,9 @@ class WorkspaceCreationTests:
         raise NotImplementedError
 
     @pytest.fixture(scope="class")
-    def realtime_score_context(self, context_type: RealtimeScoreAKSContext,
-                               test_files: dict) -> RealtimeScoreAKSContext:
+    def realtime_score_context(
+        self, context_type: RealtimeScoreAKSContext, files_for_testing
+    ) -> RealtimeScoreAKSContext:
         """
         Get or Create Context for Testing
         :param context_type: impl of WorkspaceContext
@@ -44,7 +51,11 @@ class WorkspaceCreationTests:
         """
         raise NotImplementedError
 
-    def test_get_or_create(self, realtime_score_context: RealtimeScoreAKSContext, context_type: WorkspaceContext):
+    def test_get_or_create(
+        self,
+        realtime_score_context: RealtimeScoreAKSContext,
+        context_type: WorkspaceContext,
+    ):
         """
         Assert Context Type and Creation
 
@@ -53,6 +64,13 @@ class WorkspaceCreationTests:
         """
         assert type(realtime_score_context) is context_type
         assert realtime_score_context
+
+    def test_get_or_create_model(self, realtime_score_context: ModelManagementContext):
+        """
+
+        :param realtime_score_context: Testing Context
+        """
+        assert realtime_score_context.get_or_create_model()
 
     def test_get_images(self, realtime_score_context: RealtimeScoreAKSContext):
         """
@@ -69,19 +87,12 @@ class WorkspaceCreationTests:
         """
         assert realtime_score_context.compute_targets
 
-    def test_get_webserices(self, realtime_score_context: RealtimeScoreAKSContext):
+    def test_get_webservices(self, realtime_score_context: RealtimeScoreAKSContext):
         """
 
         :param realtime_score_context: Testing Context
         """
         assert realtime_score_context.webservices
-
-    def test_get_or_create_model(self, realtime_score_context: ModelManagementContext):
-        """
-
-        :param realtime_score_context: Testing Context
-        """
-        assert realtime_score_context.get_or_create_model()
 
     def test_get_or_create_aks(self, realtime_score_context: RealtimeScoreAKSContext):
         """
@@ -93,15 +104,19 @@ class WorkspaceCreationTests:
 
 class TestDeployRTS(WorkspaceCreationTests):
     @pytest.fixture(scope="class")
-    def realtime_score_context(self, context_type: MLRealtimeScore,
-                               test_files: dict) -> MLRealtimeScore:
+    def realtime_score_context(
+        self, context_type: MLRealtimeScore, files_for_testing
+    ) -> MLRealtimeScore:
         """
         Get or Create Context for Testing
+        :param files_for_testing:
         :param context_type: impl of WorkspaceContext
-        :param test_files: Dict of input Files
         :return:
         """
-        return context_type.get_or_create_workspace(train_py=test_files['train_py'], score_py=test_files['score_py'])
+        return context_type.get_or_create_workspace(
+            train_py=files_for_testing["train_py"],
+            score_py=files_for_testing["score_py"],
+        )
 
     @pytest.fixture(scope="class")
     def context_type(self):
@@ -112,7 +127,7 @@ class TestDeployRTS(WorkspaceCreationTests):
         return MLRealtimeScore
 
     @pytest.fixture(scope="class")
-    def test_files(self):
+    def files_for_testing(self):
         return {"train_py": "create_model.py", "score_py": "driver.py"}
 
 
@@ -126,20 +141,23 @@ class TestDeployDeepRTS(WorkspaceCreationTests):
         return DeepRealtimeScore
 
     @pytest.fixture(scope="class")
-    def test_files(self):
+    def files_for_testing(self):
         return {"train_py": "create_deep_model.py", "score_py": "score_dl.py"}
 
     @pytest.fixture(scope="class")
-    def realtime_score_context(self, context_type: DeepRealtimeScore,
-                               test_files: dict) -> DeepRealtimeScore:
+    def realtime_score_context(
+        self, context_type: DeepRealtimeScore, files_for_testing
+    ) -> DeepRealtimeScore:
         """
         Get or Create Context for Testing
         :param context_type: impl of WorkspaceContext
         :param test_files: Dict of input Files
         :return:
         """
-        return context_type.get_or_create_workspace(train_py=test_files['train_py'], score_py=test_files['score_py'])
-
+        return context_type.get_or_create_workspace(
+            train_py=files_for_testing["train_py"],
+            score_py=files_for_testing["score_py"],
+        )
 
 
 # noinspection PyUnresolvedReferences,PyUnresolvedReferences,PyUnresolvedReferences
