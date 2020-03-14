@@ -12,14 +12,24 @@ from azureml._restclient.models import ErrorResponseException
 from azureml._restclient.service_context import ServiceContext
 from azureml._restclient.workspace_client import WorkspaceClient
 from azureml._run_impl.run_history_facade import RunHistoryFacade
-from azureml.core import (Webservice, ComputeTarget, Run, ScriptRunConfig, Experiment, Model, )
+from azureml.core import (
+    Webservice,
+    ComputeTarget,
+    Run,
+    ScriptRunConfig,
+    Experiment,
+    Model,
+)
 from azureml.core.authentication import AbstractAuthentication
 from azureml.exceptions import ActivityFailedException
 from msrest.exceptions import HttpOperationError
 
 from azure_utils.configuration.notebook_config import project_configuration_file
 from azure_utils.configuration.project_configuration import ProjectConfiguration
-from azure_utils.machine_learning.contexts.realtime_score_context import MLRealtimeScore
+from azure_utils.machine_learning.contexts.realtime_score_context import (
+    MLRealtimeScore,
+    DeepRealtimeScore,
+)
 
 
 class MockMLRealtimeScore(MLRealtimeScore):
@@ -80,7 +90,192 @@ class MockMLRealtimeScore(MLRealtimeScore):
             project_configuration.get_value("subscription_id"),
             project_configuration.get_value("resource_group"),
             project_configuration.get_value("workspace_name"),
-            project_configuration_file, **kwargs
+            project_configuration_file,
+            **kwargs,
+        )
+
+    @property
+    def compute_targets(self):
+        return {"mock_aks_1": MockComputeTarget(self, "mock_aks")}
+
+    @property
+    def webservices(self):
+        return {"mock_aks_1": MockWebService(self, "mock_aks")}
+
+    @property
+    def models(self):
+        """Return a dictionary where the key is model name, and value is a :class:`azureml.core.model.Model` object.
+
+        Raises a :class:`azureml.exceptions.WebserviceException` if there was a problem interacting with
+        model management service.
+
+        :return: A dictionary of models.
+        :rtype: dict[str, azureml.core.Model]
+        :raises: azureml.exceptions.WebserviceException
+        """
+        return {}
+
+    def submit_experiment_run(self, wait_for_completion=True) -> Run:
+        """
+
+        :param wait_for_completion:
+        :return:
+        """
+        assert self.source_directory
+        assert self.train_py
+        assert self.run_configuration
+        assert self.experiment_name
+        assert os.path.isfile(self.source_directory + "/" + self.train_py), (
+            f"The file {self.train_py} could not be found at "
+            f"{self.source_directory}"
+        )
+
+        src = ScriptRunConfig(
+            source_directory=self.source_directory,
+            script=self.train_py,
+            arguments=self.args,
+            run_config=self.run_configuration,
+        )
+        self.image_tags["train_py_hash"] = self._get_file_md5(
+            self.source_directory + "/" + self.train_py
+        )
+        exp = MockExperiment(workspace=self, name=self.experiment_name)
+        run = exp.submit(src)
+        if wait_for_completion:
+            try:
+                run.wait_for_completion(show_output=self.show_output)
+            except ActivityFailedException as e:
+                print(run.get_details())
+                raise e
+        return run
+
+    def get_or_create_model(self):
+        """
+        Get or Create Model
+
+        :return: Model from Workspace
+        """
+        assert self.model_name
+
+        if self.model_name in self.models:
+            # if get_model(self.model_name).tags['train_py_hash'] == self.get_file_md5(
+            #         self.source_directory + "/" + self.script):
+            model = Model(self, name=self.model_name)
+            model.download("outputs", exist_ok=True)
+            return model
+
+        model = self.train_model()
+
+        assert model
+        if self.show_output:
+            print(model.name, model.version, model.url, sep="\n")
+        return model
+
+    def train_model(self) -> Model:
+        """
+        Train Model with Experiment Run
+
+        :return: registered model from Experiment run.
+        """
+        run = self.submit_experiment_run(wait_for_completion=self.wait_for_completion)
+
+        Model(self, "mock_model")
+        model = run.register_model(
+            model_name=self.model_name, model_path=self.model_path
+        )
+        return model
+
+    def submit_experiment_run(self, wait_for_completion=True) -> Run:
+        """
+
+        :param wait_for_completion:
+        :return:
+        """
+        assert self.source_directory
+        assert self.train_py
+        assert self.run_configuration
+        assert self.experiment_name
+        assert os.path.isfile(self.source_directory + "/" + self.train_py), (
+            f"The file {self.train_py} could not be found at "
+            f"{self.source_directory}"
+        )
+
+        src = ScriptRunConfig(
+            source_directory=self.source_directory,
+            script=self.train_py,
+            arguments=self.args,
+            run_config=self.run_configuration,
+        )
+        self.image_tags["train_py_hash"] = self._get_file_md5(
+            self.source_directory + "/" + self.train_py
+        )
+        exp = MockExperiment(workspace=self, name=self.experiment_name)
+        run = exp.submit(src)
+        if wait_for_completion:
+            try:
+                run.wait_for_completion(show_output=self.show_output)
+            except ActivityFailedException as e:
+                print(run.get_details())
+                raise e
+        return run
+
+
+class MockDeepRealtimeScore(DeepRealtimeScore):
+    def __init__(
+        self,
+        subscription_id,
+        resource_group,
+        workspace_name,
+        configuration_file,
+        score_py,
+        train_py,
+        model_name="mock_model",
+        **kwargs,
+    ):
+        super().__init__(
+            subscription_id=subscription_id,
+            resource_group=resource_group,
+            workspace_name=workspace_name,
+            configuration_file=configuration_file,
+            train_py=train_py,
+            score_py=score_py,
+            **kwargs,
+        )
+        self._subscription_id = subscription_id
+        self._resource_group = resource_group
+        self._workspace_name = workspace_name
+        self.project_configuration_file = configuration_file
+        self.score_py = score_py
+        self.train_py = train_py
+        self.model_name = model_name
+
+        self._auth = MockAuthentication()
+
+        self._service_context = MockServiceContext(
+            self._subscription_id,
+            self._resource_group,
+            self._workspace_name,
+            "1",
+            self._auth,
+        )
+        self.wait_for_completion = True
+
+    @classmethod
+    def get_or_create_workspace(
+        cls, configuration_file: str = project_configuration_file, **kwargs
+    ):
+        project_configuration = ProjectConfiguration(configuration_file)
+        assert project_configuration.has_value("subscription_id")
+        assert project_configuration.has_value("resource_group")
+        assert project_configuration.has_value("workspace_name")
+        assert project_configuration.has_value("workspace_region")
+
+        return MockMLRealtimeScore(
+            project_configuration.get_value("subscription_id"),
+            project_configuration.get_value("resource_group"),
+            project_configuration.get_value("workspace_name"),
+            project_configuration_file,
+            **kwargs,
         )
 
     @property
@@ -434,10 +629,13 @@ class MockRun(Run):
 
     def run(self):
         import subprocess
+
         try:
-            subprocess.run(["python", "script/" + self.train_py], stderr=PIPE, check=True)
+            subprocess.run(
+                ["python", "script/" + self.train_py], stderr=PIPE, check=True
+            )
         except CalledProcessError as e:
-            raise TrainScriptError(e.stderr.decode('ascii'))
+            raise TrainScriptError(e.stderr.decode("ascii"))
 
     def wait_for_completion(
         self, show_output=False, wait_post_processing=False, raise_on_error=True

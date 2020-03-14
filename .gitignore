@@ -123,3 +123,5 @@ venv.bak/
 .mypy_cache/
 
 config/__pycahce__/
+/.vscode/
+/aml_config/
