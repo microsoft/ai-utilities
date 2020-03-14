@@ -159,6 +159,13 @@ class TestDeployDeepRTS(WorkspaceCreationTests):
             score_py=files_for_testing["score_py"],
         )
 
+    def test_get_or_create_model(self, realtime_score_context: ModelManagementContext):
+        """
+
+        :param realtime_score_context: Testing Context
+        """
+        assert realtime_score_context.get_or_create_model()
+
 
 # noinspection PyUnresolvedReferences,PyUnresolvedReferences,PyUnresolvedReferences
 class TestDeployDeepRTSLocally:
