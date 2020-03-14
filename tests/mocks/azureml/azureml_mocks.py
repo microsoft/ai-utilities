@@ -28,24 +28,25 @@ class MockMLRealtimeScore(MLRealtimeScore):
         subscription_id,
         resource_group,
         workspace_name,
-        project_configuration_file,
+        configuration_file,
         score_py,
         train_py,
         model_name="mock_model",
         **kwargs,
     ):
         super().__init__(
-            subscription_id,
-            resource_group,
-            workspace_name,
-            train_py,
-            score_py,
+            subscription_id=subscription_id,
+            resource_group=resource_group,
+            workspace_name=workspace_name,
+            configuration_file=configuration_file,
+            train_py=train_py,
+            score_py=score_py,
             **kwargs,
         )
         self._subscription_id = subscription_id
         self._resource_group = resource_group
         self._workspace_name = workspace_name
-        self.project_configuration_file = project_configuration_file
+        self.project_configuration_file = configuration_file
         self.score_py = score_py
         self.train_py = train_py
         self.model_name = model_name
@@ -79,7 +80,7 @@ class MockMLRealtimeScore(MLRealtimeScore):
             project_configuration.get_value("subscription_id"),
             project_configuration.get_value("resource_group"),
             project_configuration.get_value("workspace_name"),
-            project_configuration_file,
+            project_configuration_file, **kwargs
         )
 
     @property
@@ -313,6 +314,7 @@ class MockExperiment(Experiment):
         self._workspace = workspace
         self._name = name
         self._workspace_client = MockWorkspaceClient(workspace.service_context)
+        self.train_py = workspace.train_py
 
         _ident = kwargs.pop(
             "_ident", ChainedIdentity.DELIM.join([self.__class__.__name__, self._name])
@@ -399,7 +401,7 @@ class MockExperiment(Experiment):
         :rtype: azureml.core.Run
         """
         # Warn user if trying to run GPU image on a local machine
-        run = MockRun(self, "1")
+        run = MockRun(self, "1", train_py=self.train_py)
         run.run()
         return run
 
@@ -419,9 +421,10 @@ class TrainScriptError(Exception):
 
 
 class MockRun(Run):
-    def __init__(self, experiment, run_id, **kwargs):
+    def __init__(self, experiment, run_id, train_py, **kwargs):
         self._experiment = experiment
         self._run_id = run_id
+        self.train_py = train_py
 
         self._client = MockRunHistoryFacade(
             self._experiment, self._run_id, RUN_ORIGIN, self
@@ -432,7 +435,7 @@ class MockRun(Run):
     def run(self):
         import subprocess
         try:
-            subprocess.run(["python", "script/create_model.py"], stderr=PIPE, check=True)
+            subprocess.run(["python", "script/" + self.train_py], stderr=PIPE, check=True)
         except CalledProcessError as e:
             raise TrainScriptError(e.stderr.decode('ascii'))
 

@@ -103,16 +103,14 @@ class LocalTrainingContext(ModelTrainingContext):
         self,
         subscription_id,
         resource_group,
-        workspace_name,
-        run_configuration=get_local_run_configuration(),
-        configuration_file: str = project_configuration_file,
+        workspace_name, configuration_file: str = project_configuration_file,
         train_py=train_py_default,
     ):
         super().__init__(
             subscription_id=subscription_id,
             resource_group=resource_group,
             workspace_name=workspace_name,
-            run_configuration=run_configuration,
+            run_configuration=get_local_run_configuration(),
             configuration_file=configuration_file,
             train_py=train_py,
         )
@@ -137,7 +135,7 @@ class LocalTrainingContext(ModelTrainingContext):
             source_directory=self.source_directory,
             script=self.train_py,
             arguments=self.args,
-            run_config=self.run_configuration,
+            run_config=get_local_run_configuration(),
         )
         self.image_tags["train_py_hash"] = self._get_file_md5(
             self.source_directory + "/" + self.train_py

@@ -5,7 +5,8 @@ from azureml.core import Model
 
 from azure_utils.configuration.notebook_config import project_configuration_file
 from azure_utils.configuration.project_configuration import ProjectConfiguration
-from azure_utils.machine_learning.contexts.realtime_score_context import (RealtimeScoreAKSContext, MLRealtimeScore, )
+from azure_utils.machine_learning.contexts.realtime_score_context import (RealtimeScoreAKSContext, MLRealtimeScore,
+                                                                          DeepRealtimeScore, )
 from azure_utils.machine_learning.contexts.workspace_contexts import WorkspaceContext
 from tests.mocks.azureml.azureml_mocks import MockMLRealtimeScore
 
@@ -54,7 +55,6 @@ class MockWorkspaceCreationTests:
         # assert issubclass(realtime_score_context, context_type)
         # assert type(realtime_score_context) is context_type
         assert realtime_score_context
-        assert issubclass(type(realtime_score_context), context_type)
         assert hasattr(realtime_score_context, "_subscription_id")
         assert hasattr(realtime_score_context, "_resource_group")
         assert hasattr(realtime_score_context, "_workspace_name")
@@ -148,6 +148,52 @@ class TestMockDeployRTS(MockWorkspaceCreationTests):
     @pytest.fixture(scope="class")
     def files_for_testing(self):
         return {"train_py": "create_model.py", "score_py": "driver.py"}
+
+    @pytest.fixture
+    def realtime_score_context(
+        self, monkeypatch, context_type: MLRealtimeScore, files_for_testing
+    ) -> MLRealtimeScore:
+        """
+        Get or Create Context for Testing
+        :param files_for_testing:
+        :param context_type: impl of WorkspaceContext
+        :return:
+        """
+
+        def mockreturn(train_py, score_py):
+            project_configuration = ProjectConfiguration(project_configuration_file)
+            assert project_configuration.has_value("subscription_id")
+            assert project_configuration.has_value("resource_group")
+            assert project_configuration.has_value("workspace_name")
+            ws = MockMLRealtimeScore(
+                subscription_id=project_configuration.get_value("subscription_id"),
+                resource_group=project_configuration.get_value("resource_group"),
+                workspace_name=project_configuration.get_value("workspace_name"),
+                configuration_file=project_configuration_file,
+                score_py=score_py,
+                train_py=train_py,
+            )
+            return ws
+
+        monkeypatch.setattr(context_type, "get_or_create_workspace", mockreturn)
+
+        return context_type.get_or_create_workspace(
+            train_py=files_for_testing["train_py"],
+            score_py=files_for_testing["score_py"],
+        )
+
+class TestMockDeployDeepRTS(MockWorkspaceCreationTests):
+    @pytest.fixture(scope="class")
+    def context_type(self):
+        """
+
+        :return:
+        """
+        return DeepRealtimeScore
+
+    @pytest.fixture(scope="class")
+    def files_for_testing(self):
+        return {"train_py": "create_deep_model.py", "score_py": "deep_driver.py"}
 
     @pytest.fixture
     def realtime_score_context(
