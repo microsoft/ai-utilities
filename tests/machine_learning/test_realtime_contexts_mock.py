@@ -101,7 +101,7 @@ class MockWorkspaceCreationTests:
         monkeypatch.setattr(Model, "_get", mockreturn_2)
         monkeypatch.setattr(Model, "_get_model_path_remote", mock_get_model_path_remote)
         monkeypatch.setattr(Model, "_initialize", mock_initialize)
-        realtime_score_context.prepare_data()
+        realtime_score_context.prepare_data(".")
         assert realtime_score_context.get_or_create_model()
 
         assert os.path.isfile("model.pkl")

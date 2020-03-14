@@ -780,6 +780,7 @@ if __name__ == '__main__':
     labels_path = os.path.join(outputs_path, args.labels)
 
     # Load the training data
+    assert os.path.isfile(data_path)
     print('Reading {}'.format(data_path))
     train = pd.read_csv(data_path, sep='\t', encoding='latin1')
 
@@ -870,11 +871,10 @@ if __name__ == '__main__':
                 "RUN apt update -y && apt upgrade -y && apt install -y build-essential"
             )
 
-    def prepare_data(self) -> None:
+    def prepare_data(self, outputs_path = directory + "/data_folder") -> None:
         """
         Prepare the training data
         """
-        outputs_path = directory + "/data_folder"
         dupes_test_path = os.path.join(outputs_path, "dupes_test.tsv")
         questions_path = os.path.join(outputs_path, "questions.tsv")
 
