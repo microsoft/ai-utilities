@@ -35,7 +35,7 @@ class WorkspaceIntegrationTests:
         project_configuration = ProjectConfiguration(project_configuration_file)
 
         allchar = string.ascii_letters + string.digits
-        append = "".join(random.choice(allchar) for x in range(1, 5))
+        append = "".join(random.choice(allchar) for _ in range(1, 5))
 
         settings = [
             "resource_group",

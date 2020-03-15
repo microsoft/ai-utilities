@@ -13,4 +13,5 @@ setup(name="Microsoft-AI-Azure-Utility-Samples", version="0.3.81", description="
       install_requires=['azureml-core', 'azure-cli==2.0.81', 'python-dotenv', 'nbformat', 'papermill', 'nbconvert',
                         'junit_xml', 'PyYAML', 'pytest', 'lightgbm==2.1.2', 'pandas', 'sklearn', 'msrestazure',
                         'azure-common', 'azure-cli-ml', 'deprecated', 'requests', 'wget', 'numpy', 'Pillow', 'keras',
-                        'resnet', 'azureml-contrib-functions', 'toolz', 'knack', 'ipywidgets', 'tabulate', 'flask'])
+                        'resnet', 'azureml-contrib-functions', 'toolz', 'knack', 'ipywidgets', 'tabulate', 'flask',
+                        'msrest', 'azure'])
