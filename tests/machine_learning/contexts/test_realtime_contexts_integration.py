@@ -27,6 +27,7 @@ import random
 
 
 # noinspection PyMethodMayBeStatic
+@pytest.mark.skip
 class WorkspaceIntegrationTests:
     """Workspace Creation Test Suite"""
 
@@ -52,9 +53,15 @@ class WorkspaceIntegrationTests:
         for setting in settings:
             project_configuration.append_value(setting, append)
         yield project_configuration
-        ws = WorkspaceContext.get_or_create_workspace(project_configuration=project_configuration)
-        rg_client = ResourceManagementClient(ws._auth, project_configuration.get_value("subscription_id"))
-        rg_client.resource_groups.delete(resource_group_name=project_configuration.get_value("resource_group"))
+        ws = WorkspaceContext.get_or_create_workspace(
+            project_configuration=project_configuration
+        )
+        rg_client = ResourceManagementClient(
+            ws._auth, project_configuration.get_value("subscription_id")
+        )
+        rg_client.resource_groups.delete(
+            resource_group_name=project_configuration.get_value("resource_group")
+        )
 
     @pytest.fixture(scope="class")
     def context_type(self):
@@ -105,34 +112,6 @@ class WorkspaceIntegrationTests:
         :param realtime_score_context: Testing Context
         """
         assert realtime_score_context.get_or_create_model()
-
-    def test_integration_get_images(
-        self, realtime_score_context: RealtimeScoreAKSContext
-    ):
-        """
-        Assert images have been created
-
-        :param realtime_score_context: Testing Context
-        """
-        assert realtime_score_context.images
-
-    def test_integration_get_compute_targets(
-        self, realtime_score_context: RealtimeScoreAKSContext
-    ):
-        """
-
-        :param realtime_score_context: Testing Context
-        """
-        assert realtime_score_context.compute_targets
-
-    def test_integration_get_webservices(
-        self, realtime_score_context: RealtimeScoreAKSContext
-    ):
-        """
-
-        :param realtime_score_context: Testing Context
-        """
-        assert realtime_score_context.webservices
 
     def test_integration_get_or_create_aks(
         self, realtime_score_context: RealtimeScoreAKSContext
