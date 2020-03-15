@@ -273,4 +273,4 @@ class TestMockDeployDeepRTS(MockWorkspaceCreationTests):
         monkeypatch.setattr(Model, "_initialize", mock_initialize)
         assert realtime_score_context.get_or_create_model()
 
-        assert os.path.isfile("../outputs/model.pkl")
+        assert os.path.isfile("outputs/model.pkl")
