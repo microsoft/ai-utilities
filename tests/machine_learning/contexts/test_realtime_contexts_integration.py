@@ -4,26 +4,18 @@ AI-Utilities - test_realtime_contexts
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 """
-import os
-import os.path
+import random
+import string
+
 import pytest
 from azure.mgmt.resource import ResourceManagementClient
 
-from azure_utils.azureml_tools.resource_group import _get_resource_group_client
 from azure_utils.configuration.notebook_config import project_configuration_file
 from azure_utils.configuration.project_configuration import ProjectConfiguration
-from azure_utils.machine_learning.contexts.model_management_context import (
-    ModelManagementContext,
-)
-from azure_utils.machine_learning.contexts.realtime_score_context import (
-    DeepRealtimeScore,
-    MLRealtimeScore,
-    RealtimeScoreAKSContext,
-    RealtimeScoreFunctionsContext,
-)
+from azure_utils.machine_learning.contexts.model_management_context import (ModelManagementContext, )
+from azure_utils.machine_learning.contexts.realtime_score_context import (DeepRealtimeScore, MLRealtimeScore,
+                                                                          RealtimeScoreAKSContext, )
 from azure_utils.machine_learning.contexts.workspace_contexts import WorkspaceContext
-import string
-import random
 
 
 # noinspection PyMethodMayBeStatic
