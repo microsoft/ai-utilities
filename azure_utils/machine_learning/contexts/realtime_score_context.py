@@ -62,6 +62,7 @@ class RealtimeScoreContext(WorkspaceContext):
         resource_group,
         workspace_name,
         configuration_file: str = project_configuration_file,
+        project_configuration=None,
         score_py=score_py_default,
         settings_image_name="image_name",
         settings_aks_name="aks_name",
@@ -69,14 +70,14 @@ class RealtimeScoreContext(WorkspaceContext):
         wait_for_completion=True,
         **kwargs,
     ):
+        if not project_configuration:
+            project_configuration = ProjectConfiguration(configuration_file)
         super().__init__(
             subscription_id=subscription_id,
             resource_group=resource_group,
             workspace_name=workspace_name,
-            configuration_file=configuration_file,
             **kwargs,
         )
-        project_configuration = ProjectConfiguration(configuration_file)
         self.project_configuration = project_configuration
 
         self.score_py = score_py
@@ -221,6 +222,7 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         resource_group: str,
         workspace_name: str,
         configuration_file: str = project_configuration_file,
+        project_configuration=None,
         score_py=score_py_default,
         settings_aks_name="aks_name",
         settings_aks_service_name="aks_service_name",
@@ -234,11 +236,13 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         :param workspace_name: Azure Machine Learning Workspace
         :param kwargs: additional args
         """
+        if not project_configuration:
+            project_configuration = ProjectConfiguration(configuration_file)
         super().__init__(
             subscription_id=subscription_id,
             resource_group=resource_group,
             workspace_name=workspace_name,
-            configuration_file=configuration_file,
+            project_configuration=project_configuration,
             score_py=score_py,
             **kwargs,
         )
@@ -622,16 +626,19 @@ class MLRealtimeScore(RealtimeScoreAKSContext, LocalTrainingContext):
         resource_group,
         workspace_name,
         configuration_file: str = project_configuration_file,
+        project_configuration=None,
         train_py=train_py_default,
         score_py=score_py_default,
         conda_file="my_env.yml",
         **kwargs,
     ):
+        if not project_configuration:
+            project_configuration = ProjectConfiguration(configuration_file)
         super().__init__(
             subscription_id=subscription_id,
             resource_group=resource_group,
             workspace_name=workspace_name,
-            configuration_file=configuration_file,
+            project_configuration=project_configuration,
             score_py=score_py,
             **kwargs,
         )
@@ -871,7 +878,7 @@ if __name__ == '__main__':
                 "RUN apt update -y && apt upgrade -y && apt install -y build-essential"
             )
 
-    def prepare_data(self, outputs_path = directory + "/data_folder") -> None:
+    def prepare_data(self, outputs_path=directory + "/data_folder") -> None:
         """
         Prepare the training data
         """

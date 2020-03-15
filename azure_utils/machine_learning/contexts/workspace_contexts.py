@@ -28,8 +28,7 @@ class WorkspaceContext(Workspace):
         self,
         subscription_id: str,
         resource_group: str,
-        workspace_name: str,
-        configuration_file: str = project_configuration_file,
+        workspace_name: str, configuration_file: str = project_configuration_file, project_configuration=None,
         train_py: str = train_py_default,
         score_py: str = score_py_default,
         **kwargs
@@ -45,8 +44,9 @@ class WorkspaceContext(Workspace):
         :param score_py: python source file for scoring
         """
         super().__init__(subscription_id, resource_group, workspace_name, **kwargs)
-        self.configuration_file = configuration_file
-        self.project_configuration = ProjectConfiguration(configuration_file)
+        if not project_configuration:
+            self.project_configuration = ProjectConfiguration(configuration_file)
+
         self.image_tags = None
         self.args = None
         self.train_py = train_py
@@ -94,10 +94,10 @@ class WorkspaceContext(Workspace):
         )
 
         ws = cls(
-            project_configuration.get_value("subscription_id"),
-            project_configuration.get_value("resource_group"),
-            project_configuration.get_value("workspace_name"),
-            project_configuration.configuration_file,
+            subscription_id=project_configuration.get_value("subscription_id"),
+            resource_group=project_configuration.get_value("resource_group"),
+            workspace_name=project_configuration.get_value("workspace_name"),
+            project_configuration=project_configuration,
             **kwargs
         )
         return ws
