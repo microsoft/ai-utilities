@@ -1,10 +1,26 @@
 workspace_conf.yml
 project.yml
+data_folder
+model.pkl
+test-timing-output.xml
+*project.yml
+*.output_ipynb
+*lynx*jpg
+
+*env.yml
+my_env.yml
+lgbmenv.yml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Jetbrains
+.idea
+
+# AzureML
+.azureml
 
 # C extensions
 *.so
@@ -107,3 +123,5 @@ venv.bak/
 .mypy_cache/
 
 config/__pycahce__/
+/.vscode/
+/aml_config/

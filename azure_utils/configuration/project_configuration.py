@@ -6,7 +6,7 @@ Licensed under the MIT License.
 """
 
 import os
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 import yaml
 
@@ -25,11 +25,12 @@ class ProjectConfiguration:
             - value: <>
         etc....
     """
+
     configuration: Dict[str, Optional[str]]
     project_key = "project_name"
     settings_key = "settings"
-    setting_value = 'value'
-    setting_description = 'description'
+    setting_value = "value"
+    setting_description = "description"
 
     def __init__(self, configuration_file: str):
         """
@@ -38,12 +39,24 @@ class ProjectConfiguration:
 
         :param configuration_file: File path to configuration file
         """
+        self.configuration: dict = {}
         found, file_dir = find_file(configuration_file)
         self.configuration_file = file_dir + "/" + configuration_file
-        self.configuration = {}
-
         if not found:
-            self.configuration = ProjectConfiguration("project_sample.yml").configuration
+            self.set_project_name("project_name")
+            self.add_setting("subscription_id", "Your Azure Subscription", "<>")
+            self.add_setting("resource_group", "Azure Resource Group Name", "<>")
+            self.add_setting("workspace_name", "Azure ML Workspace Name", "<>")
+            self.add_setting("workspace_region", "Azure ML Workspace Region", "<>")
+            self.add_setting("image_name", "Docker Container Image Name", "<>")
+            self.add_setting("aks_service_name", "AKS Service Name", "<>")
+            self.add_setting("aks_location", " AKS Azure Region", "<>")
+            self.add_setting("aks_name", "AKS Cluster Name", "<>")
+            self.add_setting("deep_image_name", "Docker Container Image Name", "<>")
+            self.add_setting("deep_aks_service_name", "AKS Service Name", "<>")
+            self.add_setting("deep_aks_name", "AKS Cluster Name", "<>")
+            self.add_setting("deep_aks_location", "AKS Azure Region", "<>")
+
             self.save_configuration()
 
         self._load_configuration()
@@ -65,13 +78,13 @@ class ProjectConfiguration:
         if key_name not in self.configuration.keys():
             raise Exception("Invalid configuration file")
 
-    def _load_configuration(self):
+    def _load_configuration(self) -> None:
         """
         Load the configuration file from disk, there is no security around this. Although
         it will be called from the constructor, which will create a default file for the user.
         """
-        with open(self.configuration_file, 'r') as ymlfile:
-            self.configuration = yaml.load(ymlfile, Loader=yaml.BaseLoader)
+        with open(self.configuration_file) as ymlfile:
+            self.configuration = yaml.safe_load(ymlfile)
 
         assert self.configuration
 
@@ -90,10 +103,10 @@ class ProjectConfiguration:
 
         :param project_name: Project Configuration Name
         """
-        self._validate_configuration(ProjectConfiguration.project_key)
+        # self._validate_configuration(ProjectConfiguration.project_key)
         self.configuration[ProjectConfiguration.project_key] = project_name
 
-    def has_settings(self, setting_name: str) -> bool:
+    def has_value(self, setting_name: str) -> bool:
         """
         Get all of the settings (UI Configuration)
 
@@ -127,13 +140,21 @@ class ProjectConfiguration:
         :param description: Text describing the setting
         :param value: Value of setting to saving in configuration
         """
-        self._validate_configuration(ProjectConfiguration.settings_key)
+        # self._validate_configuration(ProjectConfiguration.settings_key)
 
-        if not isinstance(self.configuration[ProjectConfiguration.settings_key], list):
+        if (
+            ProjectConfiguration.settings_key not in self.configuration
+            or not isinstance(
+                self.configuration[ProjectConfiguration.settings_key], list
+            )
+        ):
+            # noinspection PyTypeChecker
             self.configuration[ProjectConfiguration.settings_key] = []
 
         new_setting = {setting_name: []}
-        new_setting[setting_name].append({ProjectConfiguration.setting_description: description})
+        new_setting[setting_name].append(
+            {ProjectConfiguration.setting_description: description}
+        )
         new_setting[setting_name].append({ProjectConfiguration.setting_value: value})
         self.configuration[ProjectConfiguration.settings_key].append(new_setting)
 
@@ -150,13 +171,27 @@ class ProjectConfiguration:
         return_value = None
 
         if isinstance(self.configuration[ProjectConfiguration.settings_key], list):
-            setting = [x for x in self.configuration[ProjectConfiguration.settings_key] if setting_name in x.keys()]
+            setting = self.get_settings_from_config(setting_name)
             if len(setting) == 1:
-                value = [x for x in setting[0][setting_name] if ProjectConfiguration.setting_value in x.keys()]
+                value = self.get_value_from_config(setting, setting_name)
                 if len(value) == 1:
                     return_value = value[0][ProjectConfiguration.setting_value]
 
         return return_value
+
+    def get_settings_from_config(self, setting_name: str) -> list:
+        """
+        Get list of project settings from yaml configuration.
+
+        :param setting_name: Name of settings key in YAML file
+        :return: list of project settings
+        """
+        setting = [
+            x
+            for x in self.configuration[ProjectConfiguration.settings_key]
+            if setting_name in x.keys()
+        ]
+        return setting
 
     def set_value(self, setting_name: str, value: str):
         """
@@ -169,22 +204,50 @@ class ProjectConfiguration:
         self._validate_configuration(ProjectConfiguration.settings_key)
 
         if isinstance(self.configuration[ProjectConfiguration.settings_key], list):
-            setting = [x for x in self.configuration[ProjectConfiguration.settings_key] if setting_name in x.keys()]
+            setting = self.get_settings_from_config(setting_name)
             if len(setting) == 1:
-                current_value = [x for x in setting[0][setting_name] if ProjectConfiguration.setting_value in x.keys()]
+                current_value = self.get_value_from_config(setting, setting_name)
                 if len(current_value) == 1:
                     current_value[0][ProjectConfiguration.setting_value] = value
                 else:
                     value_setting = {ProjectConfiguration.setting_value: value}
+                    # noinspection PyTypeChecker
                     setting[0][setting_name].append(value_setting)
 
-    def save_configuration(self):
+
+    def append_value(self, setting_name: str, value: str):
+        """
+        Append the value of a specific setting. However, if this is just created there is no setting to set
+        and the request is silently ignored.
+
+        :param setting_name: Key of setting to set
+        :param value: Value of setting to set
+        """
+        original_value = self.get_value(setting_name=setting_name)
+        self.set_value(setting_name=setting_name, value=original_value + value)
+
+    @staticmethod
+    def get_value_from_config(setting: list, setting_name: str) -> list:
+        """
+        Get a setting from the list of settings
+
+        :param setting: list of settings
+        :param setting_name: name of setting to return
+        :return: settings of given name
+        """
+        return [
+            x
+            for x in setting[0][setting_name]
+            if ProjectConfiguration.setting_value in x.keys()
+        ]
+
+    def save_configuration(self) -> None:
         """ Save the configuration file """
-        with open(self.configuration_file, 'w') as ymlfile:
+        with open(self.configuration_file, "w") as ymlfile:
             yaml.dump(self.configuration, ymlfile)
 
 
-def transverse_up(file: str, search_depth: int = 5):
+def transverse_up(file: str, search_depth: int = 3):
     """
     Check if file is in directory, and if not recursive call up to 5 times
 

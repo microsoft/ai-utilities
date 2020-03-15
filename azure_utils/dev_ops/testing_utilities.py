@@ -10,15 +10,20 @@ import re
 import sys
 
 import nbformat
-from nbconvert import MarkdownExporter, RSTExporter
-from junit_xml import TestCase, TestSuite
 import papermill as pm
+from junit_xml import TestCase, TestSuite, to_xml_report_file
+from nbconvert import MarkdownExporter, RSTExporter
 
 notebook_output_ext = ".output_ipynb"
 
 
-def run_notebook(input_notebook, add_nunit_attachment, parameters=None, kernel_name="ai-architecture-template",
-                 root="."):
+def run_notebook(
+    input_notebook,
+    add_nunit_attachment,
+    parameters=None,
+    kernel_name="ai-architecture-template",
+    root=".",
+):
     """
     Used to run a notebook in the correct directory.
 
@@ -37,7 +42,7 @@ def run_notebook(input_notebook, add_nunit_attachment, parameters=None, kernel_n
             os.path.join(root, input_notebook),
             os.path.join(root, output_notebook),
             parameters=parameters,
-            kernel_name=kernel_name
+            kernel_name=kernel_name,
         )
 
         for cell in results.cells:
@@ -46,28 +51,43 @@ def run_notebook(input_notebook, add_nunit_attachment, parameters=None, kernel_n
     finally:
         with open(os.path.join(root, output_notebook)) as json_file:
             data = json.load(json_file)
-            jupyter_output = nbformat.reads(json.dumps(data), as_version=nbformat.NO_CONVERT)
+            jupyter_output = nbformat.reads(
+                json.dumps(data), as_version=nbformat.NO_CONVERT
+            )
 
-        export_md(jupyter_output, output_notebook, add_nunit_attachment, file_ext=".txt", root=root)
+        export_md(
+            jupyter_output,
+            output_notebook,
+            add_nunit_attachment,
+            file_ext=".txt",
+            root=root,
+        )
 
-        regex = r'Deployed (.*) with name (.*). Took (.*) seconds.'
+        regex = r"Deployed (.*) with name (.*). Took (.*) seconds."
 
-        with open(os.path.join(root, output_notebook), 'r') as file:
+        with open(os.path.join(root, output_notebook)) as file:
             data = file.read()
 
             test_cases = []
             for group in re.findall(regex, data):
                 test_cases.append(
-                    TestCase(name=group[0] + " creation", classname=input_notebook, elapsed_sec=float(group[2]),
-                             status="Success"))
+                    TestCase(
+                        name=group[0] + " creation",
+                        classname=input_notebook,
+                        elapsed_sec=float(group[2]),
+                        status="Success",
+                    )
+                )
 
             test_suite = TestSuite("my test suite", test_cases)
 
-            with open('test-timing-output.xml', 'w') as test_file:
-                TestSuite.to_file(test_file, [test_suite], prettyprint=False)
+            with open("test-timing-output.xml", "w") as test_file:
+                to_xml_report_file(test_file, [test_suite], prettyprint=False)
 
 
-def export_notebook(exporter, jupyter_output, output_notebook, add_nunit_attachment, file_ext, root='.'):
+def export_notebook(
+    exporter, jupyter_output, output_notebook, add_nunit_attachment, file_ext, root="."
+):
     """
     Export Jupyter Output to File
 
@@ -79,16 +99,18 @@ def export_notebook(exporter, jupyter_output, output_notebook, add_nunit_attachm
     :param root:
     """
     (body, _) = exporter.from_notebook_node(jupyter_output)
-    with open(os.path.join(root, output_notebook.replace(notebook_output_ext, file_ext)), "w") as text_file:
+    path = os.path.join(root, output_notebook.replace(notebook_output_ext, file_ext))
+    with open(path, "w") as text_file:
         sys.stderr.write(body)
         text_file.write(body)
 
     if add_nunit_attachment is not None:
-        path = os.path.join(root, output_notebook.replace(notebook_output_ext, file_ext))
         add_nunit_attachment(path, output_notebook)
 
 
-def export_md(jupyter_output, output_notebook, add_nunit_attachment, file_ext='.md', root="."):
+def export_md(
+    jupyter_output, output_notebook, add_nunit_attachment, file_ext=".md", root="."
+):
     """
     Export Jupyter Output to Markdown File
 
@@ -99,10 +121,19 @@ def export_md(jupyter_output, output_notebook, add_nunit_attachment, file_ext='.
     :param root:
     """
     markdown_exporter = MarkdownExporter()
-    export_notebook(markdown_exporter, jupyter_output, output_notebook, add_nunit_attachment, file_ext, root=root)
+    export_notebook(
+        markdown_exporter,
+        jupyter_output,
+        output_notebook,
+        add_nunit_attachment,
+        file_ext,
+        root=root,
+    )
 
 
-def export_rst(jupyter_output, output_notebook, add_nunit_attachment, file_ext='.rst', root="."):
+def export_rst(
+    jupyter_output, output_notebook, add_nunit_attachment, file_ext=".rst", root="."
+):
     """
     Export Jupyter Output to RST File
 
@@ -113,4 +144,11 @@ def export_rst(jupyter_output, output_notebook, add_nunit_attachment, file_ext='
     :param root:
     """
     rst_exporter = RSTExporter()
-    export_notebook(rst_exporter, jupyter_output, output_notebook, add_nunit_attachment, file_ext, root=root)
+    export_notebook(
+        rst_exporter,
+        jupyter_output,
+        output_notebook,
+        add_nunit_attachment,
+        file_ext,
+        root=root,
+    )

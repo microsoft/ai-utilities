@@ -37,6 +37,8 @@ from azure_utils.configuration.configuration_ui import SettingsUpdate
 from azure_utils.configuration.project_configuration import ProjectConfiguration
 
 project_configuration_file = "project.yml"
+train_py_default = "train.py"
+score_py_default = "score.py"
 
 
 def get_or_configure_settings(configuration_yaml: str = project_configuration_file):
@@ -47,9 +49,9 @@ def get_or_configure_settings(configuration_yaml: str = project_configuration_fi
     :param configuration_yaml: Location of configuration yaml
     """
     settings_object = get_settings(configuration_yaml)
-    sub_id = settings_object.get_value('subscription_id')
+    sub_id = settings_object.get_value("subscription_id")
 
-    if sub_id == '<>':
+    if sub_id == "<>":
         configure_settings(configuration_yaml)
 
     return get_settings(configuration_yaml)
@@ -82,7 +84,9 @@ def configure_settings(configuration_yaml: str = project_configuration_file):
     app.mainloop()
 
 
-def get_settings(configuration_yaml: str = project_configuration_file) -> ProjectConfiguration:
+def get_settings(
+    configuration_yaml: str = project_configuration_file,
+) -> ProjectConfiguration:
     """
         Acquire the project settings from the provided configuration_yaml file.
         If a file is not provided, the default ./project.yml will be created and
@@ -103,5 +107,5 @@ def get_settings(configuration_yaml: str = project_configuration_file) -> Projec
     return ProjectConfiguration(configuration_yaml)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     configure_settings()
