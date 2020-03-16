@@ -1,29 +1,27 @@
 name: ai-utilities
 channels:
   - conda-forge
-  - r
 dependencies:
   - python=3.6.2
   - pip
   - jupyter
-  - pytest
-  - pytest-cov
-  - nb_conda_kernels
-  - pylint
-  - pandas
-  - scikit-learn
-  - numpy
-  - urllib3
+  - pytest==5.4.1
+  - pytest-cov==2.8.1
+  - nb_conda_kernels==2.2.3
+  - pylint==2.4.4
+  - pandas==1.0.2
+  - scikit-learn==0.20.3
+  - numpy==1.18.1
+  - urllib3==1.25.7
   - cudatoolkit==9.0
   - tensorflow-gpu==1.14.0
-  - matplotlib
+  - matplotlib==3.2.0
   - jupyter_contrib_nbextensions
-  - ipywidgets
+  - ipywidgets==7.5.1
   - ipykernel
-  - r-irkernel
   - pip:
-    - resnet
-    - papermill
+    - resnet==0.1
+    - papermill==2.0.0
     - azureml-core==1.0.85
     - azureml-train==1.0.85
     - azureml-contrib-services==1.0.85
@@ -36,17 +34,17 @@ dependencies:
     - python-dotenv
     - PyYAML
     - msrestazure
-    - azure-common
+    - azure-common==1.1.25
     - lightgbm
     - Deprecated
     - Pillow==6.1.0
     - wget==3.2
     - toolz==0.9.0
     - tqdm==4.32.2
-    - azure-core
+    - azure-core==1.0.85
     - keras==2.2.4
     - locustio==0.11.0
     - prompt-toolkit==2.0.9
-    - PyOpenSSL
+    - PyOpenSSL==19.1.0
     - nb-clean
     - git+https://github.com/microsoft/AI-Utilities.git@dciborow/no-cli
