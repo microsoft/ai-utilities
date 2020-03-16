@@ -5,7 +5,6 @@ channels:
 dependencies:
   - python=3.6.2
   - pip
-  - psutil==5.7.0
   - jupyter
   - pytest
   - pytest-cov
@@ -29,8 +28,6 @@ dependencies:
     - azureml-train==1.0.85
     - azureml-contrib-services==1.0.85
     - azureml-contrib-functions==1.0.85
-    - azure-cli==2.0.81
-    - azure-cli-ml
     - pylint-junit
     - pytest-nunit
     - nbconvert
@@ -52,4 +49,4 @@ dependencies:
     - prompt-toolkit==2.0.9
     - PyOpenSSL
     - nb-clean
-    - git+https://github.com/microsoft/AI-Utilities.git
+    - git+https://github.com/microsoft/AI-Utilities.git@dciborow/no-cli
