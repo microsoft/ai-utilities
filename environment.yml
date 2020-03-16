@@ -42,9 +42,10 @@ dependencies:
     - azureml-train==1.0.85
     - azureml-contrib-services==1.0.85
     - azureml-contrib-functions==1.0.85
-    - pylint-junit
-    - pytest-nunit
-    - junit-xml
+    - pylint-junit==0.2.0
+    - pytest-nunit==0.5.2
+    - junit-xml==1.9
     - wget==3.2
     - locustio==0.11.0
-    - nb-clean
+    - nb-clean==1.4.1
+    - git+https://github.com/microsoft/AI-Utilities.git
