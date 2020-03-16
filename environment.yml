@@ -49,4 +49,3 @@ dependencies:
     - prompt-toolkit==2.0.9
     - PyOpenSSL
     - nb-clean
-    - git+https://github.com/microsoft/AI-Utilities.git
