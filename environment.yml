@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - r
 dependencies:
-  - python=3.6.2
+  - python=3.8.2
   - pip
   - psutil
   - jupyter
