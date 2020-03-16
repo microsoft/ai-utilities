@@ -24,12 +24,11 @@ dependencies:
   - pip:
     - resnet
     - papermill
+    - azure-core
     - azureml-core==1.0.85
     - azureml-train==1.0.85
     - azureml-contrib-services==1.0.85
     - azureml-contrib-functions==1.0.85
-    - azure-cli==2.0.81
-    - azure-cli-ml
     - pylint-junit
     - pytest-nunit
     - nbconvert
@@ -45,7 +44,6 @@ dependencies:
     - wget==3.2
     - toolz==0.9.0
     - tqdm==4.32.2
-    - azure-core
     - keras==2.2.4
     - locustio==0.11.0
     - prompt-toolkit==2.0.9
