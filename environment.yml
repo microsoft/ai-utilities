@@ -32,7 +32,7 @@ dependencies:
   - Pillow==6.1.0
   - python-dotenv
   - azure-common==1.1.24
-  - pip==20.0.2
+  - pip
   - pip:
     - resnet
     - prompt-toolkit==2.0.9
