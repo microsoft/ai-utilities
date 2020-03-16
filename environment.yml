@@ -9,4 +9,4 @@ dependencies:
     - azureml-train==1.0.85
     - azureml-contrib-services==1.0.85
     - azureml-contrib-functions==1.0.85
-    - git+https://github.com/microsoft/AI-Utilities.git
+    - git+https://github.com/microsoft/AI-Utilities.git@dciborow/no-cli
