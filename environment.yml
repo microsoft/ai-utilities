@@ -3,30 +3,30 @@ channels:
   - conda-forge
 dependencies:
   - python=3.6.2
-  - pylint==2.4.4
-  - pytest==5.4.1
+  - pylint
+  - pytest
   - pytest-cov
   - Deprecated
   - PyYAML==5.3
   - pandas
   - scikit-learn
-  - numpy==1.18.1
-  - urllib3==1.25.7
+  - numpy
+  - urllib3
   - cudatoolkit==9.0
   - tensorflow-gpu==1.14.0
   - jupyter
-  - jupyter_contrib_nbextensions==0.5.1
+  - jupyter_contrib_nbextensions
   - matplotlib==3.2.0
-  - nb_conda_kernels==2.2.3
-  - ipywidgets==7.5.1
+  - nb_conda_kernels
+  - ipywidgets
   - ipykernel
   - nbformat
   - nbconvert
   - papermill
   - msrestazure
-  - lightgbm==2.3.1
+  - lightgbm
   - toolz==0.9.0
-  - tqdm==4.43.0
+  - tqdm
   - keras==2.2.4
   - PyOpenSSL
   - Pillow==6.1.0
