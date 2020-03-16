@@ -2,7 +2,7 @@ name: ai-utilities
 channels:
   - conda-forge
 dependencies:
-  - python=3.6.2
+  - python>3.6.2
   - pip
   - jupyter
   - pytest==5.4.1
