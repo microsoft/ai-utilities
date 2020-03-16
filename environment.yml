@@ -12,7 +12,7 @@ dependencies:
   - backcall=0.1.0
   - black=19.10b0
   - blas=1.0
-  - bleach=3.1.
+  - bleach=3.1.1
   - ca-certificates=2019.11.28
   - certifi=2019.11.28
   - cffi=1.14.0
@@ -34,7 +34,7 @@ dependencies:
   - importlib-metadata=1.5.0
   - importlib_metadata=1.5.0
   - intel-openmp=2019.4
-  - ipykernel=5.1.
+  - ipykernel=5.1.4
   - ipython=7.13.0
   - ipython_genutils=0.2.0
   - ipywidgets=7.5.1
@@ -49,7 +49,7 @@ dependencies:
   - keras-applications=1.0.8
   - keras-preprocessing=1.1.0
   - libblas=3.8.0
-  - libcblas=3.8.0=
+  - libcblas=3.8.0
   - libgpuarray=0.7.6
   - liblapack=3.8.0
   - libpng=1.6.37
@@ -92,7 +92,6 @@ dependencies:
   - pluggy=0.13.0
   - prometheus_client=0.7.1
   - prompt-toolkit=3.0.4
-  - prompt_toolkit=3.0.4=0
   - protobuf=3.11.4
   - py=1.8.1
   - pycparser=2.20
@@ -147,7 +146,7 @@ dependencies:
   - widgetsnbextension=3.5.1
   - win_inet_pton=1.1.0
   - wincertstore=0.2
-  - winpty=0.4.3=4
+  - winpty=0.4.3
   - wrapt=1.12.1
   - xz=5.2.4
   - yaml=0.2.2
