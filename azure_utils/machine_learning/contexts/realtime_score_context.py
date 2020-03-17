@@ -263,15 +263,19 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         :param train_py: python source file for training
         :param score_py: python source file for scoring
         """
+        print("Step 1: Get or Create Model")
         model, workspace = cls._get_workspace_and_model(
             configuration_file, score_py, train_py
         )
+        print("Step 2: Create Inference Configuration")
         inference_config = workspace.get_inference_config()
+        print("Step 3: Get or Create Kubernetes Cluster")
         aks_target = workspace.get_or_create_aks()
+        print("Step 4: Get or Create Web Service")
         web_service = workspace.get_or_create_aks_service(
             model, aks_target, inference_config
         )
-
+        print("All Steps Completed")
         return workspace, web_service
 
     @classmethod
@@ -301,12 +305,16 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         assert "_" not in self.project_configuration.get_value(
             self.settings_aks_service_name
         ), (self.settings_aks_service_name + " can not contain _")
-        assert self.project_configuration.has_value("workspace_region")
+        assert self.project_configuration.has_value(
+            "workspace_region"
+        ), """Configuration does not have a Workspace Region"""
 
         workspace_compute = self.compute_targets
+        print("Check if Cluster exists.")
         if self.aks_name in workspace_compute:
+            print("Cluster does exists.")
             return workspace_compute[self.aks_name]
-
+        print("Cluster does not exists.")
         prov_config = AksCompute.provisioning_configuration(
             agent_count=self.node_count,
             vm_size=self.aks_vm_size,
