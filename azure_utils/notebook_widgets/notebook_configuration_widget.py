@@ -112,18 +112,10 @@ def get_configuration_widget(config: str, with_existing: bool = True) -> VBox:
     convert_to_region("deep_aks_location")
 
     dropdown_keys = [
-        "aks_service_name",
-        "aks_name",
-        "image_name",
-        "deep_aks_service_name",
-        "deep_aks_name",
-        "deep_image_name",
     ]
 
-    ws = RealtimeScoreContext.get_or_create_workspace(config)
-
     my_list = get_widgets_list(
-        dropdown_keys, out, setting_boxes, uploader, with_existing, ws
+        dropdown_keys, out, setting_boxes, uploader, with_existing, config
     )
 
     def upload_on_change(change: dict):
@@ -162,7 +154,7 @@ def get_widgets_list(
     setting_boxes: dict,
     uploader: widgets.FileUpload,
     with_existing: bool,
-    ws: Workspace,
+    config
 ) -> list:
     """
     Get Widgets in a List
@@ -182,6 +174,9 @@ def get_widgets_list(
             dropdown_keys, setting_key, text_box, with_existing, ws
         )
         if is_valid:
+
+            ws = RealtimeScoreContext.get_or_create_workspace(config)
+
             dropdown = widgets.Dropdown(
                 options=get_list(ws, setting_key),
                 value=get_list(ws, setting_key)[0],
@@ -198,7 +193,7 @@ def check_if_valid(
     setting_key: str,
     text_box: widgets.Widget,
     with_existing: bool,
-    ws: Workspace,
+    config,
 ) -> bool:
     """
     Check if dropdown key list is valid.
@@ -214,7 +209,7 @@ def check_if_valid(
         with_existing
         and setting_key in dropdown_keys
         and type(text_box) is widgets.Text
-        and get_list(ws, setting_key)[0]
+        and get_list(config, setting_key)[0]
     )
 
 
@@ -250,7 +245,7 @@ def create_settings_boxes(
     return setting_boxs
 
 
-def get_list(ws: Workspace, key: str) -> list:
+def get_list(config, key: str) -> list:
     """
     Get List of Workspace Resources based on key.
 
@@ -258,6 +253,8 @@ def get_list(ws: Workspace, key: str) -> list:
     :param key: Service Type. ex: image_name, aks_name, aks_service_name
     :return: List of services in workspace
     """
+    ws = RealtimeScoreContext.get_or_create_workspace(config)
+
     if "image_name" in key:
         return list(ws.images.keys())
     if "aks_name" in key:
