@@ -6,28 +6,13 @@ Licensed under the MIT License.
 """
 import getpass
 import warnings
-from typing import List
 
 import yaml
-from azure.mgmt.resource import SubscriptionClient
 from azureml.core import Workspace
 from ipywidgets import widgets, VBox
 
 from azure_utils.configuration.project_configuration import ProjectConfiguration
 from azure_utils.machine_learning.contexts.realtime_score_context import (RealtimeScoreContext, )
-
-
-def list_subscriptions(config) -> List[set]:
-    """
-
-    :return:
-    """
-    ws = RealtimeScoreContext.get_or_create_workspace(config)
-
-    sub_client = SubscriptionClient(ws._auth)
-    subs = sub_client.subscriptions.list()
-
-    return [{name_2_id(sub) for sub in subs}, {id_2_name(sub) for sub in subs}]
 
 
 def name_2_id(sub) -> dict:
