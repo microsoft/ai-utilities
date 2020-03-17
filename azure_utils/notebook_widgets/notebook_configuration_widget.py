@@ -9,30 +9,22 @@ import warnings
 from typing import List
 
 import yaml
-from azure.common.client_factory import get_client_from_cli_profile
 from azure.mgmt.resource import SubscriptionClient
 from azureml.core import Workspace
 from ipywidgets import widgets, VBox
-from knack.util import CLIError
 
-from azure_utils.azureml_tools.subscription import run_az_cli_login
 from azure_utils.configuration.project_configuration import ProjectConfiguration
-from azure_utils.machine_learning.contexts.realtime_score_context import (
-    RealtimeScoreContext,
-)
+from azure_utils.machine_learning.contexts.realtime_score_context import (RealtimeScoreContext, )
 
 
-def list_subscriptions() -> List[set]:
+def list_subscriptions(config) -> List[set]:
     """
 
     :return:
     """
-    try:
-        sub_client = get_client_from_cli_profile(SubscriptionClient)
-    except CLIError:
-        run_az_cli_login()
-        sub_client = get_client_from_cli_profile(SubscriptionClient)
+    ws = RealtimeScoreContext.get_or_create_workspace(config)
 
+    sub_client = SubscriptionClient(ws._auth)
     subs = sub_client.subscriptions.list()
 
     return [{name_2_id(sub) for sub in subs}, {id_2_name(sub) for sub in subs}]
@@ -97,13 +89,11 @@ def get_configuration_widget(config: str, with_existing: bool = True) -> VBox:
 
     uploader = widgets.FileUpload(accept=".yml", multiple=False)
 
-    name2id, id2name = list_subscriptions()
-
+    name2id = {'sub_id': proj_config.get_value("subscription_id")}
+    id2name = {proj_config.get_value("subscription_id"): "sub_id"}
     getpass.getuser()
 
-    default_sub = list(name2id.keys())[0]
-    if proj_config.get_value("subscription_id") in id2name:
-        default_sub = id2name[proj_config.get_value("subscription_id")]
+    default_sub = proj_config.get_value("subscription_id")
 
     setting_boxes = create_settings_boxes(default_sub, name2id, proj_config)
 
@@ -266,20 +256,12 @@ def create_settings_boxes(
             setting = setting[setting_key][0]
             description = setting["description"]
 
-            if setting_key == "subscription_id":
-                setting_boxs["subscription_id"] = widgets.Dropdown(
-                    options=list(name2id.keys()),
-                    value=default_sub,
-                    description="subscription_id",
-                    disabled=False,
-                )
-            else:
-                setting_boxs[setting_key] = widgets.Text(
-                    value=setting_with_id.replace("<>", ""),
-                    placeholder=description,
-                    description=setting_key,
-                    disabled=False,
-                )
+            setting_boxs[setting_key] = widgets.Text(
+                value=setting_with_id.replace("<>", ""),
+                placeholder=description,
+                description=setting_key,
+                disabled=False,
+            )
     return setting_boxs
 
 
