@@ -171,7 +171,7 @@ def get_widgets_list(
     for setting_key in setting_boxes:
         text_box = setting_boxes[setting_key]
         is_valid = check_if_valid(
-            dropdown_keys, setting_key, text_box, with_existing, ws
+            dropdown_keys, setting_key, text_box, with_existing, config
         )
         if is_valid:
 
