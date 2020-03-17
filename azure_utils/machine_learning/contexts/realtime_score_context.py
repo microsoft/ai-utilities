@@ -405,7 +405,6 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         :param service_name:
         :return:
         """
-        assert self.webservices
         return service_name in self.webservices
 
     def get_web_service_state(self, service_name: str) -> str:
@@ -1151,7 +1150,7 @@ class Scale(Layer):
 def identity_block(input_tensor, kernel_size, filters, stage, block):
     eps = 1.1e-5
 
-    if K.image_dim_ordering() == "tf":
+    if K.common.image_dim_ordering() == "tf":
         bn_axis = 3
     else:
         bn_axis = 1
@@ -1191,7 +1190,7 @@ def identity_block(input_tensor, kernel_size, filters, stage, block):
 def conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2)):
     eps = 1.1e-5
 
-    if K.image_dim_ordering() == "tf":
+    if K.common.image_dim_ordering() == "tf":
         bn_axis = 3
     else:
         bn_axis = 1
@@ -1283,7 +1282,7 @@ def ResNet152(
             img_input = input_tensor
 
     # handle dimension ordering for different backends
-    if K.image_dim_ordering() == "tf":
+    if K.common.image_dim_ordering() == "tf":
         bn_axis = 3
     else:
         bn_axis = 1
