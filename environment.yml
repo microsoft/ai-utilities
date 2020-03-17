@@ -111,6 +111,7 @@ dependencies:
   - tk=8.6.10
   - toml=0.10.0
   - tornado=6.0.4
+  - toolz=0.10.0
   - tqdm=4.43.0
   - traitlets=4.3.3
   - typed-ast=1.4.1

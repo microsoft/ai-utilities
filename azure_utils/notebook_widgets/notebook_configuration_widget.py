@@ -309,11 +309,11 @@ def test_score_py_button(score_py="source/score.py"):
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=FutureWarning)
-
-            import tensorflow as tf
-            tf.logging.set_verbosity(tf.logging.ERROR)
             import os
             os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+            import tensorflow as tf
+            tf.logging.set_verbosity(tf.logging.FATAL)
+
             with output:
                 exec(open(score_py).read())
                 exec("init()")
