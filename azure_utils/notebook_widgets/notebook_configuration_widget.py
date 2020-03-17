@@ -305,11 +305,20 @@ def test_score_py_button(score_py="source/score.py"):
     output = widgets.Output()
 
     def on_button_clicked(b):
-        with output:
-            exec(open(score_py).read())
-            exec("init()")
-            exec("response = run(MockRequest())")
-            exec("assert response")
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=FutureWarning)
+
+            import tensorflow as tf
+            tf.logging.set_verbosity(tf.logging.ERROR)
+            import os
+            os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+            with output:
+                exec(open(score_py).read())
+                exec("init()")
+                exec("response = run(MockRequest())")
+                exec("assert response")
 
     button.on_click(on_button_clicked)
     display(button, output)
