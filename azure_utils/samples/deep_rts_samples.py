@@ -893,8 +893,7 @@ def MakeResNet152(include_top=True, weights=None, input_tensor=None, input_shape
         raise ValueError('If using `weights` as imagenet with `include_top`'
                          ' as true, `classes` should be 1000')
     print("Creating Tensorflow model (and hiding Tensorflow output)")
-    text_trap = io.StringIO()
-    sys.stdout = text_trap
+
     eps = 1.1e-5
 
     if large_input:
@@ -1067,8 +1066,6 @@ def MakeResNet152(include_top=True, weights=None, input_tensor=None, input_shape
                           '`image_data_format="channels_last"` in '
                           "your Keras config "
                           "at ~/.keras/keras.json.")
-    sys.stdout = sys.__stdout__
-    print("Created Tensorflow model (and restoring print output)")
     return model
 
 _NUMBER_RESULTS = 3
