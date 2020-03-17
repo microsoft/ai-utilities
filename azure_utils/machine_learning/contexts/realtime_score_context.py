@@ -972,14 +972,12 @@ class DeepRealtimeScore(
         # Conda Configuration
         self.conda_file = conda_file
         self.write_conda_env()
-        self.conda_pack = ["tensorflow-gpu==1.14.0"]
+        self.conda_pack = ["tensorflow-gpu==1.14.0", "keras=2.3.1", "pillow=7.0.0"]
         self.requirements = [
-            "keras==2.2.0",
-            "Pillow==5.2.0",
             "azureml-defaults",
             "azureml-contrib-services",
             "toolz==0.9.0",
-            "git+https://github.com/microsoft/AI-Utilities.git@deep_learning_2",
+            "git+https://github.com/microsoft/AI-Utilities.git@dciborow/no-cli",
         ]
         self.conda_env = CondaDependencies.create(
             conda_packages=self.conda_pack, pip_packages=self.requirements
