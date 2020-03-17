@@ -277,3 +277,56 @@ def update_setting_boxes(
             )
         else:
             warnings.warn("Reload Widget to display new properties")
+
+class MockRequest:
+    """Mock Request Class to create calls to test web service code"""
+
+    method = "GET"
+
+
+import ipywidgets as widgets
+from IPython.display import display
+
+
+def test_train_py_button(train_py="script/train_dl.py"):
+    button = widgets.Button(description="Test train.py")
+    output = widgets.Output()
+
+    def on_button_clicked(b):
+        with output:
+            exec(open(train_py).read())
+
+    button.on_click(on_button_clicked)
+    display(button, output)
+
+
+def test_score_py_button(score_py="source/score.py"):
+    button = widgets.Button(description="Test score.py")
+    output = widgets.Output()
+
+    def on_button_clicked(b):
+        with output:
+            exec(open(score_py).read())
+            exec("init()")
+            exec("response = run(MockRequest())")
+            exec("assert response")
+
+    button.on_click(on_button_clicked)
+    display(button, output)
+
+
+def deploy_button(project_configuration, train_py="train_dl.py", score_py="score.py"):
+    button = widgets.Button(description="Deploy Service")
+    output = widgets.Output()
+
+    def on_button_clicked(b):
+        with output:
+            print("Begin Deployment.")
+            from azure_utils.machine_learning.contexts.realtime_score_context import  DeepRealtimeScore
+
+            deep_ws, aks_service = DeepRealtimeScore.get_or_or_create(configuration_file=project_configuration,
+                                                                      train_py=train_py, score_py=score_py)
+            display(deep_ws.workspace_widget)
+
+    button.on_click(on_button_clicked)
+    display(button, output)
