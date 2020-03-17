@@ -418,7 +418,7 @@ class ResNet152(RTSEstimator):
         """
         eps = 1.1e-5
 
-        if keras_backend.image_dim_ordering() == "tf":
+        if keras_backend.common.image_dim_ordering() == "tf":
             bn_axis = 3
         else:
             bn_axis = 1
@@ -646,7 +646,7 @@ class ResNet152(RTSEstimator):
         img_input = ResNet152.get_image_input(input_shape, input_tensor)
 
         # handle dimension ordering for different backends
-        if keras_backend.image_dim_ordering() == "tf":
+        if keras_backend.common.image_dim_ordering() == "tf":
             bn_axis = 3
         else:
             bn_axis = 1
