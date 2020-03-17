@@ -381,7 +381,7 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
     ):
         aks_dict = aks_service.serialize()
         self.workspace_widget = make_workspace_widget(model_dict, aks_dict)
-        self.create_kube_config(aks_target)
+        # self.create_kube_config(aks_target)
 
     def wait_then_configure_ping_test(
         self, aks_service: AksWebservice, aks_service_name
