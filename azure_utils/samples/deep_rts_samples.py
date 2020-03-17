@@ -1042,7 +1042,6 @@ def MakeResNet152(include_top=True, weights=None, input_tensor=None, input_shape
     WEIGHTS_PATH = 'https://github.com/adamcasson/resnet152/releases/download/v0.1/resnet152_weights_tf.h5'
     WEIGHTS_PATH_NO_TOP = 'https://github.com/adamcasson/resnet152/releases/download/v0.1/resnet152_weights_tf_notop.h5'
 
-
     if weights == "imagenet":
         if include_top:
             weights_path = get_file("resnet152_weights_tf.h5", WEIGHTS_PATH, cache_subdir="models",
