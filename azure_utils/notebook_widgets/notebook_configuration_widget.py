@@ -275,13 +275,8 @@ def update_setting_boxes(
     """
     for setting_box_key in setting_boxes:
         if new_proj_config.has_value(setting_box_key):
-            if setting_box_key == "subscription_id":
-                setting_boxes[setting_box_key].value = id2name[
-                    new_proj_config.get_value(setting_box_key)
-                ]
-            else:
-                setting_boxes[setting_box_key].value = new_proj_config.get_value(
-                    setting_box_key
-                )
+            setting_boxes[setting_box_key].value = new_proj_config.get_value(
+                setting_box_key
+            )
         else:
             warnings.warn("Reload Widget to display new properties")
