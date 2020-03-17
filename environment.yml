@@ -1,4 +1,4 @@
-name: test_env
+name: ai_utilities
 channels:
   - conda-forge
   - defaults
@@ -144,6 +144,7 @@ dependencies:
     - azureml-automl-core==1.1.5.1
     - azureml-contrib-functions==1.1.5
     - azureml-contrib-services==1.1.5
+    - azureml-contrib-notebook
     - azureml-core==1.1.5.3
     - azureml-dataprep==1.3.5
     - azureml-dataprep-native==14.1.0
