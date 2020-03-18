@@ -93,7 +93,7 @@ class WorkspaceCreationTests:
 
         :param realtime_score_context: Testing Context
         """
-        assert realtime_score_context.webservices
+        assert hasattr(realtime_score_context, "webservices")
 
     def test_get_or_create_aks(self, realtime_score_context: RealtimeScoreAKSContext):
         """
@@ -166,6 +166,17 @@ class TestDeployDeepRTS(WorkspaceCreationTests):
         :param realtime_score_context: Testing Context
         """
         assert realtime_score_context.get_or_create_model()
+
+    def test_get_or_create_webservices(self, realtime_score_context: DeepRealtimeScore):
+        """
+
+        :param realtime_score_context: Testing Context
+        """
+        model = realtime_score_context.get_or_create_model()
+        inference_config = realtime_score_context.get_inference_config()
+        aks_target = realtime_score_context.get_or_create_aks()
+        web_service = realtime_score_context.get_or_create_aks_service(model, aks_target, inference_config)
+        assert web_service.state == "Succeeded"
 
 
 # noinspection PyUnresolvedReferences,PyUnresolvedReferences,PyUnresolvedReferences

@@ -41,8 +41,6 @@ dependencies:
   - joblib=0.14.1
   - jpeg=9
   - jsonschema=3.2.0
-  - jupyter=1.0.0
-  - jupyterlab=2.0.1
   - jupyter_client=6.0.0
   - jupyter_core=4.6.3
   - keras=2.3.1

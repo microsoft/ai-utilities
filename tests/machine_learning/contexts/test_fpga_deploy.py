@@ -24,18 +24,34 @@ def test_fpga_deploy():
     assert aks_service
 
 
+def test_gpu_service():
+    ws = WorkspaceContext.get_or_create_workspace()
+    aks_service_name = "deepaksservice"
+
+    assert aks_service_name in ws.webservices
+    aks_service = AksWebservice(ws, name=aks_service_name)
+    assert aks_service.state == "Succeeded", aks_service.state
+    scoring_url = aks_service.scoring_uri
+    print(scoring_url)
+    api_key = aks_service.get_keys()[0]
+    import requests
+    IMAGEURL = "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/220px-Lynx_lynx_poing.jpg"
+    headers = {"Authorization": ("Bearer " + api_key)}
+    import urllib
+    import toolz
+    from io import BytesIO
+
+    img_data = toolz.pipe(IMAGEURL, urllib.request.urlopen, lambda x: x.read(), BytesIO).read()
+    r = requests.post(scoring_url, files={"image": img_data}, headers=headers)
+    r.json()
+
+
 def test_fpga_service():
     # Using the grpc client in Azure ML Accelerated Models SDK package
     ws = WorkspaceContext.get_or_create_workspace()
     aks_service_name = "my-aks-service"
-
     aks_service = AksWebservice(workspace=ws, name=aks_service_name)
     client = FPGARealtimeScore.get_prediction_client(aks_service)
-
-    classes_entries = requests.get(
-        "https://raw.githubusercontent.com/Lasagne/Recipes/"
-        "master/examples/resnet50/imagenet_classes.txt"
-    ).text.splitlines()
 
     # Score image with input and output tensor names
     input_tensors, output_tensors = FPGARealtimeScore.get_resnet50_IO()
@@ -43,6 +59,7 @@ def test_fpga_service():
         "https://raw.githubusercontent.com/Azure/MachineLearningNotebooks/"
         "master/how-to-use-azureml/deployment/accelerated-models/snowleopardgaze.jpg"
     )
+
     results = client.score_file(
         path="snowleopardgaze.jpg", input_name=input_tensors, outputs=output_tensors
     )
@@ -52,5 +69,9 @@ def test_fpga_service():
     # sort results by confidence
     sorted_results = sorted(results, key=lambda x: x[1], reverse=True)
     # print top 5 results
+    classes_entries = requests.get(
+        "https://raw.githubusercontent.com/Lasagne/Recipes/"
+        "master/examples/resnet50/imagenet_classes.txt"
+    ).text.splitlines()
     for top in sorted_results[:5]:
         print(classes_entries[top[0]], "confidence:", top[1])
