@@ -411,7 +411,7 @@ def test_score_py_button(score_py="source/score.py"):
     slider = widgets.IntProgress(layout=Layout(width="80%"))
 
     def on_button_clicked(b):
-        c = BackgroundCountThread()
+        c = BackgroundCountThread(1)
         slider.value = 0
         slider.bar_style = "info"
         thread = threading.Thread(target=c.work, args=(slider,))
@@ -469,7 +469,7 @@ def deploy_button(project_configuration, train_py="train_dl.py", score_py="score
     slider = widgets.IntProgress(layout=Layout(width="80%"))
 
     def on_button_clicked(b):
-        c = BackgroundCountThread()
+        c = BackgroundCountThread(12)
         slider.value = 0
         slider.bar_style = "info"
         thread = threading.Thread(target=c.work, args=(slider,))
