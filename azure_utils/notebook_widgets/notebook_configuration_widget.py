@@ -72,7 +72,7 @@ def update_and_save_configuration(
     """
     for boxes in setting_boxes:
         if boxes == "subscription_id":
-            proj_config.set_value(boxes, name2id[proj_config.get_value("subscription_id")])
+            proj_config.set_value(boxes, name2id[setting_boxes[boxes].value])
         else:
             proj_config.set_value(boxes, setting_boxes[boxes].value)
     save_project_configuration(proj_config)
