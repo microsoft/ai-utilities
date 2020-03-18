@@ -422,27 +422,17 @@ def test_score_py_button(score_py="source/score.py"):
             button.disabled = True
             button.description = "Running"
             button.button_style = "info"
-            import warnings
 
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=FutureWarning)
-                import os
-
-                os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-                import tensorflow as tf
-
-                tf.logging.set_verbosity(tf.logging.FATAL)
-
-                exec(open(score_py).read())
-                exec("init()")
-                with output:
-                    exec("response = run(MockRequest())")
-                    exec("assert response")
-                    print("Score Test Complete")
-                button.button_style = "success"
-                slider.bar_style = "success"
-                slider.value = 100
-                button.description = "Complete, rerun?"
+            exec(open(score_py).read())
+            exec("init()")
+            with output:
+                exec("response = run(MockRequest())")
+                exec("assert response")
+                print("Score Test Complete")
+            button.button_style = "success"
+            slider.bar_style = "success"
+            slider.value = 100
+            button.description = "Complete, rerun?"
 
         except:
             with output:

@@ -1,5 +1,7 @@
+import wget
+
 from azure_utils.machine_learning.contexts.realtime_score_context import (
-    FPGARealtimeScore
+    FPGARealtimeScore,
 )
 
 from azure_utils.machine_learning.contexts.workspace_contexts import WorkspaceContext
@@ -31,13 +33,18 @@ def test_fpga_service():
     client = FPGARealtimeScore.get_prediction_client(aks_service)
 
     classes_entries = requests.get(
-        "https://raw.githubusercontent.com/Lasagne/Recipes/master/examples/resnet50/imagenet_classes.txt"
+        "https://raw.githubusercontent.com/Lasagne/Recipes/"
+        "master/examples/resnet50/imagenet_classes.txt"
     ).text.splitlines()
 
     # Score image with input and output tensor names
     input_tensors, output_tensors = FPGARealtimeScore.get_resnet50_IO()
+    wget.download(
+        "https://raw.githubusercontent.com/Azure/MachineLearningNotebooks/"
+        "master/how-to-use-azureml/deployment/accelerated-models/snowleopardgaze.jpg"
+    )
     results = client.score_file(
-        path="./snowleopardgaze.jpg", input_name=input_tensors, outputs=output_tensors
+        path="snowleopardgaze.jpg", input_name=input_tensors, outputs=output_tensors
     )
 
     # map results [class_id] => [confidence]

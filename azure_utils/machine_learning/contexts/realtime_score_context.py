@@ -1643,11 +1643,11 @@ class FPGARealtimeScore(RealtimeScoreAKSContext):
         return client
 
 
-def test_score_file(score_py):
-    exec(open(score_py).read())
-    exec("init()")
-    exec("response = run(MockRequest())")
-    exec("assert response")
+# def test_score_file(score_py):
+#     exec(open(score_py).read())
+#     exec("init()")
+#     exec("response = run(MockRequest())")
+#     exec("assert response")
 
 
 class MockRequest:
