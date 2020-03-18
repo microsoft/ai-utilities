@@ -101,6 +101,9 @@ def get_configuration_widget(config: str, with_existing: bool = True) -> VBox:
     default_sub = list(name2id.keys())[0]
     if proj_config.get_value("subscription_id") in id2name:
         default_sub = id2name[proj_config.get_value("subscription_id")]
+    else:
+        proj_config.set_value("subscription_id", list(id2name.keys())[0])
+        proj_config.save_configuration()
 
     setting_boxes = create_settings_boxes(default_sub, name2id, proj_config)
 
