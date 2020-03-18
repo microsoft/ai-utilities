@@ -274,3 +274,8 @@ class TestMockDeployDeepRTS(MockWorkspaceCreationTests):
         assert realtime_score_context.get_or_create_model()
 
         assert os.path.isfile("outputs/model.pkl")
+
+
+
+def test_print():
+    print("hi")

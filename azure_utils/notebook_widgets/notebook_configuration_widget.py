@@ -6,13 +6,17 @@ Licensed under the MIT License.
 """
 import getpass
 import warnings
+from typing import List
 
 import yaml
 from azureml.core import Workspace
+from azureml.core.authentication import InteractiveLoginAuthentication
 from ipywidgets import widgets, VBox
 
 from azure_utils.configuration.project_configuration import ProjectConfiguration
-from azure_utils.machine_learning.contexts.realtime_score_context import (RealtimeScoreContext, )
+from azure_utils.machine_learning.contexts.realtime_score_context import (
+    RealtimeScoreContext,
+)
 
 
 def name_2_id(sub) -> dict:
@@ -21,7 +25,7 @@ def name_2_id(sub) -> dict:
     :param sub: Tuple of one subscription
     :return: mapping_dict
     """
-    return {sub.display_name: sub.subscription_id}
+    return {sub.subscription_name: sub.subscription_id}
 
 
 def id_2_name(sub) -> dict:
@@ -30,7 +34,21 @@ def id_2_name(sub) -> dict:
     :param sub: Tuple of one subscription
     :return: mapping_dict
     """
-    return {sub.subscription_id: sub.display_name}
+    return {sub.subscription_id: sub.subscription_name}
+
+
+def list_subscriptions():
+    """	
+    :return:	
+    """
+
+    auth = InteractiveLoginAuthentication()
+    subs = Workspace._fetch_subscriptions(auth)[0]
+
+    return [
+        {sub.subscription_name: sub.subscription_id for sub in subs},
+        {sub.subscription_id: sub.subscription_name for sub in subs},
+    ]
 
 
 def save_project_configuration(proj_config: ProjectConfiguration):
@@ -53,7 +71,10 @@ def update_and_save_configuration(
     :param name2id: Mapping of Subscription Name to ID
     """
     for boxes in setting_boxes:
-        proj_config.set_value(boxes, setting_boxes[boxes].value)
+        if boxes == "subscription_id":
+            proj_config.set_value(boxes, name2id[proj_config.get_value(boxes)])
+        else:
+            proj_config.set_value(boxes, setting_boxes[boxes].value)
     save_project_configuration(proj_config)
 
 
@@ -71,11 +92,15 @@ def get_configuration_widget(config: str, with_existing: bool = True) -> VBox:
 
     uploader = widgets.FileUpload(accept=".yml", multiple=False)
 
-    name2id = {'sub_id': proj_config.get_value("subscription_id")}
-    id2name = {proj_config.get_value("subscription_id"): "sub_id"}
+    name2id, id2name = list_subscriptions()
+    # name2id = {'sub_id': proj_config.get_value("subscription_id")}
+    # id2name = {proj_config.get_value("subscription_id"): "sub_id"}
     getpass.getuser()
 
-    default_sub = proj_config.get_value("subscription_id")
+    # default_sub = proj_config.get_value("subscription_id")
+    default_sub = list(name2id.keys())[0]
+    if proj_config.get_value("subscription_id") in id2name:
+        default_sub = id2name[proj_config.get_value("subscription_id")]
 
     setting_boxes = create_settings_boxes(default_sub, name2id, proj_config)
 
@@ -108,8 +133,7 @@ def get_configuration_widget(config: str, with_existing: bool = True) -> VBox:
     convert_to_region("aks_location")
     convert_to_region("deep_aks_location")
 
-    dropdown_keys = [
-    ]
+    dropdown_keys = []
 
     my_list = get_widgets_list(
         dropdown_keys, out, setting_boxes, uploader, with_existing, config
@@ -151,7 +175,7 @@ def get_widgets_list(
     setting_boxes: dict,
     uploader: widgets.FileUpload,
     with_existing: bool,
-    config
+    config,
 ) -> list:
     """
     Get Widgets in a List
@@ -233,12 +257,20 @@ def create_settings_boxes(
             setting = setting[setting_key][0]
             description = setting["description"]
 
-            setting_boxs[setting_key] = widgets.Text(
-                value=setting_with_id.replace("<>", ""),
-                placeholder=description,
-                description=setting_key,
-                disabled=False,
-            )
+            if setting_key == "subscription_id":
+                setting_boxs["subscription_id"] = widgets.Dropdown(
+                    options=list(name2id.keys()),
+                    value=default_sub,
+                    description="subscription_id",
+                    disabled=False,
+                )
+            else:
+                setting_boxs[setting_key] = widgets.Text(
+                    value=setting_with_id.replace("<>", ""),
+                    placeholder=description,
+                    description=setting_key,
+                    disabled=False,
+                )
     return setting_boxs
 
 
@@ -272,11 +304,17 @@ def update_setting_boxes(
     """
     for setting_box_key in setting_boxes:
         if new_proj_config.has_value(setting_box_key):
-            setting_boxes[setting_box_key].value = new_proj_config.get_value(
-                setting_box_key
-            )
+            if setting_box_key == "subscription_id":
+                setting_boxes[setting_box_key].value = id2name[
+                    new_proj_config.get_value(setting_box_key)
+                ]
+            else:
+                setting_boxes[setting_box_key].value = new_proj_config.get_value(
+                    setting_box_key
+                )
         else:
             warnings.warn("Reload Widget to display new properties")
+
 
 class MockRequest:
     """Mock Request Class to create calls to test web service code"""
@@ -310,8 +348,10 @@ def test_score_py_button(score_py="source/score.py"):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=FutureWarning)
             import os
-            os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+            os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
             import tensorflow as tf
+
             tf.logging.set_verbosity(tf.logging.FATAL)
 
             with output:
@@ -331,10 +371,15 @@ def deploy_button(project_configuration, train_py="train_dl.py", score_py="score
     def on_button_clicked(b):
         with output:
             print("Begin Deployment.")
-            from azure_utils.machine_learning.contexts.realtime_score_context import  DeepRealtimeScore
+            from azure_utils.machine_learning.contexts.realtime_score_context import (
+                DeepRealtimeScore,
+            )
 
-            deep_ws, aks_service = DeepRealtimeScore.get_or_or_create(configuration_file=project_configuration,
-                                                                      train_py=train_py, score_py=score_py)
+            deep_ws, aks_service = DeepRealtimeScore.get_or_or_create(
+                configuration_file=project_configuration,
+                train_py=train_py,
+                score_py=score_py,
+            )
             display(deep_ws.workspace_widget)
 
     button.on_click(on_button_clicked)
