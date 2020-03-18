@@ -262,8 +262,8 @@ def create_settings_boxes(
 
             if setting_key == "subscription_id":
                 setting_boxs["subscription_id"] = widgets.Dropdown(
-                    options=list(name2id.keys()),
-                    value=default_sub,
+                    options=list(name2id.keys()) + [""],
+                    value=default_sub.replace("<>", ""),
                     description="subscription_id",
                     disabled=False,
                 )
