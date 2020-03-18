@@ -155,7 +155,7 @@ dependencies:
     - azureml-train-automl-client==1.1.5.1
     - azureml-train-core==1.1.5
     - azureml-train-restclients-hyperdrive==1.1.5
-    - azureml-widgets
+    - azureml-contrib-notebooks
     - backports-tempfile==1.0
     - backports-weakref==1.0.post1
     - cloudpickle==1.3.0
