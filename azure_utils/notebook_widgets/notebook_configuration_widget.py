@@ -19,7 +19,7 @@ from azure_utils.machine_learning.contexts.realtime_score_context import (
 )
 
 
-def name_2_id(sub) -> dict:
+def name_2_id(sub) -> dict  :
     """
     Create Mapping for sub name to id
     :param sub: Tuple of one subscription
@@ -370,7 +370,7 @@ def test_train_py_button(train_py="script/train_dl.py"):
 
 def test_score_py_button(score_py="source/score.py"):
     button = widgets.Button(
-        description="Test train.py",
+        description="Test score.py",
         layout=Layout(width="80%", height="80px", align_content="center"),
     )
     output = widgets.Output()
