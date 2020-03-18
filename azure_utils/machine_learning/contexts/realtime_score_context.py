@@ -12,6 +12,8 @@ from typing import Any, Tuple
 
 from azure.mgmt.deploymentmanager.models import DeploymentMode
 from azure.mgmt.resource import ResourceManagementClient
+from azureml.accel import AccelContainerImage, AccelOnnxConverter, PredictionClient
+from azureml.accel.models import QuantizedResnet50, utils as utils
 from azureml.contrib.functions import HTTP_TRIGGER, package
 from azureml.core import ComputeTarget, Environment, Image, Model, Webservice, Workspace
 from azureml.core.authentication import AzureCliAuthentication
@@ -51,6 +53,7 @@ from azure_utils.machine_learning.realtime.image import (
     print_image_deployment_info,
 )
 from azure_utils.notebook_widgets.workspace_widget import make_workspace_widget
+import azureml.accel.models.utils as utils
 
 
 class RealtimeScoreContext(WorkspaceContext):
@@ -1447,6 +1450,188 @@ if __name__ == "__main__":
             **kwargs,
         )
         return ws
+
+
+class FPGARealtimeScore(RealtimeScoreAKSContext):
+    @classmethod
+    def create_aks(cls, ws: Workspace, aks_name, agent_count=1, location="eastus"):
+        # Specify the Standard_PB6s Azure VM and location. Values for location may be "eastus", "southeastasia",
+        # "westeurope", or "westus2". If no value is specified, the default is "eastus".
+        prov_config = AksCompute.provisioning_configuration(
+            vm_size="Standard_PB6s", agent_count=agent_count, location=location
+        )
+        if aks_name in ws.compute_targets:
+            print("Existing AKS Found")
+            return ComputeTarget(workspace=ws, name=aks_name)
+        aks_target = ComputeTarget.create(
+            workspace=ws, name=aks_name, provisioning_configuration=prov_config
+        )
+        aks_target.wait_for_completion(show_output=True)
+        print(aks_target.provisioning_state)
+        print(aks_target.provisioning_errors)
+
+        return aks_target
+
+    @classmethod
+    def create_aks_service(
+        cls, ws: Workspace, aks_target, image, aks_service_name="my-aks-service",
+    ) -> AksWebservice:
+        if aks_service_name in ws.webservices:
+            return AksWebservice(ws, aks_service_name)
+
+        # For this deployment, set the web service configuration without enabling auto-scaling
+        # or authentication for testing
+        aks_config = AksWebservice.deploy_configuration(
+            autoscale_enabled=False, num_replicas=1, auth_enabled=False
+        )
+        aks_service = AksWebservice.deploy_from_image(
+            workspace=ws,
+            name=aks_service_name,
+            image=image,
+            deployment_config=aks_config,
+            deployment_target=aks_target,
+        )
+        aks_service.wait_for_deployment(show_output=True)
+        return aks_service
+
+    @classmethod
+    def create_image(cls, converted_model, image_name, ws: Workspace):
+        if image_name in ws.images:
+            return Image(ws, image_name)
+        image_config = AccelContainerImage.image_configuration()
+        # Image name must be lowercase
+        image = Image.create(
+            name=image_name,
+            models=[converted_model],
+            image_config=image_config,
+            workspace=ws,
+        )
+        image.wait_for_creation(show_output=False)
+        return image
+
+    @classmethod
+    def register_resnet_50_model(
+        cls, ws: Workspace, model_name: str, model_save_path: str, save_path: str
+    ):
+        # Input images as a two-dimensional tensor containing an arbitrary number of images represented a strings
+        if model_name in ws.models:
+            input_tensors, output_tensors = FPGARealtimeScore.get_resnet50_IO()
+            return input_tensors, output_tensors, Model(ws, model_name)
+        import tensorflow as tf
+
+        tf.reset_default_graph()
+
+        in_images = tf.placeholder(tf.string)
+        image_tensors = utils.preprocess_array(in_images)
+        print(image_tensors.shape)
+
+        model_graph = QuantizedResnet50(save_path, is_frozen=True)
+        feature_tensor = model_graph.import_graph_def(image_tensors)
+        print(model_graph.version)
+        print(feature_tensor.name)
+        print(feature_tensor.shape)
+        classifier_output = model_graph.get_default_classifier(feature_tensor)
+        print(classifier_output)
+        print("Saving model in {}".format(model_save_path))
+        with tf.Session() as sess:
+            model_graph.restore_weights(sess)
+            tf.saved_model.simple_save(
+                sess,
+                model_save_path,
+                inputs={"images": in_images},
+                outputs={"output_alias": classifier_output},
+            )
+        input_tensors = in_images.name
+        output_tensors = classifier_output.name
+        print(input_tensors)
+        print(output_tensors)
+        registered_model = Model.register(
+            workspace=ws, model_path=model_save_path, model_name=model_name
+        )
+
+        print(
+            "Successfully registered: ",
+            registered_model.name,
+            registered_model.description,
+            registered_model.version,
+            sep="\t",
+        )
+
+        return input_tensors, output_tensors, registered_model
+
+    @classmethod
+    def convert_tf_model(cls, ws, input_tensors, output_tensors, registered_model):
+        convert_request = AccelOnnxConverter.convert_tf_model(
+            ws, registered_model, input_tensors, output_tensors
+        )
+        # If it fails, you can run wait_for_completion again with show_output=True.
+        convert_request.wait_for_completion(show_output=False)
+        # If the above call succeeded, get the converted model
+        converted_model = convert_request.result
+        print(
+            "\nSuccessfully converted: ",
+            converted_model.name,
+            converted_model.url,
+            converted_model.version,
+            converted_model.id,
+            converted_model.created_time,
+            "\n",
+        )
+        return converted_model
+
+    @classmethod
+    def register_resnet_50(
+        cls,
+        ws: Workspace,
+        model_name,
+        image_name,
+        save_path=os.path.expanduser("~/models"),
+    ):
+        if image_name in ws.images:
+            return Image(ws, image_name)
+        model_save_path = os.path.join(save_path, model_name)
+        (
+            input_tensors,
+            output_tensors,
+            registered_model,
+        ) = FPGARealtimeScore.register_resnet_50_model(
+            ws, model_name, model_save_path, save_path
+        )
+        converted_model = FPGARealtimeScore.convert_tf_model(
+            ws, input_tensors, output_tensors, registered_model
+        )
+        image = FPGARealtimeScore.create_image(converted_model, image_name, ws)
+        return image
+
+    @classmethod
+    def get_resnet50_IO(cls):
+        import tensorflow as tf
+
+        tf.reset_default_graph()
+        in_images = tf.placeholder(tf.string)
+        save_path = os.path.expanduser("~/models")
+        model_graph = QuantizedResnet50(save_path, is_frozen=True)
+        image_tensors = utils.preprocess_array(in_images)
+        feature_tensor = model_graph.import_graph_def(image_tensors)
+        classifier_output = model_graph.get_default_classifier(feature_tensor)
+        input_tensors = in_images.name
+        output_tensors = classifier_output.name
+        return input_tensors, output_tensors
+
+    @classmethod
+    def get_prediction_client(cls, aks_service: AksWebservice):
+        address = aks_service.scoring_uri
+        ssl_enabled = address.startswith("https")
+        address = address[address.find("/") + 2 :].strip("/")
+        port = 443 if ssl_enabled else 80
+        # Initialize Azure ML Accelerated Models client
+        client = PredictionClient(
+            address=address,
+            port=port,
+            use_ssl=ssl_enabled,
+            service_name=aks_service.name,
+        )
+        return client
 
 
 def test_score_file(score_py):
