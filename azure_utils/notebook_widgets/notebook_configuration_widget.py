@@ -11,7 +11,7 @@ from typing import List
 import yaml
 from azureml.core import Workspace
 from azureml.core.authentication import InteractiveLoginAuthentication
-from ipywidgets import widgets, VBox
+from ipywidgets import widgets, VBox, Layout
 
 from azure_utils.configuration.project_configuration import ProjectConfiguration
 from azure_utils.machine_learning.contexts.realtime_score_context import (
@@ -90,7 +90,11 @@ def get_configuration_widget(config: str, with_existing: bool = True) -> VBox:
     proj_config.save_configuration()
     out = widgets.Output()
 
-    uploader = widgets.FileUpload(accept=".yml", multiple=False)
+    uploader = widgets.FileUpload(
+        accept=".yml",
+        multiple=False,
+        layout=Layout(width="50%")
+    )
 
     name2id, id2name = list_subscriptions()
     # name2id = {'sub_id': proj_config.get_value("subscription_id")}
@@ -130,6 +134,8 @@ def get_configuration_widget(config: str, with_existing: bool = True) -> VBox:
                 value=proj_config.get_value(key).replace("<>", "eastus"),
                 description=key,
                 disabled=False,
+                style={"description_width": "initial"},
+                layout=Layout(width="50%"),
             )
 
     convert_to_region("workspace_region")
@@ -259,13 +265,14 @@ def create_settings_boxes(
 
             setting = setting[setting_key][0]
             description = setting["description"]
-
             if setting_key == "subscription_id":
                 setting_boxs["subscription_id"] = widgets.Dropdown(
                     options=list(name2id.keys()) + [""],
                     value=default_sub.replace("<>", ""),
                     description="subscription_id",
                     disabled=False,
+                    style={"description_width": "initial"},
+                    layout=Layout(width="50%"),
                 )
             else:
                 setting_boxs[setting_key] = widgets.Text(
@@ -273,6 +280,8 @@ def create_settings_boxes(
                     placeholder=description,
                     description=setting_key,
                     disabled=False,
+                    style={"description_width": "initial"},
+                    layout=Layout(width="50%"),
                 )
     return setting_boxs
 
@@ -330,60 +339,116 @@ from IPython.display import display
 
 
 def test_train_py_button(train_py="script/train_dl.py"):
-    button = widgets.Button(description="Test train.py")
+    button = widgets.Button(
+        description="Test train.py",
+        layout=Layout(width="80%", height="80px", align_content="center"),
+    )
     output = widgets.Output()
 
     def on_button_clicked(b):
-        with output:
-            exec(open(train_py).read())
+        try:
+            print("Train Started")
+            button.disabled = True
+            button.description = "Running"
+            button.button_style = "info"
+            with output:
+                exec(open(train_py).read())
+            button.button_style = "success"
+            button.description = "Complete, rerun?"
+            print("Train Complete")
+        except:
+            print("Train Error")
+            button.button_style = "danger"
+            button.description = "Error"
+            raise
+        finally:
+            button.disabled = False
 
     button.on_click(on_button_clicked)
     display(button, output)
 
 
 def test_score_py_button(score_py="source/score.py"):
-    button = widgets.Button(description="Test score.py")
+    button = widgets.Button(
+        description="Test train.py",
+        layout=Layout(width="80%", height="80px", align_content="center"),
+    )
     output = widgets.Output()
 
     def on_button_clicked(b):
-        import warnings
-
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=FutureWarning)
-            import os
-
-            os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-            import tensorflow as tf
-
-            tf.logging.set_verbosity(tf.logging.FATAL)
-
+        try:
             with output:
+                print("Test Begin")
+            button.disabled = True
+            button.description = "Running"
+            button.button_style = "info"
+            import warnings
+
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=FutureWarning)
+                import os
+
+                os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+                import tensorflow as tf
+
+                tf.logging.set_verbosity(tf.logging.FATAL)
+
                 exec(open(score_py).read())
                 exec("init()")
-                exec("response = run(MockRequest())")
-                exec("assert response")
+                with output:
+                    exec("response = run(MockRequest())")
+                    exec("assert response")
+                    print("Score Test Complete")
+                button.button_style = "success"
+                button.description = "Complete, rerun?"
+
+        except:
+            with output:
+                print("Score Test Error")
+            button.button_style = "danger"
+            button.description = "Error"
+            raise
+        finally:
+            button.disabled = False
 
     button.on_click(on_button_clicked)
     display(button, output)
 
 
 def deploy_button(project_configuration, train_py="train_dl.py", score_py="score.py"):
-    button = widgets.Button(description="Deploy Service")
+    button = widgets.Button(
+        description="Deploy Azure Machine Learning Services",
+        layout=Layout(width="80%", height="80px", justify_content="center"),
+    )
     output = widgets.Output()
 
     def on_button_clicked(b):
-        with output:
-            print("Begin Deployment.")
-            from azure_utils.machine_learning.contexts.realtime_score_context import (
-                DeepRealtimeScore,
-            )
+        try:
+            button.disabled = True
+            button.description = "Running"
+            with output:
+                button.button_style = "info"
+                print("Begin Deployment.")
+                from azure_utils.machine_learning.contexts.realtime_score_context import (
+                    DeepRealtimeScore,
+                )
 
-            deep_ws, aks_service = DeepRealtimeScore.get_or_or_create(
-                configuration_file=project_configuration,
-                train_py=train_py,
-                score_py=score_py,
-            )
-            display(deep_ws.workspace_widget)
+                deep_ws, aks_service = DeepRealtimeScore.get_or_or_create(
+                    configuration_file=project_configuration,
+                    train_py=train_py,
+                    score_py=score_py,
+                )
+                button.button_style = "success"
+                button.description = "Complete, rerun?"
+                print("Deploy Complete")
+                display(deep_ws.workspace_widget)
+        except:
+            print("Deploy Error")
+            button.button_style = "danger"
+            button.description = "Error"
+            raise
+        finally:
+            button.disabled = False
 
     button.on_click(on_button_clicked)
     display(button, output)
