@@ -761,7 +761,7 @@ import os
 import lightgbm as lgb
 import pandas as pd
 from azureml.core import Run
-from sklearn.externals import joblib
+import joblib
 from sklearn.feature_extraction import text
 from sklearn.pipeline import Pipeline, FeatureUnion, make_pipeline
 

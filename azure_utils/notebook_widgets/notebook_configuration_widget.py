@@ -19,7 +19,7 @@ from azure_utils.machine_learning.contexts.realtime_score_context import (
 )
 
 
-def name_2_id(sub) -> dict  :
+def name_2_id(sub) -> dict:
     """
     Create Mapping for sub name to id
     :param sub: Tuple of one subscription
@@ -91,9 +91,7 @@ def get_configuration_widget(config: str, with_existing: bool = True) -> VBox:
     out = widgets.Output()
 
     uploader = widgets.FileUpload(
-        accept=".yml",
-        multiple=False,
-        layout=Layout(width="50%")
+        accept=".yml", multiple=False, layout=Layout(width="50%")
     )
 
     name2id, id2name = list_subscriptions()
@@ -336,36 +334,71 @@ class MockRequest:
 
 import ipywidgets as widgets
 from IPython.display import display
+import time
+import threading
+
+
+class BackgroundCountThread:
+    def __init__(self, sleep_sec: float = 4):
+        self._running = True
+        self._sleep_sec = sleep_sec
+
+    def terminate(self):
+        self._running = False
+
+    def work(self, slider):
+        total = 100
+        for i in range(total):
+            time.sleep(self._sleep_sec)
+            slider.value = i
+            if not self._running:
+                break
 
 
 def test_train_py_button(train_py="script/train_dl.py"):
     button = widgets.Button(
-        description="Test train.py",
-        layout=Layout(width="80%", height="80px", align_content="center"),
+        description="Test train.py", layout=Layout(width="80%", height="80px"),
     )
     output = widgets.Output()
+    slider = widgets.IntProgress(layout=Layout(width="80%"))
 
     def on_button_clicked(b):
+        c = BackgroundCountThread(sleep_sec=2.4)
+        slider.value = 0
+        slider.bar_style = "info"
+        thread = threading.Thread(target=c.work, args=(slider,))
+        thread.start()
         try:
-            print("Train Started")
-            button.disabled = True
-            button.description = "Running"
-            button.button_style = "info"
             with output:
-                exec(open(train_py).read())
+                print("Train Started")
+                button.disabled = True
+                button.description = "Running"
+                button.button_style = "info"
+
+            exec(open(train_py).read())
+            exec("train()")
+
+            with output:
+                print("Train Complete")
             button.button_style = "success"
+            slider.bar_style = "success"
             button.description = "Complete, rerun?"
-            print("Train Complete")
+
         except:
-            print("Train Error")
+            with output:
+                print("Score Test Error")
             button.button_style = "danger"
+            slider.bar_style = "danger"
             button.description = "Error"
             raise
         finally:
+            c.terminate()
+            slider.value = 100
             button.disabled = False
 
     button.on_click(on_button_clicked)
-    display(button, output)
+    run_button = widgets.VBox([button, slider, output])
+    return run_button
 
 
 def test_score_py_button(score_py="source/score.py"):
@@ -374,8 +407,14 @@ def test_score_py_button(score_py="source/score.py"):
         layout=Layout(width="80%", height="80px", align_content="center"),
     )
     output = widgets.Output()
+    slider = widgets.IntProgress(layout=Layout(width="80%"))
 
     def on_button_clicked(b):
+        c = BackgroundCountThread()
+        slider.value = 0
+        slider.bar_style = "info"
+        thread = threading.Thread(target=c.work, args=(slider,))
+        thread.start()
         try:
             with output:
                 print("Test Begin")
@@ -400,19 +439,24 @@ def test_score_py_button(score_py="source/score.py"):
                     exec("assert response")
                     print("Score Test Complete")
                 button.button_style = "success"
+                slider.bar_style = "success"
+                slider.value = 100
                 button.description = "Complete, rerun?"
 
         except:
             with output:
                 print("Score Test Error")
             button.button_style = "danger"
+            slider.bar_style = "danger"
             button.description = "Error"
             raise
         finally:
+            c.terminate()
             button.disabled = False
 
     button.on_click(on_button_clicked)
-    display(button, output)
+    run_button = widgets.VBox([button, slider, output])
+    return run_button
 
 
 def deploy_button(project_configuration, train_py="train_dl.py", score_py="score.py"):

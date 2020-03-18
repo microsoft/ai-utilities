@@ -35,7 +35,7 @@ from keras.models import Model
 from keras.preprocessing import image
 from keras.utils import layer_utils
 from keras.utils.data_utils import get_file
-from sklearn.externals import joblib
+import joblib
 from sklearn.feature_extraction import text
 from sklearn.pipeline import make_pipeline, FeatureUnion, Pipeline
 from azure_utils.machine_learning.factories.realtime_factory import RealTimeFactory
