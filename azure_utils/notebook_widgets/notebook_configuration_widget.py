@@ -352,6 +352,7 @@ class BackgroundCountThread:
             time.sleep(self._sleep_sec)
             slider.value = i
             if not self._running:
+                slider.value = 100
                 break
 
 
@@ -465,8 +466,14 @@ def deploy_button(project_configuration, train_py="train_dl.py", score_py="score
         layout=Layout(width="80%", height="80px", justify_content="center"),
     )
     output = widgets.Output()
+    slider = widgets.IntProgress(layout=Layout(width="80%"))
 
     def on_button_clicked(b):
+        c = BackgroundCountThread()
+        slider.value = 0
+        slider.bar_style = "info"
+        thread = threading.Thread(target=c.work, args=(slider,))
+        thread.start()
         try:
             button.disabled = True
             button.description = "Running"
@@ -489,10 +496,13 @@ def deploy_button(project_configuration, train_py="train_dl.py", score_py="score
         except:
             print("Deploy Error")
             button.button_style = "danger"
+            slider.bar_style = "danger"
             button.description = "Error"
             raise
         finally:
+            c.terminate()
             button.disabled = False
 
     button.on_click(on_button_clicked)
-    display(button, output)
+    run_button = widgets.VBox([button, slider, output])
+    return run_button
