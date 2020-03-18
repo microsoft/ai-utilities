@@ -1474,7 +1474,14 @@ class FPGARealtimeScore(RealtimeScoreAKSContext):
 
     @classmethod
     def create_aks_service(
-        cls, ws: Workspace, aks_target, image, aks_service_name="my-aks-service",
+        cls,
+        ws: Workspace,
+        aks_target,
+        image,
+        aks_service_name="my-aks-service",
+        autoscale_enabled=False,
+        num_replicas=1,
+        auth_enabled=False,
     ) -> AksWebservice:
         if aks_service_name in ws.webservices:
             return AksWebservice(ws, aks_service_name)
@@ -1482,7 +1489,9 @@ class FPGARealtimeScore(RealtimeScoreAKSContext):
         # For this deployment, set the web service configuration without enabling auto-scaling
         # or authentication for testing
         aks_config = AksWebservice.deploy_configuration(
-            autoscale_enabled=False, num_replicas=1, auth_enabled=False
+            autoscale_enabled=autoscale_enabled,
+            num_replicas=num_replicas,
+            auth_enabled=auth_enabled,
         )
         aks_service = AksWebservice.deploy_from_image(
             workspace=ws,
