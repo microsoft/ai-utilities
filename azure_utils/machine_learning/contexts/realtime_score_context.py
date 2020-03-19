@@ -365,7 +365,7 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         model_dict = model.serialize()
 
         print("Check if AKS Service Exists")
-        if self._aks_exists():
+        if self.aks_service_name in self.webservices:
             print("AKS Service Exists")
             aks_service = AksWebservice(self, self.aks_service_name)
             if aks_service.state == "Succeeded":
