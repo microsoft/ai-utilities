@@ -174,7 +174,7 @@ class TestDeployDeepRTS(WorkspaceCreationTests):
         """
 
         if not os.path.isfile(f"source/{files_for_testing['score_py']}"):
-            os.makedirs("script", exist_ok=True)
+            os.makedirs("source", exist_ok=True)
 
             score_py = """
             import sys
