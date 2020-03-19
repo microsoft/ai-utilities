@@ -84,6 +84,7 @@ dependencies:
   - pyrsistent=0.15.7
   - pysocks=1.7.1
   - pytest=5.4.1
+  - pytest-cov
   - python=3.7.6
   - python-dateutil=2.8.1
   - python-dotenv=0.12.0
