@@ -79,14 +79,14 @@ class WorkspaceCreationTests:
 
         :param realtime_score_context: Testing Context
         """
-        assert realtime_score_context.images
+        assert hasattr(realtime_score_context, "images")
 
     def test_get_compute_targets(self, realtime_score_context: RealtimeScoreAKSContext):
         """
 
         :param realtime_score_context: Testing Context
         """
-        assert realtime_score_context.compute_targets
+        assert hasattr(realtime_score_context, "compute_targets")
 
     def test_get_webservices(self, realtime_score_context: RealtimeScoreAKSContext):
         """
