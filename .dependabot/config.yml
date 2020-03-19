@@ -1,0 +1,10 @@
+version: 1
+update_configs:
+  - package_manager: "python"
+    directory: "/"
+    update_schedule: "live"
+    allowed_updates:
+      - match:
+          # Only includes indirect (aka transient/sub-dependencies) for
+          # supported package managers: ruby:bundler, python, php:composer, rust:cargo
+          update_type: "all"
