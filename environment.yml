@@ -1,4 +1,4 @@
-name: ai_utilities
+name: ai-utilities
 channels:
   - conda-forge
   - defaults
