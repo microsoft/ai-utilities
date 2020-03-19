@@ -316,7 +316,7 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         print("Check if Cluster exists.")
         if self.aks_name in workspace_compute:
             print("Cluster does exists.")
-            return workspace_compute[self.aks_name]
+            return AksCompute(self, self.aks_name)
         print("Cluster does not exists.")
         prov_config = AksCompute.provisioning_configuration(
             agent_count=self.node_count,
@@ -367,9 +367,10 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         print("Check if AKS Service Exists")
         if self._aks_exists():
             print("AKS Service Exists")
-            aks_service = self.get_web_service(self.aks_service_name)
-            self._post_process_aks_deployment(aks_service, aks_target, model_dict)
-            return aks_service
+            aks_service = AksWebservice(self, self.aks_service_name)
+            if aks_service.state == "Succeeded":
+                self._post_process_aks_deployment(aks_service, aks_target, model_dict)
+                return aks_service
         print("AKS Service Does Not Exists")
         print("Test Score File Locally - Begin")
         # test_score_file("source/score.py")
@@ -442,7 +443,7 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         :return:
         """
         assert self.webservices[service_name]
-        return self.webservices[service_name]
+        return Webservice(self, service_name)
 
     @staticmethod
     def create_kube_config(aks_target: AksCompute):
@@ -460,11 +461,9 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
 
     def _aks_exists(self) -> bool:
         """Check if Kubernetes Cluster Exists or has Failed"""
-        aks_exists = (
-            self.has_web_service(self.aks_service_name)
-            and self.get_web_service_state(self.aks_service_name) != "Failed"
-        )
-        return aks_exists
+        if self.aks_name in self.compute_targets:
+            return AksCompute(self, self.aks_name).provisioning_state != "Failed"
+        return False
 
     @staticmethod
     def configure_ping_test(
@@ -479,6 +478,10 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         """
         project_configuration = ProjectConfiguration(project_configuration_file)
         assert project_configuration.has_value("subscription_id")
+        import warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=FutureWarning)
+            warnings.filterwarnings("ignore", message=r"track*")
         credentials = AzureCliAuthentication()
         client = ResourceManagementClient(
             credentials, project_configuration.get_value("subscription_id")
@@ -534,7 +537,7 @@ class RealTimeScoreImageAndAKSContext(RealtimeScoreAKSContext):
         assert self.aks_vm_size
 
         if self._aks_exists():
-            self.create_kube_config(aks_target)
+            # self.create_kube_config(aks_target)
             return self.get_web_service(self.aks_service_name)
 
         aks_config = self.get_aks_deployment_config()
