@@ -461,8 +461,11 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
 
     def _aks_exists(self) -> bool:
         """Check if Kubernetes Cluster Exists or has Failed"""
-        if self.aks_name in self.compute_targets:
-            return AksCompute(self, self.aks_name).provisioning_state != "Failed"
+        if (
+            self.aks_name in self.compute_targets
+            and AksCompute(self, self.aks_name).provisioning_state != "Failed"
+        ):
+            return True
         return False
 
     @staticmethod
@@ -479,6 +482,7 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         project_configuration = ProjectConfiguration(project_configuration_file)
         assert project_configuration.has_value("subscription_id")
         import warnings
+
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=FutureWarning)
             warnings.filterwarnings("ignore", message=r"track*")
