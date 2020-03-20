@@ -1,0 +1,4 @@
+engine:
+  runtime: pytest
+  # maximum number of concurrent test runners
+  cpu-cores: 2
