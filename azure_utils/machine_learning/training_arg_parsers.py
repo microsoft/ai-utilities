@@ -40,16 +40,15 @@ def get_model_path(model_pkl: str = "model.pkl"):
     :param model_pkl: filename of file
     :return: Model Directory
     """
-    model_dir = "."
+    model_dir = "outputs"
     if os.getenv("AZUREML_MODEL_DIR"):
         model_dir = os.getenv("AZUREML_MODEL_DIR")
-    assert os.path.isfile(model_dir + model_pkl)
+    assert os.path.isfile(model_dir + "/" + model_pkl), """Model not found."""
     return model_dir + "/" + model_pkl
 
 
 def image_ref_to_pil_image(image_ref: str):
-    """ Load image with PIL (RGB)
-    """
+    """ Load image with PIL (RGB) """
     return Image.open(image_ref).convert("RGB")
 
 

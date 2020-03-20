@@ -79,21 +79,21 @@ class WorkspaceCreationTests:
 
         :param realtime_score_context: Testing Context
         """
-        assert realtime_score_context.images
+        assert hasattr(realtime_score_context, "images")
 
     def test_get_compute_targets(self, realtime_score_context: RealtimeScoreAKSContext):
         """
 
         :param realtime_score_context: Testing Context
         """
-        assert realtime_score_context.compute_targets
+        assert hasattr(realtime_score_context, "compute_targets")
 
     def test_get_webservices(self, realtime_score_context: RealtimeScoreAKSContext):
         """
 
         :param realtime_score_context: Testing Context
         """
-        assert realtime_score_context.webservices
+        assert hasattr(realtime_score_context, "webservices")
 
     def test_get_or_create_aks(self, realtime_score_context: RealtimeScoreAKSContext):
         """
@@ -166,6 +166,44 @@ class TestDeployDeepRTS(WorkspaceCreationTests):
         :param realtime_score_context: Testing Context
         """
         assert realtime_score_context.get_or_create_model()
+
+    def test_get_or_create_webservices(self, realtime_score_context: DeepRealtimeScore, files_for_testing):
+        """
+
+        :param realtime_score_context: Testing Context
+        """
+
+        if not os.path.isfile(f"source/{files_for_testing['score_py']}"):
+            os.makedirs("source", exist_ok=True)
+
+            score_py = """
+            import sys
+            sys.setrecursionlimit(3000)
+
+            from azureml.contrib.services.aml_request import rawhttp
+
+            def init():
+                global process_and_score
+                from azure_utils.samples.deep_rts_samples import get_model_api
+                process_and_score = get_model_api()
+
+
+            @rawhttp
+            def run(request):
+                from azure_utils.machine_learning.realtime import default_response
+                if request.method == 'POST':
+                    return process_and_score(request.files)
+                return default_response(request)
+
+            """
+            with open(f"source/{files_for_testing['score_py']}", "w") as file:
+                file.write(score_py)
+
+        model = realtime_score_context.get_or_create_model()
+        inference_config = realtime_score_context.get_inference_config()
+        aks_target = realtime_score_context.get_or_create_aks()
+        web_service = realtime_score_context.get_or_create_aks_service(model, aks_target, inference_config)
+        assert web_service.state == "Healthy"
 
 
 # noinspection PyUnresolvedReferences,PyUnresolvedReferences,PyUnresolvedReferences
