@@ -112,11 +112,11 @@ class RealtimeScoreContext(WorkspaceContext):
         self.image_enable_gpu = False
 
         self.get_image = None
-        self.aks_vm_size: str = "Standard_D4_v2"
+        self.aks_vm_size: str = "Standard_D2_v2"
 
         self.num_estimators = "1"
 
-        self.node_count = 4
+        self.node_count = 6
         self.num_replicas: int = 2
         self.cpu_cores: int = 1
 
