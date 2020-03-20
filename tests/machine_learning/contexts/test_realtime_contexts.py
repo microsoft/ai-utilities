@@ -203,7 +203,7 @@ class TestDeployDeepRTS(WorkspaceCreationTests):
         inference_config = realtime_score_context.get_inference_config()
         aks_target = realtime_score_context.get_or_create_aks()
         web_service = realtime_score_context.get_or_create_aks_service(model, aks_target, inference_config)
-        assert web_service.state == "Succeeded"
+        assert web_service.state == "Healthy"
 
 
 # noinspection PyUnresolvedReferences,PyUnresolvedReferences,PyUnresolvedReferences

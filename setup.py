@@ -10,4 +10,4 @@ from setuptools import find_packages, setup
 setup(name="Microsoft-AI-Azure-Utility-Samples", version="0.3.85", description="Utility Samples for AI Solutions",
       author="Daniel Ciborowski & Daniel Grecoe", author_email="dciborow@microsoft.com",
       url="https://github.com/microsoft/AI-Utilities", license="MIT", packages=find_packages(),
-      install_requires=['resnet'])
+      install_requires=['lightgbm=2.3.1'])

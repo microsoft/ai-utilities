@@ -409,7 +409,11 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         :param aks_service:
         :param aks_service_name:
         """
-        aks_service.wait_for_deployment(show_output=self.show_output)
+        try:
+            aks_service.wait_for_deployment(show_output=self.show_output)
+        except WebserviceException:
+            print(aks_service.get_logs())
+            raise Exception(aks_service.get_logs())
         # self.configure_ping_test(
         #     "ping-test-" + aks_service_name,
         #     self.get_details()["applicationInsights"],
@@ -995,11 +999,11 @@ class DeepRealtimeScore(
         # Conda Configuration
         self.conda_file = conda_file
         self.write_conda_env()
-        self.conda_pack = ["keras=2.3.1", "pillow=7.0.0"]
+        self.conda_pack = ["keras=2.3.1", "pillow=7.0.0", "lightgbm=2.3.1"]
         self.requirements = [
             "azureml-defaults",
             "azureml-contrib-services",
-            "toolz==0.9.0",
+            "toolz==0.10.0",
             "git+https://github.com/microsoft/AI-Utilities.git@dciborow/no-cli",
         ]
         self.conda_env = CondaDependencies.create(
