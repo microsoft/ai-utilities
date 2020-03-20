@@ -34,7 +34,7 @@ def test_gpu_service(workspace):
 
     assert aks_service_name in workspace.webservices, f"{aks_service_name} not found."
     aks_service = AksWebservice(workspace, name=aks_service_name)
-    assert aks_service.state == "Succeeded", f"{aks_service_name} is in state {aks_service.state}."
+    assert aks_service.state == "Healthy", f"{aks_service_name} is in state {aks_service.state}."
     scoring_url = aks_service.scoring_uri
     print(scoring_url)
     api_key = aks_service.get_keys()[0]
@@ -49,8 +49,10 @@ def test_gpu_service(workspace):
     img_data = toolz.pipe(
         IMAGEURL, urllib.request.urlopen, lambda x: x.read(), BytesIO
     ).read()
-    r = requests.post(scoring_url, files={"image": img_data}, headers=headers)
-    r.json()
+    r_get = requests.get(scoring_url, headers=headers)
+    assert r_get
+    r_post = requests.post(scoring_url, files={"image": img_data}, headers=headers)
+    assert r_post
 
 
 def test_fpga_service(workspace):
