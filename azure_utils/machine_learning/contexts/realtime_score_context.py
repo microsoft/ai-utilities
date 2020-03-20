@@ -1004,7 +1004,7 @@ class DeepRealtimeScore(
             "azureml-defaults",
             "azureml-contrib-services",
             "toolz==0.10.0",
-            "git+https://github.com/microsoft/AI-Utilities.git@dciborow/no-cli",
+            "git+https://github.com/microsoft/AI-Utilities.git",
         ]
         self.conda_env = CondaDependencies.create(
             conda_packages=self.conda_pack, pip_packages=self.requirements
