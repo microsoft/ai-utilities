@@ -40,9 +40,9 @@ def test_gpu_service(workspace):
     scoring_url = aks_service.scoring_uri
     print(scoring_url)
     api_key = aks_service.get_keys()[0]
-    import requests
 
     headers = {"Authorization": ("Bearer " + api_key)}
+    import requests
 
     files = {"image": open("snowleopardgaze.jpg", "rb")}
     r_get = requests.get(scoring_url, headers=headers)
