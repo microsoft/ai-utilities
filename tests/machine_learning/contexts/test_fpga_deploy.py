@@ -50,9 +50,8 @@ def test_gpu_service(workspace):
         IMAGEURL, urllib.request.urlopen, lambda x: x.read(), BytesIO
     ).read()
     r_get = requests.get(scoring_url, headers=headers)
-    assert r_get
-    r_post = requests.post(scoring_url, files={"image": img_data}, headers=headers)
-    assert r_post
+    assert r_pget
+    requests.post(scoring_url, files={"image": img_data}, headers=headers)
 
 
 def test_fpga_service(workspace):
