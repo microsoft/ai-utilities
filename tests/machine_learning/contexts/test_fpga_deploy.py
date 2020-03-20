@@ -34,24 +34,21 @@ def test_gpu_service(workspace):
 
     assert aks_service_name in workspace.webservices, f"{aks_service_name} not found."
     aks_service = AksWebservice(workspace, name=aks_service_name)
-    assert aks_service.state == "Healthy", f"{aks_service_name} is in state {aks_service.state}."
+    assert (
+        aks_service.state == "Healthy"
+    ), f"{aks_service_name} is in state {aks_service.state}."
     scoring_url = aks_service.scoring_uri
     print(scoring_url)
     api_key = aks_service.get_keys()[0]
     import requests
 
-    IMAGEURL = "https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/220px-Lynx_lynx_poing.jpg"
     headers = {"Authorization": ("Bearer " + api_key)}
-    import urllib
-    import toolz
-    from io import BytesIO
 
-    img_data = toolz.pipe(
-        IMAGEURL, urllib.request.urlopen, lambda x: x.read(), BytesIO
-    ).read()
+    files = {"image": open("snowleopardgaze.jpg", "rb")}
     r_get = requests.get(scoring_url, headers=headers)
     assert r_get
-    requests.post(scoring_url, files={"image": img_data}, headers=headers)
+    r_post = requests.post(scoring_url, files=files, headers=headers)
+    assert r_post
 
 
 def test_fpga_service(workspace):
