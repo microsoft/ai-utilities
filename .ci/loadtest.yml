@@ -8,6 +8,8 @@ trigger:
 schedules:
   - cron: "*/15 * * * *"
     displayName: Load Test
+    branches:
+      include: ['master']
     always: true
 pool:
   name: $(Agent_Name)
