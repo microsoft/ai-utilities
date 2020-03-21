@@ -23,4 +23,12 @@ steps:
     inlineScript: |
       conda env update --file environment.yml --prune python=3.7.4
       source activate ai-utilities
-      pytest --minutes 30 --iterations 25 --threads 25 .\tests\machine_learning\realtime\test_load_tester.py
+      pytest \
+        --minutes 30 \
+        --iterations 25 \
+        --threads 25 \
+        --cov=. \
+        --cov-report=xml \
+        --test-run-title="Load Tests" \
+        .\tests\machine_learning\realtime\test_load_tester.py 
+      
