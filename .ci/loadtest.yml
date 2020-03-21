@@ -5,15 +5,20 @@
 
 trigger:
 - master
-
+schedules:
+  - cron: "*/15 * * * *"
+    displayName: Load Test
+    always: true
 pool:
-  vmImage: 'ubuntu-latest'
+  name: $(Agent_Name)
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: 'AG-AzureCAT-AIDevOps-Test-COGSNonProd-IO1685734(0ca618d2-22a8-413a-96d0-0f1b531129c3)'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      conda env update --file environment.yml --prune python=3.7.4
+      source activate ai-utilities
+      pytest --minutes 30 --iterations 25 --threads 25 .\tests\machine_learning\realtime\test_load_tester.py
