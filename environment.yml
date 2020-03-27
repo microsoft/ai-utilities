@@ -133,11 +133,13 @@ dependencies:
   - pip:
     - adal==1.2.2
     - applicationinsights==0.11.9
+    - azure-cognitiveservices-vision-computervision
     - azure-common==1.1.25
     - azure-core==1.3.0
     - azure-graphrbac==0.61.1
     - azure-identity==1.3.0
     - azure-mgmt-authorization==0.60.0
+    - azure-mgmt-cognitiveservices
     - azure-mgmt-containerregistry==2.8.0
     - azure-mgmt-deploymentmanager==0.2.0
     - azure-mgmt-keyvault==2.1.1
