@@ -12,7 +12,7 @@ dependencies:
   - backcall=0.1.0
   - black=19.10b0
   - blas=1.0
-  - bleach=3.1.1
+  - bleach
   - ca-certificates=2019.11.28
   - certifi=2019.11.28
   - cffi=1.14.0
@@ -85,7 +85,6 @@ dependencies:
   - pysocks=1.7.1
   - pytest=5.4.1
   - pytest-cov
-  - pytest-testmon
   - python=3.7.6
   - python-dateutil=2.8.1
   - python-dotenv=0.12.0
