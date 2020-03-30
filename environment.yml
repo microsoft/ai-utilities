@@ -168,7 +168,6 @@ dependencies:
     - flask==1.1.1
     - isodate==0.6.0
     - itsdangerous==1.1.0
-    - ipykernal
     - jeepney==0.4.3
     - jmespath==0.9.5
     - jsonpickle==1.3
