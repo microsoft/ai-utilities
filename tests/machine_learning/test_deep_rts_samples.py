@@ -11,7 +11,7 @@ def test_image_ref_to_pil_image():
     img_data = toolz.pipe(IMAGEURL, urllib.request.urlopen, lambda x: x.read(), BytesIO).read()
     transform_input = compose(_pil_to_numpy, _image_ref_to_pil_image)
     # transform_input(img_data)
-    wget.download("https://bostondata.blob.core.windows.net/aksdeploymenttutorialaml/220px-Lynx_lynx_poing.jpg", "220px-Lynx_lynx_poing.jpg")
+    wget.download("https://raw.githubusercontent.com/Azure/MachineLearningNotebooks/master/how-to-use-azureml/deployment/accelerated-models/snowleopardgaze.jpg", "snowleopardgaze.jpg")
     images_dict = {"lynx": open("snowleopardgaze.jpg", "rb")}
     transformed_dict = {key: transform_input(img_ref) for key, img_ref in images_dict.items()}
     # _pil_to_numpy(img_data)
