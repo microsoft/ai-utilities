@@ -3,6 +3,7 @@ from azure.mgmt.network import NetworkManagementClient
 import argparse
 import logging
 import requests
+import sys
 import time
 
 
@@ -27,7 +28,11 @@ if __name__ == '__main__':
 
     # get network mgmt client using cli credentials
     logger.info("Starting Network Management Client")
-    client = get_client_from_cli_profile(NetworkManagementClient)
+    try:
+        client = get_client_from_cli_profile(NetworkManagementClient)
+    except:
+        logger.error("Could not find Azure credentials", exc_info=True)
+        sys.exit(1)
 
     try:
         # get network security group name for resource group
@@ -35,8 +40,8 @@ if __name__ == '__main__':
         nsg_name = vnet.subnets[0].network_security_group.id.split('/')[-1]
         logger.info("Found Network Security Group: %s", nsg_name)
     except:
-        logger.error("Could not find Network Security Group, make sure resources are correct and initialized", exc_info=True)
-        exit
+        logger.error("Could not find Network Security Group", exc_info=True)
+        sys.exit(1)
 
     repeat = True
     while repeat:
