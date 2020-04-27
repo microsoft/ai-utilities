@@ -8,6 +8,7 @@ import time
 
 
 logger = logging.getLogger(__name__)
+rule_name = 'CleanupTool-Allow-100'
 
 
 if __name__ == '__main__':
@@ -45,8 +46,16 @@ if __name__ == '__main__':
 
     repeat = True
     while repeat:
-        # get security rule for allowing inbound ssh connections
-        security_rule = client.security_rules.get('cleanupservice', nsg_name, 'CleanupTool-Allow-100')
+        # find CleanupTool security rule
+        for rg in ['cleanupservice', args.resource_group]:
+            try:
+                security_rule = client.security_rules.get(rg, nsg_name, rule_name)
+                break
+            except:
+                pass
+        else:
+            logger.error("Could not find Security Rule")
+            sys.exit(1)
 
         # get list of allowed ips
         allowed_ips = security_rule.source_address_prefixes
@@ -58,7 +67,7 @@ if __name__ == '__main__':
             try:
                 # update the security rule
                 logger.info("Updating SSH Security Rule")
-                client.security_rules.create_or_update('cleanupservice', nsg_name, 'CleanupTool-Allow-100', security_rule)
+                client.security_rules.create_or_update(rg, nsg_name, rule_name, security_rule)
                 logger.info("Security Rule Updated: please wait a few seconds before attempting to connect")
             except:
                 # TODO: catch update in progress error
