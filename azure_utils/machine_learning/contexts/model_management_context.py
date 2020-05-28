@@ -59,7 +59,8 @@ class ModelManagementContext(WorkspaceContext):
             # if get_model(self.model_name).tags['train_py_hash'] == self.get_file_md5(
             #         self.source_directory + "/" + self.script):
             model = Model(self, name=self.model_name)
-            model.download("outputs", exist_ok=True)
+            if not os.path.isdir("outputs"):
+                model.download("outputs", exist_ok=True)
             return model
         print("Model does not exists.")
         model = self.train_model()

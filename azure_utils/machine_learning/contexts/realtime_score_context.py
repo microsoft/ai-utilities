@@ -127,10 +127,12 @@ class RealtimeScoreContext(WorkspaceContext):
         """
         Test Scoring Service Locally by loading file
         """
-        Model(self, self.model_name).download(exist_ok=True)
-        exec(open(self.score_py).read())
+
+        exec(open("source/"+ self.score_py).read())
         exec("init()")
         exec("response = run(MockRequest())")
+        exec("assert response")
+        exec("response = run(MockImageRequest())")
         exec("assert response")
 
     def get_inference_config(self) -> InferenceConfig:
@@ -1665,3 +1667,11 @@ class MockRequest:
     """Mock Request Class to create calls to test web service code"""
 
     method = "GET"
+
+class MockImageRequest:
+    """Mock Request Class to create calls to test web service code"""
+
+    method = "POST"
+
+    def __init__(self):
+        self.files = {"image": open("snowleopardgaze.jpg", "rb")}

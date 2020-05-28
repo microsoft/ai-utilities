@@ -41,6 +41,9 @@ stages:
     ProjectLocation: ${{ variables.ProjectLocation }}
     conda: ${{ variables.conda }}
     post_cleanup: false
+    
+    multi_region_1: false
+    multi_region_2: false
 
     flighting_release: false
     flighting_preview: false

@@ -205,6 +205,9 @@ class TestDeployDeepRTS(WorkspaceCreationTests):
         web_service = realtime_score_context.get_or_create_aks_service(model, aks_target, inference_config)
         assert web_service.state == "Healthy"
 
+    def test_web_service(self, realtime_score_context: DeepRealtimeScore):
+        realtime_score_context.test_service_local()
+
 
 # noinspection PyUnresolvedReferences,PyUnresolvedReferences,PyUnresolvedReferences
 class TestDeployDeepRTSLocally:
@@ -215,13 +218,6 @@ class TestDeployDeepRTSLocally:
             os.system("python script/create_deep_model_new.py")
 
             assert os.path.isfile("../outputs/model.pkl")
-
-    # def test_score_py(self):
-    #     if os.path.isfile("driver.py"):
-    #         from tests.machine_learning.driver import init, run
-    #         init()
-    #         response = run(MockRequest())
-    #         assert response
 
 
 def dont_test_get_or_create_function_endpoint():

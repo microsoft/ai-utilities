@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     # Load the training data
     print('Reading {}'.format(data_path))
-    train = pd.read_csv(data_path, sep='\t', encoding='latin1')
+    train = pd.read_csv(data_path, sep='\t', encoding='latin1', error_bad_lines=False)
 
     # Limit the number of duplicate-original question matches.
     train = train[train.n < args.match]
