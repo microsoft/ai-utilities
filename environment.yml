@@ -143,7 +143,6 @@ dependencies:
     - azure-mgmt-keyvault==2.1.1
     - azure-mgmt-resource==8.0.1
     - azure-mgmt-storage==8.0.0
-    - azure-storage-blob==12.3.0
     - azureml-accel-models==1.1.5
     - azureml-automl-core==1.1.5.1
     - azureml-contrib-functions==1.1.5
