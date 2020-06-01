@@ -43,7 +43,7 @@ dependencies:
   - jupyter_client=6.0.0
   - jupyter_core=4.6.3
   - keras=2.3.1
-  - lightgbm=2.3.1
+  - lightgbm
   - lz4-c=1.8.3
   - mako=1.1.0
   - markdown=3.2.1
