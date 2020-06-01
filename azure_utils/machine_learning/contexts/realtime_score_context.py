@@ -317,7 +317,7 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         workspace_compute = self.compute_targets
         print("Check if Cluster exists.")
         if self.aks_name in workspace_compute:
-            print("Cluster does exists.")
+            print(f"Cluster exists: {self.aks_name}")
             return AksCompute(self, self.aks_name)
         print("Cluster does not exists.")
         prov_config = AksCompute.provisioning_configuration(
@@ -332,6 +332,7 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
         )
 
         aks_target.wait_for_completion(show_output=True)
+
         if self.show_output:
             service_name = "AKS"
             print_deployment_time(self.aks_service_name, deploy_aks_start, service_name)
@@ -368,9 +369,9 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
 
         print("Check if AKS Service Exists")
         if self.aks_service_name in self.webservices:
-            print("AKS Service Exists")
+            print(f"AKS Service exists: {self.aks_service_name}")
             aks_service = AksWebservice(self, self.aks_service_name)
-            if aks_service.state == "Succeeded":
+            if aks_service.state == "Succeeded" or aks_service.state == "Transitioning" or aks_service.state == "Healthy":
                 self._post_process_aks_deployment(aks_service, aks_target, model_dict)
                 return aks_service
         print("AKS Service Does Not Exists")
@@ -384,7 +385,7 @@ class RealtimeScoreAKSContext(RealtimeScoreContext):
             models=[model],
             inference_config=inference_config,
             deployment_target=aks_target,
-            overwrite=True,
+            overwrite=True
         )
         self._post_process_aks_deployment(aks_service, aks_target, model_dict)
         try:
@@ -1505,6 +1506,8 @@ class FPGARealtimeScore(RealtimeScoreAKSContext):
             autoscale_enabled=autoscale_enabled,
             num_replicas=num_replicas,
             auth_enabled=auth_enabled,
+            enable_app_insights=True,
+            collect_model_data=True
         )
         aks_service = AksWebservice.deploy_from_image(
             workspace=ws,

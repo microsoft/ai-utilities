@@ -16,7 +16,7 @@ def init():
 def run(request):
     """ Make a prediction based on the data passed in using the preloaded model
     """
-    from azure_utils.machine_learning.realtime import default_response
+    from azure_utils.machine_learning.realtime.load_tester import default_response
     if request.method == 'POST':
         return process_and_score(request.files)
     return default_response(request)

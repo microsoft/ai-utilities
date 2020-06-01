@@ -1,0 +1,34 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+schedules:
+  - cron: "*/15 * * * *"
+    displayName: Load Test
+    branches:
+      include: ['master']
+    always: true
+pool:
+  name: $(Agent_Name)
+
+steps:
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: 'AG-AzureCAT-AIDevOps-Test-COGSNonProd-IO1685734(0ca618d2-22a8-413a-96d0-0f1b531129c3)'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      conda env update --file environment.yml --prune python=3.7.4
+      source activate ai-utilities
+      pytest \
+        --minutes 30 \
+        --iterations 25 \
+        --threads 25 \
+        --cov=. \
+        --cov-report=xml \
+        --test-run-title="Load Tests" \
+        .\tests\machine_learning\realtime\test_load_tester.py 
+      

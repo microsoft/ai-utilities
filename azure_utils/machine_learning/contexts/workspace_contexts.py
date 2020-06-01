@@ -28,10 +28,12 @@ class WorkspaceContext(Workspace):
         self,
         subscription_id: str,
         resource_group: str,
-        workspace_name: str, configuration_file: str = project_configuration_file, project_configuration=None,
+        workspace_name: str,
+        configuration_file: str = project_configuration_file,
+        project_configuration=None,
         train_py: str = train_py_default,
         score_py: str = score_py_default,
-        **kwargs
+        **kwargs,
     ):
         """
         Interface Constructor for Workspace Context
@@ -63,7 +65,7 @@ class WorkspaceContext(Workspace):
         cls,
         configuration_file: str = project_configuration_file,
         project_configuration: ProjectConfiguration = None,
-        **kwargs
+        **kwargs,
     ):
         """ Get or create a workspace if it doesn't exist.
 
@@ -77,29 +79,37 @@ class WorkspaceContext(Workspace):
         assert project_configuration.has_value("workspace_name")
         assert project_configuration.has_value("workspace_region")
 
+        workspace_name = project_configuration.get_value("workspace_name")
         try:
-            check_valid_resource_name(
-                project_configuration.get_value("workspace_name"), "Workspace"
-            )
+            check_valid_resource_name(workspace_name, "Workspace")
         except UserErrorException:
-            print(project_configuration.get_value("workspace_name"))
+            print(workspace_name)
             raise
 
+        subscription_id = project_configuration.get_value("subscription_id")
+        resource_group = project_configuration.get_value("resource_group")
+        workspace_region = project_configuration.get_value("workspace_region")
         cls.create(
-            subscription_id=project_configuration.get_value("subscription_id"),
-            resource_group=project_configuration.get_value("resource_group"),
-            name=project_configuration.get_value("workspace_name"),
-            location=project_configuration.get_value("workspace_region"),
+            subscription_id=subscription_id,
+            resource_group=resource_group,
+            name=workspace_name,
+            location=workspace_region,
             exist_ok=True,
         )
 
         ws = cls(
-            subscription_id=project_configuration.get_value("subscription_id"),
-            resource_group=project_configuration.get_value("resource_group"),
-            workspace_name=project_configuration.get_value("workspace_name"),
+            subscription_id=subscription_id,
+            resource_group=resource_group,
+            workspace_name=workspace_name,
             project_configuration=project_configuration,
-            **kwargs
+            **kwargs,
         )
+
+        print(f"Subscription: {subscription_id}")
+        print(f"Resource Group: {resource_group}")
+        print(f"Subscription: {subscription_id}")
+        print(f"workspace Region: {workspace_region}")
+
         return ws
 
     @staticmethod
