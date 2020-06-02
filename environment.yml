@@ -193,3 +193,5 @@ dependencies:
     - urllib3==1.25.8
     - websocket-client==0.57.0
     - wget==3.2
+    - azure-storage==0.36.0
+
